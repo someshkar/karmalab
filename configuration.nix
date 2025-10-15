@@ -14,8 +14,23 @@
   # Set your hostname
   networking.hostName = "nuc-server";
 
-  # Set a unique hostId for ZFS
+  # Set a unique hostId for ZFS, which is mandatory.
   networking.hostId = "b291ad23";
+
+  # --- ZFS Configuration ---
+  # 1. Enable ZFS support in the kernel and initrd.
+  boot.supportedFilesystems = [ "zfs" ];
+
+  # 2. Automatically import the non-root ZFS pool on boot.
+  #    "storagepool" is the name you defined in disko-config.nix.
+  boot.zfs.extraPools = [ "storagepool" ];
+
+  # 3. (Recommended) Ensure kernel compatibility with the ZFS module.
+  #    This prevents breakages from kernel updates.
+  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+
+  # 4. (Recommended) Enable automatic weekly scrubbing for data integrity.
+  services.zfs.autoScrub.enable = true;
 
   # Set your time zone.
   time.timeZone = "Asia/Kolkata";
