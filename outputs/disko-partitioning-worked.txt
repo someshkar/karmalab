@@ -1,0 +1,352 @@
+[nix-shell:~/karmalab]$ sudo !!
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko --flake .#nuc-server
+disko version 1.12.0-dirty
+unpacking 'github:NixOS/nixpkgs/cf3f5c4def3c7b5f1fc012b3d839575dbe552d43' into the Git cache...
+warning: not writing modified lock file of flake 'path:/home/nixos/karmalab':
+• Added input 'disko':
+    'github:nix-community/disko/67ff9807dd148e704baadbd4fd783b54282ca627?narHash=sha256-IGmaEf3Do8o5Cwp1kXBN1wQmZwQN3NLfq5t4nHtVtcU%3D' (2025-09-19)
+• Added input 'disko/nixpkgs':
+    follows 'nixpkgs'
+• Added input 'nixpkgs':
+    'github:NixOS/nixpkgs/cf3f5c4def3c7b5f1fc012b3d839575dbe552d43?narHash=sha256-TK9Kr0BYBQ/1P5kAsnNQhmWWKgmZXwUQr4ZMjCzWf2c%3D' (2025-10-12)
+warning: not writing modified lock file of flake 'path:/home/nixos/karmalab':
+• Added input 'disko':
+    'github:nix-community/disko/67ff9807dd148e704baadbd4fd783b54282ca627?narHash=sha256-IGmaEf3Do8o5Cwp1kXBN1wQmZwQN3NLfq5t4nHtVtcU%3D' (2025-09-19)
+• Added input 'disko/nixpkgs':
+    follows 'nixpkgs'
+• Added input 'nixpkgs':
+    'github:NixOS/nixpkgs/cf3f5c4def3c7b5f1fc012b3d839575dbe552d43?narHash=sha256-TK9Kr0BYBQ/1P5kAsnNQhmWWKgmZXwUQr4ZMjCzWf2c%3D' (2025-10-12)
+warning: not writing modified lock file of flake 'path:/home/nixos/karmalab':
+• Added input 'disko':
+    'github:nix-community/disko/67ff9807dd148e704baadbd4fd783b54282ca627?narHash=sha256-IGmaEf3Do8o5Cwp1kXBN1wQmZwQN3NLfq5t4nHtVtcU%3D' (2025-09-19)
+• Added input 'disko/nixpkgs':
+    follows 'nixpkgs'
+• Added input 'nixpkgs':
+    'github:NixOS/nixpkgs/cf3f5c4def3c7b5f1fc012b3d839575dbe552d43?narHash=sha256-TK9Kr0BYBQ/1P5kAsnNQhmWWKgmZXwUQr4ZMjCzWf2c%3D' (2025-10-12)
+umount: /mnt: not mounted
+++ realpath /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ disk=/dev/nvme0n1
++ lsblk -a -f
+NAME        FSTYPE   FSVER            LABEL                        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+loop0       squashfs 4.0                                                                                      0   100% /nix/.ro-store
+loop1
+loop2
+loop3
+loop4
+loop5
+loop6
+loop7
+sda
+├─sda1      vfat     FAT32            EFI                          67E3-17ED
+└─sda2      exfat    1.0              Expansion                    00E1-4CBC
+sdb         iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00
+├─sdb1      iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00                     0   100% /iso
+└─sdb2      vfat     FAT12            EFIBOOT                      1234-5678
+nvme0n1
+├─nvme0n1p1 vfat     FAT32                                         9C29-1D89
+├─nvme0n1p2 ext4     1.0                                           5f934534-bd7f-484a-b6fc-ef21765b30a5
+└─nvme0n1p3 swap     1                swap                         2fae2065-5193-4217-9deb-3fb0e065eea8
++ lsblk --output-all --json
++ bash -x
+++ dirname /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate
++ jq -r -f /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/zfs-swap-deactivate.jq
++ lsblk --output-all --json
++ bash -x
+++ dirname /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate
++ jq -r --arg disk_to_clear /dev/nvme0n1 -f /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate.jq
++ set -fu
++ wipefs --all -f /dev/nvme0n1p1
+/dev/nvme0n1p1: 8 bytes were erased at offset 0x00000052 (vfat): 46 41 54 33 32 20 20 20
+/dev/nvme0n1p1: 1 byte was erased at offset 0x00000000 (vfat): eb
+/dev/nvme0n1p1: 2 bytes were erased at offset 0x000001fe (vfat): 55 aa
++ wipefs --all -f /dev/nvme0n1p2
+/dev/nvme0n1p2: 2 bytes were erased at offset 0x00000438 (ext4): 53 ef
++ swapoff /dev/nvme0n1p3
+swapoff: /dev/nvme0n1p3: swapoff failed: Invalid argument
++ wipefs --all -f /dev/nvme0n1p3
+/dev/nvme0n1p3: 10 bytes were erased at offset 0x00000ff6 (swap): 53 57 41 50 53 50 41 43 45 32
+++ type zdb
+++ zdb -l /dev/nvme0n1
+++ sed -nr 's/ +name: '\''(.*)'\''/\1/p'
++ zpool=
++ [[ -n '' ]]
++ unset zpool
+++ lsblk /dev/nvme0n1 -l -p -o type,name
+++ awk 'match($1,"raid.*") {print $2}'
++ md_dev=
++ [[ -n '' ]]
++ wipefs --all -f /dev/nvme0n1
+/dev/nvme0n1: 8 bytes were erased at offset 0x00000200 (gpt): 45 46 49 20 50 41 52 54
+/dev/nvme0n1: 8 bytes were erased at offset 0x773c255e00 (gpt): 45 46 49 20 50 41 52 54
+/dev/nvme0n1: 2 bytes were erased at offset 0x000001fe (PMBR): 55 aa
++ dd if=/dev/zero of=/dev/nvme0n1 bs=440 count=1
+1+0 records in
+1+0 records out
+440 bytes copied, 0.000214472 s, 2.1 MB/s
++ lsblk -a -f
+NAME    FSTYPE   FSVER            LABEL                        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+loop0   squashfs 4.0                                                                                      0   100% /nix/.ro-store
+loop1
+loop2
+loop3
+loop4
+loop5
+loop6
+loop7
+sda
+├─sda1  vfat     FAT32            EFI                          67E3-17ED
+└─sda2  exfat    1.0              Expansion                    00E1-4CBC
+sdb     iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00
+├─sdb1  iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00                     0   100% /iso
+└─sdb2  vfat     FAT12            EFIBOOT                      1234-5678
+nvme0n1
+++ realpath /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
++ disk=/dev/sda
++ lsblk -a -f
+NAME    FSTYPE   FSVER            LABEL                        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+loop0   squashfs 4.0                                                                                      0   100% /nix/.ro-store
+loop1
+loop2
+loop3
+loop4
+loop5
+loop6
+loop7
+sda
+├─sda1  vfat     FAT32            EFI                          67E3-17ED
+└─sda2  exfat    1.0              Expansion                    00E1-4CBC
+sdb     iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00
+├─sdb1  iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00                     0   100% /iso
+└─sdb2  vfat     FAT12            EFIBOOT                      1234-5678
+nvme0n1
++ lsblk --output-all --json
++ bash -x
+++ dirname /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate
++ jq -r -f /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/zfs-swap-deactivate.jq
++ lsblk --output-all --json
++ bash -x
+++ dirname /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate
++ jq -r --arg disk_to_clear /dev/sda -f /nix/store/fpwn44vygjj6bfn8s1jj9p8yh6jhfxni-disk-deactivate/disk-deactivate.jq
++ set -fu
++ wipefs --all -f /dev/sda1
+/dev/sda1: 8 bytes were erased at offset 0x00000052 (vfat): 46 41 54 33 32 20 20 20
+/dev/sda1: 1 byte was erased at offset 0x00000000 (vfat): eb
+/dev/sda1: 2 bytes were erased at offset 0x000001fe (vfat): 55 aa
++ wipefs --all -f /dev/sda2
+/dev/sda2: 8 bytes were erased at offset 0x00000003 (exfat): 45 58 46 41 54 20 20 20
+++ type zdb
+++ sed -nr 's/ +name: '\''(.*)'\''/\1/p'
+++ zdb -l /dev/sda
++ zpool=
++ [[ -n '' ]]
++ unset zpool
+++ lsblk /dev/sda -l -p -o type,name
+++ awk 'match($1,"raid.*") {print $2}'
++ md_dev=
++ [[ -n '' ]]
++ wipefs --all -f /dev/sda
+/dev/sda: 8 bytes were erased at offset 0x00000200 (gpt): 45 46 49 20 50 41 52 54
+/dev/sda: 8 bytes were erased at offset 0x1230bffffc00 (gpt): 45 46 49 20 50 41 52 54
+/dev/sda: 2 bytes were erased at offset 0x000001fe (PMBR): 55 aa
++ dd if=/dev/zero of=/dev/sda bs=440 count=1
+1+0 records in
+1+0 records out
+440 bytes copied, 0.000580133 s, 758 kB/s
++ lsblk -a -f
+NAME    FSTYPE   FSVER            LABEL                        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+loop0   squashfs 4.0                                                                                      0   100% /nix/.ro-store
+loop1
+loop2
+loop3
+loop4
+loop5
+loop6
+loop7
+sda
+sdb     iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00
+├─sdb1  iso9660  Joliet Extension nixos-graphical-25.05-x86_64 1980-01-01-00-00-00-00                     0   100% /iso
+└─sdb2  vfat     FAT12            EFIBOOT                      1234-5678
+nvme0n1
+++ mktemp -d
++ disko_devices_dir=/tmp/tmp.0VaskzFRrv
++ trap 'rm -rf "$disko_devices_dir"' EXIT
++ mkdir -p /tmp/tmp.0VaskzFRrv
++ destroy=1
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ imageName=nvme0
++ imageSize=2G
++ name=nvme0
++ type=disk
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ efiGptPartitionFirst=1
++ type=gpt
++ blkid /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ sgdisk --clear /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
+Creating new GPT entries in memory.
+The operation has completed successfully.
++ sgdisk --align-end --new=1:0:+1G --partition-guid=1:R --change-name=1:disk-nvme0-boot --typecode=1:EF00 --attributes=1:=:0 /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
+The operation has completed successfully.
++ partprobe /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ udevadm trigger --subsystem-match=block
++ udevadm settle --timeout 120
++ sgdisk --align-end --new=2:0:-0 --partition-guid=2:R --change-name=2:disk-nvme0-root --typecode=2:8300 --attributes=2:=:0 /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
+The operation has completed successfully.
++ partprobe /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ udevadm trigger --subsystem-match=block
++ udevadm settle --timeout 120
++ device=/dev/disk/by-partlabel/disk-nvme0-boot
++ extraArgs=()
++ declare -a extraArgs
++ format=vfat
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=/boot
++ type=filesystem
++ blkid /dev/disk/by-partlabel/disk-nvme0-boot
++ grep -q TYPE=
++ device=/dev/disk/by-partlabel/disk-nvme0-root
++ extraArgs=()
++ declare -a extraArgs
++ format=ext4
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=/
++ type=filesystem
++ blkid /dev/disk/by-partlabel/disk-nvme0-root
++ grep -q TYPE=
++ mkfs.ext4 /dev/disk/by-partlabel/disk-nvme0-root
+mke2fs 1.47.3 (8-Jul-2025)
+Discarding device blocks: done
+Creating filesystem with 124764416 4k blocks and 31195136 inodes
+Filesystem UUID: 7dac5b34-7545-4056-9e97-bbe573f9a60d
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (262144 blocks): done
+Writing superblocks and filesystem accounting information: done
+
++ destroy=1
++ device=/dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
++ imageName=sda
++ imageSize=2G
++ name=sda
++ type=disk
++ device=/dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
++ pool=storagepool
++ type=zfs
++ echo /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=
++ name=storagepool
++ options=()
++ declare -A options
++ rootFsOptions=(['acltype']='posixacl' ['compression']='lz4' ['xattr']='sa')
++ declare -A rootFsOptions
++ type=zpool
++ readarray -t zfs_devices
+++ cat /tmp/tmp.0VaskzFRrv/zfs_storagepool
++ '[' 1 -eq 0 ']'
++ zpool import -N -f storagepool
+cannot import 'storagepool': no such pool available
++ zpool list storagepool
+cannot open 'storagepool': no such pool
++ continue=1
++ for dev in "${zfs_devices[@]}"
++ blkid /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
++ :
++ '[' 1 -eq 1 ']'
++ topology=
++ mode=
++ '[' '' '!=' prescribed ']'
++ topology=' /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0'
++ '[' 1 -eq 1 ']'
++ zpool create -f storagepool -R /mnt -O acltype=posixacl -O compression=lz4 -O xattr=sa /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
+++ zfs get -H mounted storagepool
+++ cut -f3
++ [[ yes == yes ]]
++ zfs unmount storagepool
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=
++ name=__root
++ options=(['acltype']='posixacl' ['compression']='lz4' ['xattr']='sa')
++ declare -A options
++ type=zfs_fs
++ zfs get type storagepool
++ zfs set -u acltype=posixacl compression=lz4 xattr=sa storagepool
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=/data
++ name=data
++ options=()
++ declare -A options
++ type=zfs_fs
++ zfs get type storagepool/data
++ zfs create -up storagepool/data -o mountpoint=/data
++ set -efux
++ destroy=1
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ imageName=nvme0
++ imageSize=2G
++ name=nvme0
++ type=disk
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ efiGptPartitionFirst=1
++ type=gpt
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=
++ name=storagepool
++ options=()
++ declare -A options
++ rootFsOptions=(['acltype']='posixacl' ['compression']='lz4' ['xattr']='sa')
++ declare -A rootFsOptions
++ type=zpool
++ zpool list storagepool
++ destroy=1
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ imageName=nvme0
++ imageSize=2G
++ name=nvme0
++ type=disk
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ efiGptPartitionFirst=1
++ type=gpt
++ device=/dev/disk/by-partlabel/disk-nvme0-root
++ extraArgs=()
++ declare -a extraArgs
++ format=ext4
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=/
++ type=filesystem
++ findmnt /dev/disk/by-partlabel/disk-nvme0-root /mnt/
++ mount /dev/disk/by-partlabel/disk-nvme0-root /mnt/ -t ext4 -o defaults -o X-mount.mkdir
++ destroy=1
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ imageName=nvme0
++ imageSize=2G
++ name=nvme0
++ type=disk
++ device=/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b47ee6f6a
++ efiGptPartitionFirst=1
++ type=gpt
++ device=/dev/disk/by-partlabel/disk-nvme0-boot
++ extraArgs=()
++ declare -a extraArgs
++ format=vfat
++ mountOptions=('defaults')
++ declare -a mountOptions
++ mountpoint=/boot
++ type=filesystem
++ findmnt /dev/disk/by-partlabel/disk-nvme0-boot /mnt/boot
++ mount /dev/disk/by-partlabel/disk-nvme0-boot /mnt/boot -t vfat -o defaults -o X-mount.mkdir
+mount: /mnt/boot: wrong fs type, bad option, bad superblock on /dev/nvme0n1p1, missing codepage or helper program, or other error.
+       dmesg(1) may have more information after failed mount system call.
++ rm -rf /tmp/tmp.0VaskzFRrv
+
