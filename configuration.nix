@@ -14,6 +14,9 @@
   # Set your hostname
   networking.hostName = "nuc-server";
 
+  # Set a unique hostId for ZFS
+  networking.hostId = "b291ad23";
+
   # Set your time zone.
   time.timeZone = "Asia/Kolkata";
 
