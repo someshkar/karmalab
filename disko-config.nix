@@ -52,7 +52,7 @@
         datasets = {
           "data" = {
             type = "zfs_fs";
-            mountpoint = "/data";
+            options.mountpoint = "legacy";
           };
         };
         # Recommended ZFS pool options for performance and compatibility

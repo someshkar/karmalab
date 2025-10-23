@@ -31,19 +31,6 @@
   # Specify device search path
   boot.zfs.devNodes = "/dev/disk/by-id";
 
-  # Wait for USB devices before importing ZFS pools
-  boot.initrd.postDeviceCommands = lib.mkAfter ''
-    echo "Waiting for USB devices to settle..."
-    for i in {1..10}; do
-      if [ -e /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0 ]; then
-        echo "USB device found"
-        break
-      fi
-      echo "Waiting for USB device... attempt $i/10"
-      sleep 2
-    done
-  '';
-
 
   # 3. (Recommended) Ensure kernel compatibility with the ZFS module.
   #    This prevents breakages from kernel updates.
@@ -51,6 +38,19 @@
 
   # 4. (Recommended) Enable automatic weekly scrubbing for data integrity.
   services.zfs.autoScrub.enable = true;
+  # Mount ZFS dataset with legacy mountpoint
+  fileSystems."/data" = {
+    device = "storagepool/data";
+    fsType = "zfs";
+    options = [
+      "zfsutil"
+      "nofail"                           # Allow boot to continue if mount fails
+      "x-systemd.device-timeout=30"      # Wait 30s for USB device
+      "x-systemd.mount-timeout=30"       # Wait 30s for mount operation
+      "x-systemd.requires=zfs-import-storagepool.service"  # Explicit dependency
+    ];
+  };
+
 
   # Set your time zone.
   time.timeZone = "Asia/Kolkata";
