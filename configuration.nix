@@ -62,9 +62,17 @@
   # --- IMPORTANT ---
   # Replace 'your-username' with your desired username.
   # Set a password for the user account after the first boot by running `passwd`
-  users.users.somesh = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable 'sudo' for the user.
+  users.users = {
+    root = {
+      hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";  # Add this line
+    };
+  
+    somesh = {
+      isNormalUser = true;
+      description = "Somesh";
+      extraGroups = [ "wheel" "networkmanager" ];
+      hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";  # Add this line
+    };
   };
 
   # Allow unfree packages
