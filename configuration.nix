@@ -1,4 +1,4 @@
-{ config, pkgs, inputs,... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
   imports = [
@@ -24,6 +24,26 @@
   # 2. Automatically import the non-root ZFS pool on boot.
   #    "storagepool" is the name you defined in disko-config.nix.
   boot.zfs.extraPools = [ "storagepool" ];
+  # Force import behavior for non-root pool
+  boot.zfs.forceImportRoot = false;
+  boot.zfs.forceImportAll = false;
+
+  # Specify device search path
+  boot.zfs.devNodes = "/dev/disk/by-id";
+
+  # Wait for USB devices before importing ZFS pools
+  boot.initrd.postDeviceCommands = lib.mkAfter ''
+    echo "Waiting for USB devices to settle..."
+    for i in {1..10}; do
+      if [ -e /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0 ]; then
+        echo "USB device found"
+        break
+      fi
+      echo "Waiting for USB device... attempt $i/10"
+      sleep 2
+    done
+  '';
+
 
   # 3. (Recommended) Ensure kernel compatibility with the ZFS module.
   #    This prevents breakages from kernel updates.
