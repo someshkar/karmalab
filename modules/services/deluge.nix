@@ -139,7 +139,8 @@ in
       NetworkNamespacePath = "/var/run/netns/${vpnNamespace}";
       
       # Bind to all interfaces in namespace (accessible via veth)
-      ExecStart = "${pkgs.deluge}/bin/deluge-web -c ${configDir} -p ${toString webPort}";
+      # -f flag keeps it in foreground (required for systemd Type=simple)
+      ExecStart = "${pkgs.deluge}/bin/deluge-web -f -c ${configDir} -p ${toString webPort}";
       
       Restart = "on-failure";
       RestartSec = "10s";
