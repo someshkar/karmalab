@@ -138,12 +138,8 @@ in
       # Run in VPN namespace
       NetworkNamespacePath = "/var/run/netns/${vpnNamespace}";
       
-      # Use wrapper script with exec to ensure proper foreground execution
-      ExecStart = let
-        startScript = pkgs.writeShellScript "deluge-web-start" ''
-          exec ${pkgs.deluge}/bin/deluge-web -f -c ${configDir} -p ${toString webPort} 2>&1
-        '';
-      in "${startScript}";
+      # -d (--do-not-daemonize) keeps it in foreground for systemd
+      ExecStart = "${pkgs.deluge}/bin/deluge-web -d -c ${configDir} -p ${toString webPort}";
       
       Restart = "on-failure";
       RestartSec = "10s";
