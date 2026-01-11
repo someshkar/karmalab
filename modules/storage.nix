@@ -162,17 +162,9 @@ in
       options = zfsMountOpts;
     };
     
-    "/var/lib/prowlarr" = {
-      device = "${poolName}/services/prowlarr";
-      fsType = "zfs";
-      options = zfsMountOpts;
-    };
-    
-    "/var/lib/jellyseerr" = {
-      device = "${poolName}/services/jellyseerr";
-      fsType = "zfs";
-      options = zfsMountOpts;
-    };
+    # Note: jellyseerr and prowlarr use NixOS defaults on NVMe SSD
+    # They use DynamicUser=true which conflicts with ZFS mounts
+    # Their data is small (config + SQLite) so NVMe is fine
     
     # Note: uptime-kuma uses NixOS default at /var/lib/uptime-kuma/
     # No ZFS mount needed - NixOS 25.11 manages this automatically
