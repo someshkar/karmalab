@@ -148,7 +148,7 @@
         intel-compute-runtime
         
         # Optional: VDPAU compatibility layer
-        vaapiVdpau
+        libva-vdpau-driver
         libvdpau-va-gl
       ];
     };

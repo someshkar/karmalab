@@ -37,9 +37,7 @@ in
     settings = {
       # Port to listen on
       PORT = toString uptimeKumaPort;
-      
-      # Data directory (will be on ZFS via storage.nix mount)
-      DATA_DIR = "/var/lib/private/uptime-kuma";
+      # DATA_DIR is managed automatically by NixOS (defaults to /var/lib/uptime-kuma/)
     };
   };
   

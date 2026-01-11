@@ -58,10 +58,10 @@ in
     # Enable ZFS support
     supportedFilesystems = [ "zfs" ];
     
-    # Use latest kernel for Intel N150 (Alder Lake-N) GPU support
+    # Use kernel 6.12 for Intel N150 (Alder Lake-N) GPU support
     # The N150 iGPU needs recent i915 driver improvements
-    # Note: ZFS builds against this kernel - if build fails, try linuxPackages_6_12
-    kernelPackages = pkgs.linuxPackages_latest;
+    # Note: linuxPackages_latest (6.18) breaks ZFS - use 6.12 which has full ZFS support
+    kernelPackages = pkgs.linuxPackages_6_12;
     
     # Import the USB ZFS pool on boot
     # This is the key difference from disko - extraPools handles
