@@ -42,6 +42,7 @@
     ./modules/services/deluge.nix   # Native Deluge in VPN namespace
     ./modules/services/immich.nix   # Immich photo management (Docker)
     ./modules/services/uptime-kuma.nix # Service monitoring
+    ./modules/services/flaresolverr.nix # Cloudflare bypass for Prowlarr
   ];
 
   # ============================================================================
