@@ -87,8 +87,19 @@
     firewall = {
       enable = true;
       
-      # Public ports (SSH only)
-      allowedTCPPorts = [ 22 ];
+      # Ports open on all interfaces (local network access)
+      allowedTCPPorts = [ 
+        22      # SSH
+        8096    # Jellyfin
+        7878    # Radarr
+        8989    # Sonarr
+        6767    # Bazarr
+        9696    # Prowlarr
+        5055    # Jellyseerr
+        8112    # Deluge Web UI
+        2283    # Immich
+        3001    # Uptime Kuma
+      ];
       
       # Trusted interfaces
       trustedInterfaces = [
