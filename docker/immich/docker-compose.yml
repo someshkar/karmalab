@@ -21,8 +21,8 @@ services:
     devices:
       - /dev/dri:/dev/dri
     group_add:
-      - video
-      - render
+      - "26"    # video
+      - "303"   # render
     
     volumes:
       # Photo library - ZFS dataset on USB HDD
