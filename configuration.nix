@@ -1,89 +1,359 @@
+# configuration.nix
+# ============================================================================
+# NIXOS HOMELAB CONFIGURATION - ASUS NUC MEDIA SERVER
+# ============================================================================
+#
+# This configuration provides a complete media server stack with 18 services:
+#
+# MEDIA STACK:
+# - Jellyfin: Media streaming with Intel Quick Sync hardware transcoding
+# - Radarr/Sonarr/Bazarr/Prowlarr: Media automation (*arr stack)
+# - Jellyseerr: User-friendly media request interface
+# - Readarr/Audiobookshelf/Calibre-Web: Book management (Phase 2)
+#
+# PHOTOS:
+# - Immich: Self-hosted Google Photos alternative (Docker)
+#
+# INFRASTRUCTURE:
+# - Deluge: Torrent client with VPN isolation (Surfshark WireGuard)
+# - Uptime Kuma: Service monitoring and status pages
+#
+# PRODUCTIVITY (Phase 3):
+# - Vaultwarden: Password manager
+# - Nextcloud: File sync and collaboration
+#
+# Key Design Principles:
+# - Graceful degradation: System boots even if 20TB USB HDD is disconnected
+# - VPN isolation: All torrent traffic routed through WireGuard namespace
+# - Native services: Using NixOS services instead of Docker where possible
+# - ZFS storage: With proper timeouts for slow USB device enumeration
+# - Hardware acceleration: Intel Quick Sync (VAAPI) for Jellyfin AND Immich
+#
+# ============================================================================
+
 { config, pkgs, inputs, lib, ... }:
 
 {
   imports = [
-   ./hardware-configuration.nix
-   ./disko-config.nix
+    ./hardware-configuration.nix
+    ./disko-config.nix              # NVMe boot/root disk only
+    ./modules/storage.nix           # ZFS pool management with graceful degradation
+    ./modules/wireguard-vpn.nix     # VPN namespace for Surfshark
+    ./modules/services/deluge.nix   # Native Deluge in VPN namespace
+    ./modules/services/immich.nix   # Immich photo management (Docker)
+    ./modules/services/uptime-kuma.nix # Service monitoring
   ];
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  # ============================================================================
+  # BOOT CONFIGURATION
+  # ============================================================================
 
-  # --- IMPORTANT ---
-  # Set your hostname
-  networking.hostName = "nuc-server";
-
-  # Set a unique hostId for ZFS, which is mandatory.
-  networking.hostId = "b291ad23";
-
-  # --- ZFS Configuration ---
-  # 1. Enable ZFS support in the kernel and initrd.
-  boot.supportedFilesystems = [ "zfs" ];
-
-  # 2. Automatically import the non-root ZFS pool on boot.
-  #    "storagepool" is the name you defined in disko-config.nix.
-  boot.zfs.extraPools = [ "storagepool" ];
-  # Force import behavior for non-root pool
-  boot.zfs.forceImportRoot = false;
-  boot.zfs.forceImportAll = false;
-
-  # Specify device search path
-  boot.zfs.devNodes = "/dev/disk/by-id";
-
-
-  # 3. (Recommended) Ensure kernel compatibility with the ZFS module.
-  #    This prevents breakages from kernel updates.
-  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
-
-  # 4. (Recommended) Enable automatic weekly scrubbing for data integrity.
-  services.zfs.autoScrub.enable = true;
-  # Mount ZFS dataset with legacy mountpoint
-  fileSystems."/data" = {
-    device = "storagepool/data";
-    fsType = "zfs";
-    options = [
-      "zfsutil"
-      "nofail"                           # Allow boot to continue if mount fails
-      "x-systemd.device-timeout=30"      # Wait 30s for USB device
-      "x-systemd.mount-timeout=30"       # Wait 30s for mount operation
-      "x-systemd.requires=zfs-import-storagepool.service"  # Explicit dependency
+  boot = {
+    loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+    
+    # Load network drivers
+    kernelModules = [ "r8169" "kvm-intel" ];  # Realtek RTL8125 2.5GbE + KVM
+    
+    # Intel N150 (Alder Lake-N) Quick Sync support
+    # Device ID 46d4 needs force_probe; enable_guc=3 for GuC/HuC firmware
+    kernelParams = [
+      "i915.force_probe=46d4"
+      "i915.enable_guc=3"
     ];
   };
 
+  # ============================================================================
+  # NETWORKING
+  # ============================================================================
 
-  # Set your time zone.
-  time.timeZone = "Asia/Kolkata";
-
-  # Enable the OpenSSH server.
-  services.openssh.enable = true;
-
-  # Define a user account.
-  # --- IMPORTANT ---
-  # Replace 'your-username' with your desired username.
-  # Set a password for the user account after the first boot by running `passwd`
-  users.users = {
-    root = {
-      hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";  # Add this line
+  networking = {
+    hostName = "nuc-server";
+    
+    # ZFS requires a unique hostId (generate with: head -c4 /dev/urandom | od -A none -t x4)
+    hostId = "b291ad23";
+    
+    # NetworkManager for reliable network management
+    networkmanager.enable = true;
+    useDHCP = lib.mkDefault false;
+    interfaces = {
+      enp1s0.useDHCP = lib.mkDefault true;  # Ethernet
+      wlo1.useDHCP = lib.mkDefault true;    # WiFi
     };
-  
-    somesh = {
-      isNormalUser = true;
-      description = "Somesh";
-      extraGroups = [ "wheel" "networkmanager" ];
-      hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";  # Add this line
+    
+    # Firewall configuration
+    firewall = {
+      enable = true;
+      
+      # Public ports (SSH only)
+      allowedTCPPorts = [ 22 ];
+      
+      # Trusted interfaces
+      trustedInterfaces = [
+        "tailscale0"  # Tailscale VPN
+        "lo"          # Localhost
+      ];
+      
+      # Service ports accessible via Tailscale only
+      # Note: Additional ports are defined in service modules:
+      # - Immich (2283) in modules/services/immich.nix
+      # - Uptime Kuma (3001) in modules/services/uptime-kuma.nix
+      interfaces."tailscale0".allowedTCPPorts = [
+        8096    # Jellyfin
+        7878    # Radarr
+        8989    # Sonarr
+        6767    # Bazarr
+        9696    # Prowlarr
+        5055    # Jellyseerr
+        # Deluge ports configured in modules/services/deluge.nix
+      ];
+      
+      # Allow ping
+      allowPing = true;
+      logRefusedConnections = true;
+      
+      # SSH rate limiting
+      extraCommands = ''
+        iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH
+        iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP
+      '';
     };
   };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  # ============================================================================
+  # HARDWARE
+  # ============================================================================
 
-  # Enable flakes and the new nix command
+  hardware = {
+    enableRedistributableFirmware = true;
+    enableAllFirmware = true;
+    
+    # Intel microcode updates
+    cpu.intel.updateMicrocode = true;
+    
+    # Intel N150 Quick Sync (VAAPI + QSV) for Jellyfin/Immich transcoding
+    # Reference: https://wiki.nixos.org/wiki/Intel_Graphics
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        # VA-API driver (primary - for hardware decode/encode)
+        intel-media-driver      # VAAPI iHD driver for Alder Lake N150
+        
+        # Quick Sync Video runtime (for QSV encoding)
+        vpl-gpu-rt              # oneVPL GPU runtime for 11th gen+
+        
+        # OpenCL support (for HDR tone mapping in Jellyfin)
+        intel-compute-runtime
+        
+        # Optional: VDPAU compatibility layer
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+    };
+    
+    # Enable intel-gpu-tools for diagnostics
+    intel-gpu-tools.enable = true;
+  };
+  
+  # Force iHD driver for VA-API
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "iHD";
+  };
+
+  # ============================================================================
+  # TIME AND LOCALE
+  # ============================================================================
+
+  time.timeZone = "Asia/Kolkata";
+
+  # ============================================================================
+  # USERS AND GROUPS
+  # ============================================================================
+
+  users.groups.media = {
+    gid = 2000;  # Fixed GID for consistent file permissions
+  };
+
+  users.users = {
+    root.hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";
+    
+    somesh = {
+      isNormalUser = true;
+      description = "Somesh";
+      extraGroups = [
+        "wheel"           # sudo
+        "networkmanager"
+        "media"           # Media file access
+        "docker"          # Docker container management
+      ];
+      hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";
+    };
+  };
+
+  # ============================================================================
+  # SSH
+  # ============================================================================
+
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = true;  # Disable after SSH key setup
+      PermitRootLogin = "yes";        # Disable after initial setup
+      MaxAuthTries = 3;
+      ClientAliveInterval = 300;
+      ClientAliveCountMax = 2;
+    };
+  };
+
+  # ============================================================================
+  # JELLYFIN - Media Streaming Server
+  # ============================================================================
+
+  services.jellyfin = {
+    enable = true;
+    openFirewall = false;  # Managed via Tailscale interface
+    user = "jellyfin";
+    group = "media";
+  };
+
+  users.users.jellyfin = {
+    extraGroups = [ "render" "video" ];  # Hardware transcoding
+  };
+
+  # Jellyfin depends on storage but should start gracefully without it
+  systemd.services.jellyfin = {
+    after = [ "storage-online.target" ];
+    wants = [ "storage-online.target" ];
+    # Note: NOT using "requires" - allows Jellyfin to start even if storage unavailable
+  };
+
+  # ============================================================================
+  # PROWLARR - Indexer Management
+  # ============================================================================
+
+  services.prowlarr = {
+    enable = true;
+    openFirewall = false;
+  };
+
+  users.users.prowlarr = {
+    isSystemUser = true;
+    group = "prowlarr";
+    extraGroups = [ "media" ];
+  };
+  users.groups.prowlarr = {};
+
+  systemd.services.prowlarr = {
+    after = [ "network-online.target" "storage-online.target" ];
+    wants = [ "network-online.target" "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # RADARR - Movie Automation
+  # ============================================================================
+
+  services.radarr = {
+    enable = true;
+    openFirewall = false;
+    dataDir = "/var/lib/radarr";
+    group = "media";
+  };
+
+  systemd.services.radarr = {
+    after = [ "network-online.target" "storage-online.target" ];
+    wants = [ "network-online.target" "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # SONARR - TV Show Automation
+  # ============================================================================
+
+  services.sonarr = {
+    enable = true;
+    openFirewall = false;
+    dataDir = "/var/lib/sonarr";
+    group = "media";
+  };
+
+  systemd.services.sonarr = {
+    after = [ "network-online.target" "storage-online.target" ];
+    wants = [ "network-online.target" "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # BAZARR - Subtitle Automation
+  # ============================================================================
+
+  services.bazarr = {
+    enable = true;
+    openFirewall = false;
+    group = "media";
+  };
+
+  systemd.services.bazarr = {
+    after = [ "storage-online.target" ];
+    wants = [ "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # JELLYSEERR - Media Request Interface
+  # ============================================================================
+
+  services.jellyseerr = {
+    enable = true;
+    openFirewall = false;
+    port = 5055;
+  };
+
+  users.users.jellyseerr = {
+    isSystemUser = true;
+    group = "jellyseerr";
+    extraGroups = [ "media" ];
+  };
+  users.groups.jellyseerr = {};
+
+  systemd.services.jellyseerr = {
+    after = [ "storage-online.target" ];
+    wants = [ "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # SYSTEM PACKAGES
+  # ============================================================================
+
+  environment.systemPackages = with pkgs; [
+    # System monitoring
+    htop btop iotop ncdu
+    
+    # Network tools
+    curl wget dig mtr netcat
+    pciutils usbutils ethtool iproute2
+    
+    # File management
+    tree rsync
+    
+    # Development
+    git vim
+    
+    # ZFS tools
+    zfs-prune-snapshots
+    
+    # System utilities
+    lm_sensors
+  ];
+
+  # ============================================================================
+  # NIX CONFIGURATION
+  # ============================================================================
+
+  nixpkgs.config.allowUnfree = true;
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It's perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  system.stateVersion = "23.11"; # Or whatever version is current
+  # ============================================================================
+  # STATE VERSION
+  # ============================================================================
+
+  system.stateVersion = "23.11";
 }
