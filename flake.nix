@@ -15,7 +15,7 @@
 
   outputs = { self, nixpkgs, disko, ... }@inputs: {
     nixosConfigurations = {
-      nuc-server = nixpkgs.lib.nixosSystem {
+      karmalab = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         
         # Pass flake inputs to all modules
@@ -32,6 +32,6 @@
     };
     
     # Convenience outputs for deployment
-    # Usage: nix build .#nixosConfigurations.nuc-server.config.system.build.toplevel
+    # Usage: nix build .#nixosConfigurations.karmalab.config.system.build.toplevel
   };
 }

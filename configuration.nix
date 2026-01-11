@@ -70,7 +70,7 @@
   # ============================================================================
 
   networking = {
-    hostName = "nuc-server";
+    hostName = "karmalab";
     
     # ZFS requires a unique hostId (generate with: head -c4 /dev/urandom | od -A none -t x4)
     hostId = "b291ad23";
@@ -200,6 +200,9 @@
         "docker"          # Docker container management
       ];
       hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFeWzy9kzmaFFNzXX/lAhYruiIHbf9Hszo9DrGc+X1on somesh@Someshs-MacBook-Pro.local"
+      ];
     };
   };
 
@@ -210,7 +213,7 @@
   services.openssh = {
     enable = true;
     settings = {
-      PasswordAuthentication = true;  # Disable after SSH key setup
+      PasswordAuthentication = false;  # SSH key only
       PermitRootLogin = "yes";        # Disable after initial setup
       MaxAuthTries = 3;
       ClientAliveInterval = 300;
