@@ -276,12 +276,8 @@
     group = "media";
   };
 
-  users.users.radarr = {
-    isSystemUser = true;
-    group = "radarr";
-    extraGroups = [ "media" ];
-  };
-  users.groups.radarr = {};
+  # Add radarr user to media group for /data/media write access
+  users.users.radarr.extraGroups = [ "media" ];
 
   systemd.services.radarr = {
     after = [ "network-online.target" "storage-online.target" ];
@@ -299,12 +295,8 @@
     group = "media";
   };
 
-  users.users.sonarr = {
-    isSystemUser = true;
-    group = "sonarr";
-    extraGroups = [ "media" ];
-  };
-  users.groups.sonarr = {};
+  # Add sonarr user to media group for /data/media write access
+  users.users.sonarr.extraGroups = [ "media" ];
 
   systemd.services.sonarr = {
     after = [ "network-online.target" "storage-online.target" ];
@@ -321,12 +313,8 @@
     group = "media";
   };
 
-  users.users.bazarr = {
-    isSystemUser = true;
-    group = "bazarr";
-    extraGroups = [ "media" ];
-  };
-  users.groups.bazarr = {};
+  # Add bazarr user to media group for /data/media write access
+  users.users.bazarr.extraGroups = [ "media" ];
 
   systemd.services.bazarr = {
     after = [ "storage-online.target" ];
