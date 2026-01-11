@@ -289,6 +289,15 @@ in
       set_property "$POOL/media/downloads/incomplete" "quota" "500G"
       set_property "$POOL/media/downloads/incomplete" "com.sun:auto-snapshot" "false"
       
+      # ===== SET MEDIA DIRECTORY PERMISSIONS =====
+      # Allow media group (radarr, sonarr, bazarr, deluge, jellyfin) to write
+      echo "--- Setting media directory permissions ---"
+      chown -R root:media /data/media
+      chmod -R 775 /data/media
+      
+      # Ensure new files/dirs inherit group ownership
+      chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads /data/media/downloads/complete /data/media/downloads/incomplete
+      
       # ===== SERVICE CONFIG DATASETS =====
       echo "--- Creating Service datasets ---"
       create_dataset "$POOL/services" -o mountpoint=/var/lib/media-services -o compression=lz4 -o atime=off

@@ -276,6 +276,13 @@
     group = "media";
   };
 
+  users.users.radarr = {
+    isSystemUser = true;
+    group = "radarr";
+    extraGroups = [ "media" ];
+  };
+  users.groups.radarr = {};
+
   systemd.services.radarr = {
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
@@ -292,6 +299,13 @@
     group = "media";
   };
 
+  users.users.sonarr = {
+    isSystemUser = true;
+    group = "sonarr";
+    extraGroups = [ "media" ];
+  };
+  users.groups.sonarr = {};
+
   systemd.services.sonarr = {
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
@@ -306,6 +320,13 @@
     openFirewall = false;
     group = "media";
   };
+
+  users.users.bazarr = {
+    isSystemUser = true;
+    group = "bazarr";
+    extraGroups = [ "media" ];
+  };
+  users.groups.bazarr = {};
 
   systemd.services.bazarr = {
     after = [ "storage-online.target" ];
