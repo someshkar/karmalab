@@ -131,6 +131,12 @@ in
       RemainAfterExit = true;
     };
     
+    # Clean up any stale WireGuard interface before starting
+    preStart = ''
+      ${pkgs.iproute2}/bin/ip link delete ${wgInterface} 2>/dev/null || true
+      ${pkgs.iproute2}/bin/ip netns exec ${vpnNamespace} ${pkgs.iproute2}/bin/ip link delete ${wgInterface} 2>/dev/null || true
+    '';
+    
     script = ''
       # Create WireGuard interface in host namespace, then move to vpn namespace
       ${pkgs.iproute2}/bin/ip link add ${wgInterface} type wireguard

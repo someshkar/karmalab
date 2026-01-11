@@ -42,8 +42,9 @@ let
   mountTimeout = "60";    # 1 minute for mount operation
   
   # Common mount options for ZFS datasets
+  # Note: Do NOT use "zfsutil" here - datasets have mountpoint=legacy
+  # which requires standard mount, not ZFS's internal mount mechanism
   zfsMountOpts = [
-    "zfsutil"
     "nofail"                                    # Boot continues if mount fails
     "x-systemd.device-timeout=${deviceTimeout}" # Wait for USB device
     "x-systemd.mount-timeout=${mountTimeout}"   # Wait for mount
@@ -173,11 +174,8 @@ in
       options = zfsMountOpts;
     };
     
-    "/var/lib/private/uptime-kuma" = {
-      device = "${poolName}/services/uptime-kuma";
-      fsType = "zfs";
-      options = zfsMountOpts;
-    };
+    # Note: uptime-kuma uses NixOS default at /var/lib/uptime-kuma/
+    # No ZFS mount needed - NixOS 25.11 manages this automatically
   };
   
   # ============================================================================
