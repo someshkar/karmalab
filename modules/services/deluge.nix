@@ -131,7 +131,7 @@ in
     wantedBy = [ "multi-user.target" ];
     
     serviceConfig = {
-      Type = "simple";
+      Type = "exec";
       User = delugeUser;
       Group = delugeGroup;
       
@@ -139,7 +139,7 @@ in
       NetworkNamespacePath = "/var/run/netns/${vpnNamespace}";
       
       # Bind to all interfaces in namespace (accessible via veth)
-      # -f flag keeps it in foreground (required for systemd Type=simple)
+      # -f flag keeps it in foreground
       ExecStart = "${pkgs.deluge}/bin/deluge-web -f -c ${configDir} -p ${toString webPort}";
       
       Restart = "on-failure";
