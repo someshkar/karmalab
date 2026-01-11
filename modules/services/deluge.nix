@@ -138,9 +138,12 @@ in
       # Run in VPN namespace
       NetworkNamespacePath = "/var/run/netns/${vpnNamespace}";
       
-      # Bind to all interfaces in namespace (accessible via veth)
-      # -f flag keeps it in foreground
-      ExecStart = "${pkgs.deluge}/bin/deluge-web -f -c ${configDir} -p ${toString webPort}";
+      # Use wrapper script with exec to ensure proper foreground execution
+      ExecStart = let
+        startScript = pkgs.writeShellScript "deluge-web-start" ''
+          exec ${pkgs.deluge}/bin/deluge-web -f -c ${configDir} -p ${toString webPort} 2>&1
+        '';
+      in "${startScript}";
       
       Restart = "on-failure";
       RestartSec = "10s";
