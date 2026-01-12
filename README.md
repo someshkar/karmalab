@@ -327,18 +327,18 @@ See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
 
 | Service | URL |
 |---------|-----|
-| Jellyfin | http://192.168.0.171:8096 |
-| Jellyseerr | http://192.168.0.171:5055 |
-| Radarr | http://192.168.0.171:7878 |
-| Sonarr | http://192.168.0.171:8989 |
-| Bazarr | http://192.168.0.171:6767 |
-| Prowlarr | http://192.168.0.171:9696 |
-| Deluge | http://192.168.0.171:8112 |
-| Immich | http://192.168.0.171:2283 |
-| Uptime Kuma | http://192.168.0.171:3001 |
-| Syncthing | http://192.168.0.171:8384 |
-| Forgejo | http://192.168.0.171:3030 |
-| Forgejo SSH | ssh://git@192.168.0.171:2222 |
+| Jellyfin | http://192.168.0.200:8096 |
+| Jellyseerr | http://192.168.0.200:5055 |
+| Radarr | http://192.168.0.200:7878 |
+| Sonarr | http://192.168.0.200:8989 |
+| Bazarr | http://192.168.0.200:6767 |
+| Prowlarr | http://192.168.0.200:9696 |
+| Deluge | http://192.168.0.200:8112 |
+| Immich | http://192.168.0.200:2283 |
+| Uptime Kuma | http://192.168.0.200:3001 |
+| Syncthing | http://192.168.0.200:8384 |
+| Forgejo | http://192.168.0.200:3030 |
+| Forgejo SSH | ssh://git@192.168.0.200:2222 |
 
 ## License
 

@@ -556,7 +556,7 @@ sudo zfs list -t snapshot
 
 ```bash
 # From your Mac (after adding SSH key)
-ssh somesh@192.168.0.171
+ssh somesh@192.168.0.200
 # Or if configured in ~/.ssh/config:
 ssh karmalab
 ```
@@ -564,7 +564,7 @@ ssh karmalab
 SSH config (`~/.ssh/config`):
 ```
 Host karmalab
-    HostName 192.168.0.171
+    HostName 192.168.0.200
     User somesh
     IdentityFile ~/.ssh/id_ed25519
 ```
@@ -709,7 +709,7 @@ Syncthing provides decentralized file synchronization, perfect for syncing your 
 
 After deploying the NixOS configuration:
 
-1. Open **http://192.168.0.171:8384** in your browser
+1. Open **http://192.168.0.200:8384** in your browser
 2. You'll see a warning about no GUI authentication - we'll fix that next
 
 ### 10.2 Set Up GUI Authentication (Important!)
@@ -806,7 +806,7 @@ Forgejo is a lightweight, self-hosted Git forge for hosting your personal reposi
 
 After deploying the NixOS configuration:
 
-1. Open **http://192.168.0.171:3030** in your browser
+1. Open **http://192.168.0.200:3030** in your browser
 2. You'll see the initial setup wizard
 
 ### 11.2 Complete Initial Setup
@@ -855,17 +855,17 @@ After deploying the NixOS configuration:
 **SSH (recommended):**
 ```bash
 # Clone
-git clone ssh://git@192.168.0.171:2222/somesh/my-project.git
+git clone ssh://git@192.168.0.200:2222/somesh/my-project.git
 
 # Or add remote to existing repo
-git remote add karmalab ssh://git@192.168.0.171:2222/somesh/my-project.git
+git remote add karmalab ssh://git@192.168.0.200:2222/somesh/my-project.git
 git push karmalab main
 ```
 
 **HTTPS:**
 ```bash
 # Clone
-git clone http://192.168.0.171:3030/somesh/my-project.git
+git clone http://192.168.0.200:3030/somesh/my-project.git
 ```
 
 ### 11.6 SSH Config for Easier Access
@@ -874,7 +874,7 @@ Add to your `~/.ssh/config`:
 
 ```
 Host karmalab-git
-    HostName 192.168.0.171
+    HostName 192.168.0.200
     Port 2222
     User git
     IdentityFile ~/.ssh/id_ed25519
@@ -909,7 +909,7 @@ Then rebuild: `sudo nixos-rebuild switch --flake /etc/nixos#karmalab`
 systemctl status forgejo
 
 # Check SSH access
-ssh -p 2222 git@192.168.0.171
+ssh -p 2222 git@192.168.0.200
 # Should show: "Hi somesh! You've successfully authenticated..."
 
 # View logs

@@ -20,12 +20,12 @@
 # - Repositories stored in /var/lib/forgejo/repositories/
 #
 # Access:
-# - Web UI: http://192.168.0.171:3030
-# - SSH: ssh://git@192.168.0.171:2222/user/repo.git
-# - HTTPS clone: http://192.168.0.171:3030/user/repo.git
+# - Web UI: http://192.168.0.200:3030
+# - SSH: ssh://git@192.168.0.200:2222/user/repo.git
+# - HTTPS clone: http://192.168.0.200:3030/user/repo.git
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.171:3030
+# 1. Access http://192.168.0.200:3030
 # 2. Complete initial setup wizard
 # 3. Create admin account (recommend: somesh)
 # 4. Add SSH key in Settings -> SSH/GPG Keys
@@ -44,7 +44,7 @@ let
   sshPort = 2222;
   
   # Domain (for future Cloudflare Tunnel)
-  domain = "192.168.0.171";
+  domain = "192.168.0.200";
 in
 {
   # ============================================================================

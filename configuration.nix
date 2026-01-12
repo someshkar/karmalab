@@ -82,12 +82,20 @@
     # ZFS requires a unique hostId (generate with: head -c4 /dev/urandom | od -A none -t x4)
     hostId = "b291ad23";
     
-    # NetworkManager for reliable network management
-    networkmanager.enable = true;
+    # NetworkManager for reliable network management (Ethernet only)
+    networkmanager = {
+      enable = true;
+      # Don't manage WiFi - we only use Ethernet
+      unmanaged = [ "wlo1" ];
+    };
+    
+    # Disable WiFi completely - server uses Ethernet only
+    wireless.enable = false;
+    
+    # Ethernet gets DHCP (router assigns static IP 192.168.0.200 via reservation)
     useDHCP = lib.mkDefault false;
     interfaces = {
-      enp1s0.useDHCP = lib.mkDefault true;  # Ethernet
-      wlo1.useDHCP = lib.mkDefault true;    # WiFi
+      enp1s0.useDHCP = lib.mkDefault true;  # Ethernet only
     };
     
     # Firewall configuration
