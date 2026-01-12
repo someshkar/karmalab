@@ -1,8 +1,34 @@
-# NixOS Homelab - 18-Service Media & Productivity Server
+# Karmalab - NixOS Homelab Media & Photo Server
 
-A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab server with 18 self-hosted services.
+A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab server with self-hosted media automation, photo management, and monitoring services.
 
-## Architecture Overview
+## Current Status
+
+| Service | Port | Status | Notes |
+|---------|------|--------|-------|
+| **Jellyfin** | 8096 | Working | Media streaming, Intel Quick Sync HW transcoding |
+| **Prowlarr** | 9696 | Working | Indexer management with FlareSolverr |
+| **FlareSolverr** | 8191 | Working | Cloudflare bypass for Prowlarr |
+| **Radarr** | 7878 | Working | Movie automation |
+| **Sonarr** | 8989 | Working | TV show automation |
+| **Bazarr** | 6767 | Working | Subtitle automation (needs providers configured) |
+| **Jellyseerr** | 5055 | Working | Media request interface |
+| **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
+| **Immich** | 2283 | Working | Google Photos alternative |
+| **Uptime Kuma** | 3001 | Running | Needs monitors configured |
+
+## Hardware
+
+| Component | Specification |
+|-----------|--------------|
+| **Device** | ASUS NUC (Intel N150, Alder Lake) |
+| **CPU** | Intel N150 with Quick Sync (VAAPI) |
+| **RAM** | 16GB DDR5 |
+| **Boot/OS** | 500GB NVMe SSD |
+| **Storage** | 20TB Seagate Expansion USB HDD (ZFS) |
+| **Network** | WiFi (wlo1) - will move to 2.5GbE Ethernet |
+
+## Architecture
 
 ```
                               INTERNET
@@ -10,7 +36,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
                     ┌─────────────┴─────────────┐
                     │                           │
               Cloudflare Tunnel           Tailscale VPN
-              (Public Access)             (Private Admin)
+              (Phase 3 - Future)          (Phase 3 - Future)
                     │                           │
     ┌───────────────┼───────────────┐           │
     │               │               │           │
@@ -25,91 +51,40 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
     │               │               │
 ┌───────┐     ┌─────────┐     ┌──────────┐
 │ Redis │     │Postgres │     │ ML Model │
-│       │     │pgvector │     │ (CPU)    │
+│(Valkey)│    │pgvector │     │  (CPU)   │
 └───────┘     └─────────┘     └──────────┘
 ```
 
-## Hardware
-
-| Component | Specification |
-|-----------|--------------|
-| **Device** | ASUS NUC (Intel N150, Alder Lake) |
-| **CPU** | Intel N150 with Quick Sync (VAAPI) |
-| **RAM** | 16GB DDR5 |
-| **Boot/OS** | 500GB NVMe SSD |
-| **Storage** | 20TB Seagate Expansion USB HDD (ZFS) |
-| **Network** | 2.5GbE Realtek RTL8125 |
-
-## Service Reference
-
-### Media Stack (Ports 5055-9696)
-
-| Service | Port | Type | Access | Purpose |
-|---------|------|------|--------|---------|
-| **Jellyfin** | 8096 | Native | Public | Media streaming with HW transcoding |
-| **Radarr** | 7878 | Native | Tailscale | Movie automation |
-| **Sonarr** | 8989 | Native | Tailscale | TV show automation |
-| **Bazarr** | 6767 | Native | Tailscale | Subtitle automation |
-| **Prowlarr** | 9696 | Native | Tailscale | Indexer management |
-| **Jellyseerr** | 5055 | Native | Public | Media request interface |
-| **Readarr** | 8787 | Native | Tailscale | Book automation (Phase 2) |
-| **Audiobookshelf** | 13378 | Native | Public | Audiobook streaming (Phase 2) |
-| **Calibre-Web** | 8083 | Native | Public | Ebook library (Phase 2) |
-
-### Photo Management (Port 2283)
-
-| Service | Port | Type | Access | Purpose |
-|---------|------|------|--------|---------|
-| **Immich** | 2283 | Docker | Public | Google Photos alternative |
-| Postgres | 5432 | Docker | Internal | Immich database (pgvector) |
-| Redis | 6379 | Docker | Internal | Immich caching |
-| ML Model | 3003 | Docker | Internal | Face/object recognition |
-
-### Infrastructure
-
-| Service | Port | Type | Access | Purpose |
-|---------|------|------|--------|---------|
-| **Deluge** | 8112 | Native | Tailscale | Torrent client (VPN isolated) |
-| **Uptime Kuma** | 3001 | Native | Tailscale | Service monitoring |
-
-### Productivity (Phase 3)
-
-| Service | Port | Type | Access | Purpose |
-|---------|------|------|--------|---------|
-| **Vaultwarden** | 8222 | Native | Public | Password manager |
-| **Nextcloud** | 8080 | Native | Public | File sync & collaboration |
-
-## Network Topology
+### VPN Isolation (Deluge)
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                           NETWORK NAMESPACES                               │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │ DEFAULT NAMESPACE (Host)                                            │  │
-│  │                                                                     │  │
-│  │  enp1s0 (2.5GbE) ──────► LAN (192.168.x.x)                         │  │
-│  │  tailscale0 ───────────► Tailscale VPN (100.x.x.x)                 │  │
-│  │  lo ───────────────────► Localhost                                  │  │
-│  │                                                                     │  │
-│  │  Services: Jellyfin, *arr stack, Immich, Uptime Kuma               │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                      │                                     │
-│                                      │ veth pair                           │
-│                                      ▼                                     │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │ VPN NAMESPACE (Isolated)                                           │  │
-│  │                                                                     │  │
-│  │  wg-vpn ──────────────► Surfshark WireGuard (VPN IP)               │  │
-│  │  veth-vpn ────────────► Connection to host namespace               │  │
-│  │                                                                     │  │
-│  │  Services: Deluge (torrent traffic ONLY)                           │  │
-│  │                                                                     │  │
-│  │  Kill Switch: All traffic blocked if VPN disconnects               │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                            │
-└────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           NETWORK NAMESPACES                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │ DEFAULT NAMESPACE (Host)                                           │    │
+│  │                                                                    │    │
+│  │  wlo1 (WiFi) ────────────► LAN (192.168.0.x)                      │    │
+│  │  lo ─────────────────────► Localhost                               │    │
+│  │                                                                    │    │
+│  │  Services: Jellyfin, *arr stack, Immich, Uptime Kuma              │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                      │                                      │
+│                                      │ veth pair                            │
+│                                      ▼                                      │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │ VPN NAMESPACE (wg-vpn) - Isolated                                  │    │
+│  │                                                                    │    │
+│  │  wg-vpn ────────────────► Surfshark WireGuard (Singapore IP)      │    │
+│  │  veth-vpn ──────────────► Connection to host namespace            │    │
+│  │                                                                    │    │
+│  │  Services: Deluge (ALL torrent traffic via VPN)                   │    │
+│  │                                                                    │    │
+│  │  Kill Switch: All traffic blocked if VPN disconnects              │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Storage Layout
@@ -122,8 +97,8 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 │  /                           Root filesystem (EXT4 via disko)               │
 │  /boot                       EFI partition                                  │
 │  /nix                        Nix store                                      │
-│  /var/lib/immich/postgres/   Immich database (10GB) - FAST QUERIES          │
-│  /var/lib/immich/model-cache/ML models (20GB) - FAST LOADING                │
+│  /var/lib/immich/postgres/   Immich database - UID 999:999                  │
+│  /var/lib/immich/model-cache/ML models - UID 999:999                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -133,14 +108,14 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 │                                                                             │
 │  storagepool/data                    /data (root mount)                     │
 │  │                                                                          │
-│  ├── storagepool/media               /data/media                            │
+│  ├── storagepool/media               /data/media (root:media, 775)          │
 │  │   ├── movies                      /data/media/movies (6TB quota)         │
 │  │   ├── tv                          /data/media/tv (6TB quota)             │
 │  │   └── downloads                   /data/media/downloads                  │
 │  │       ├── complete                (1TB quota)                            │
 │  │       └── incomplete              (500GB, no snapshots)                  │
 │  │                                                                          │
-│  ├── storagepool/immich              Photo storage                          │
+│  ├── storagepool/immich              Photo storage (999:999)                │
 │  │   ├── photos                      /data/immich/photos (1TB quota)        │
 │  │   └── upload                      /data/immich/upload (50GB)             │
 │  │                                                                          │
@@ -150,153 +125,41 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 │      ├── deluge/config               /var/lib/deluge (5GB)                  │
 │      ├── radarr                      /var/lib/radarr (5GB)                  │
 │      ├── sonarr                      /var/lib/sonarr (5GB)                  │
-│      ├── bazarr                      /var/lib/bazarr (5GB)                  │
-│      ├── prowlarr                    /var/lib/prowlarr (5GB)                │
-│      ├── jellyseerr                  /var/lib/jellyseerr (5GB)              │
-│      └── uptime-kuma                 /var/lib/private/uptime-kuma (1GB)     │
+│      └── bazarr                      /var/lib/bazarr (5GB)                  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Data Flow Diagrams
-
-### Media Request Flow
-
-```
-User Request ──► Jellyseerr ──► Radarr/Sonarr
-                                     │
-                                     ▼
-                               ┌──────────┐
-                               │ Prowlarr │ ◄── Indexers (NZB/Torrent)
-                               └──────────┘
-                                     │
-                                     ▼
-                               ┌──────────┐
-                               │  Deluge  │ ◄── VPN Namespace (Surfshark)
-                               └──────────┘
-                                     │
-                                     ▼
-                        /data/media/downloads/complete
-                                     │
-                                     ▼
-                          Radarr/Sonarr (Import)
-                                     │
-                         ┌───────────┴───────────┐
-                         ▼                       ▼
-              /data/media/movies      /data/media/tv
-                         │                       │
-                         └───────────┬───────────┘
-                                     ▼
-                                ┌──────────┐
-                                │ Jellyfin │ ◄── Intel Quick Sync (VAAPI)
-                                └──────────┘
-                                     │
-                                     ▼
-                              User Streaming
-```
-
-### Photo Upload Flow
-
-```
-Mobile App / Web ──► Immich Server (:2283)
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-         ┌────────┐  ┌────────┐  ┌────────────┐
-         │ Redis  │  │Postgres│  │ ML Service │
-         │(cache) │  │(pgvec) │  │  (CPU)     │
-         └────────┘  └────────┘  └────────────┘
-                          │           │
-              NVMe SSD ◄──┘           │
-              (fast DB)               ▼
-                              Face Detection
-                              Object Recognition
-                              Smart Search
-                                     │
-                                     ▼
-                        /data/immich/photos (ZFS)
-                              │
-                              ▼
-                     ZFS Snapshots (automatic)
-```
-
-## Access Model
-
-### Public Access (Cloudflare Tunnel - Phase 4)
-
-Services exposed to the internet via Cloudflare Tunnel:
-
-| Subdomain | Service | Notes |
-|-----------|---------|-------|
-| `jellyfin.somesh.xyz` | Jellyfin | Media streaming |
-| `immich.somesh.xyz` | Immich | Photo management |
-| `requests.somesh.xyz` | Jellyseerr | Media requests |
-| `vault.somesh.xyz` | Vaultwarden | Password manager |
-| `cloud.somesh.xyz` | Nextcloud | File sync |
-| `books.somesh.xyz` | Audiobookshelf | Audiobooks |
-| `library.somesh.xyz` | Calibre-Web | Ebooks |
-
-### Private Access (Tailscale Only)
-
-Admin interfaces accessible only via Tailscale VPN:
-
-- Radarr, Sonarr, Bazarr, Prowlarr, Readarr
-- Deluge (torrent management)
-- Uptime Kuma (monitoring)
-- SSH
-
-## Implementation Phases
-
-### Phase 1: Core Infrastructure (Current)
-- [x] Boot/storage configuration with graceful degradation
-- [x] WireGuard VPN namespace for torrent isolation
-- [x] Native Deluge in VPN namespace
-- [x] Immich photo management (Docker)
-- [x] Uptime Kuma monitoring
-- [ ] Testing and validation
-
-### Phase 2: Book Stack
-- [ ] Readarr (book automation)
-- [ ] Audiobookshelf (audiobook streaming)
-- [ ] Calibre-Web (ebook library)
-
-### Phase 3: Productivity
-- [ ] Vaultwarden (password manager)
-- [ ] Nextcloud (file sync)
-
-### Phase 4: Public Access
-- [ ] Cloudflare Tunnel configuration
-- [ ] Subdomain routing
-- [ ] SSL certificates (automatic via Cloudflare)
-
-### Phase 5: Documentation & Hardening
-- [ ] Complete documentation
-- [ ] Security hardening
-- [ ] Backup automation
-
 ## Quick Start
 
+See [SETUP.md](./SETUP.md) for complete setup instructions. Summary:
+
 ```bash
-# Clone the repository
-git clone <repo-url> ~/repos/nixos-homelab
-cd ~/repos/nixos-homelab
+# 1. Clone the repository
+git clone https://github.com/someshkar/karmalab ~/karmalab
 
-# One-time: Create ZFS pool (see SETUP.md)
-# One-time: Configure WireGuard VPN (see SETUP.md)
-# One-time: Create Immich .env file (see SETUP.md)
+# 2. One-time setup (see SETUP.md for details):
+#    - Create ZFS pool on USB HDD
+#    - Configure Surfshark WireGuard VPN
+#    - Create Immich .env file
 
-# Build and deploy
-sudo nixos-rebuild switch --flake .#nuc-server
+# 3. Deploy
+sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 
-# Verify services
-sudo systemctl status jellyfin radarr sonarr immich uptime-kuma
+# 4. Manual service configuration (see SETUP.md):
+#    - Jellyfin: Add libraries, enable HW transcoding
+#    - Prowlarr: Add indexers, configure FlareSolverr proxy
+#    - Radarr/Sonarr: Connect to Prowlarr and Deluge
+#    - Jellyseerr: Connect to Jellyfin, Radarr, Sonarr
+#    - Immich: Create admin account
 ```
 
 ## File Structure
 
 ```
-nixos-homelab-v2/
+karmalab/
 ├── flake.nix                      # Nix flake entry point
+├── flake.lock                     # Pinned dependencies
 ├── configuration.nix              # Main NixOS configuration
 ├── hardware-configuration.nix     # Hardware-specific config
 ├── disko-config.nix              # NVMe disk partitioning
@@ -305,50 +168,105 @@ nixos-homelab-v2/
 │   ├── wireguard-vpn.nix         # VPN namespace for torrents
 │   └── services/
 │       ├── deluge.nix            # Native Deluge in VPN namespace
+│       ├── flaresolverr.nix      # Cloudflare bypass (Docker)
 │       ├── immich.nix            # Immich Docker Compose service
 │       └── uptime-kuma.nix       # Service monitoring
 ├── docker/
 │   └── immich/
 │       ├── docker-compose.yml    # Immich container stack
 │       └── .env.example          # Environment template
-├── docs/
-│   ├── deployment-guide.md
-│   ├── arr-stack-setup.md
-│   ├── jellyfin-setup.md
-│   └── ...
-├── SETUP.md                      # One-time setup instructions
+├── docs/                         # Additional documentation
+├── SETUP.md                      # Complete setup guide
 └── README.md                     # This file
 ```
 
-## Hardware Transcoding
+## Implementation Phases
 
-Both Jellyfin and Immich use Intel Quick Sync (VAAPI) for hardware-accelerated video transcoding:
+### Phase 1: Core Infrastructure - COMPLETE
 
-```nix
-# Intel Quick Sync configuration
-hardware.opengl = {
-  enable = true;
-  extraPackages = with pkgs; [
-    intel-media-driver      # VAAPI for Alder Lake N150
-    vaapiIntel             # Legacy VAAPI
-    intel-compute-runtime  # OpenCL for tone mapping
-  ];
-};
+- [x] NixOS base system on NVMe with disko
+- [x] ZFS storage pool on USB HDD with graceful degradation
+- [x] WireGuard VPN namespace for torrent isolation
+- [x] Intel Quick Sync (VAAPI) hardware acceleration
+- [x] **Jellyfin** - Media streaming with HW transcoding
+- [x] **Prowlarr** - Indexer management
+- [x] **FlareSolverr** - Cloudflare bypass
+- [x] **Radarr** - Movie automation
+- [x] **Sonarr** - TV show automation
+- [x] **Bazarr** - Subtitle automation
+- [x] **Jellyseerr** - Media request interface
+- [x] **Deluge** - Torrent client in VPN namespace
+- [x] **Immich** - Photo management (Docker)
+- [x] **Uptime Kuma** - Service monitoring
+
+### Phase 2: Polish & Configuration - IN PROGRESS
+
+- [x] Quality profiles for Radarr/Sonarr (size-optimized)
+- [x] Minimum seeders configuration in Prowlarr
+- [ ] Uptime Kuma monitors for all services
+- [ ] Bazarr subtitle provider configuration
+- [ ] Homepage dashboard (single pane of glass)
+
+### Phase 3: External Access - PLANNED
+
+- [ ] Tailscale VPN for remote access
+- [ ] Cloudflare Tunnel for public services
+- [ ] SSL/HTTPS for all services
+- [ ] Subdomain routing (jellyfin.somesh.xyz, etc.)
+
+### Phase 4: Book Stack - PLANNED
+
+- [ ] Readarr (ebook automation)
+- [ ] Audiobookshelf (audiobook streaming)
+- [ ] Calibre-Web (ebook library)
+
+### Phase 5: Productivity - PLANNED
+
+- [ ] Vaultwarden (password manager)
+- [ ] Nextcloud (file sync) - maybe
+
+### Phase 6: Hardening & Backups - PLANNED
+
+- [ ] ZFS snapshot verification
+- [ ] Off-site backup (Backblaze B2)
+- [ ] Monitoring alerts (Telegram/Discord)
+- [ ] Security hardening
+- [ ] Complete documentation
+
+## Key Configuration Notes
+
+### Media Group Permissions
+
+All *arr services run with `group = "media"` (GID 2000). The `/data/media` directory is owned by `root:media` with permissions `775` and setgid bit, so all files inherit the media group.
+
+### Immich Permissions
+
+Immich containers run as UID/GID 999. The directories `/var/lib/immich/postgres`, `/var/lib/immich/model-cache`, `/data/immich/photos`, and `/data/immich/upload` must be owned by `999:999`.
+
+### VPN Verification
+
+To verify torrent traffic is going through the VPN:
+
+```bash
+# Check VPN namespace IP (should be Surfshark, not your ISP)
+sudo ip netns exec wg-vpn curl -s https://api.ipify.org
+
+# Compare to real IP
+curl -s https://api.ipify.org
 ```
 
-**Jellyfin**: Uses `/dev/dri/renderD128` for transcoding
-**Immich**: Docker containers get `/dev/dri` passed through
+### Quality Profiles (Radarr/Sonarr)
 
-## Graceful Degradation
+Recommended profile for bandwidth-conscious setups:
+- Name: `1080p-Small`
+- Allowed: WEB-DL 1080p, WEBRip 1080p (NO REMUX)
+- Max size: ~17-35 MB/min (2-4GB per movie)
 
-The system is designed to boot and run core services even if the USB HDD is disconnected:
+### Prowlarr Indexer Settings
 
-1. **ZFS import uses extended timeouts** (2 minutes) for slow USB enumeration
-2. **All mounts use `nofail`** - boot continues if mount fails
-3. **Services use `wants` not `requires`** for storage dependency
-4. **`storage-online.target`** provides a soft dependency point
+For public trackers, set minimum seeders to 20+ to avoid dead torrents.
 
-## Maintenance
+## Maintenance Commands
 
 ```bash
 # Check ZFS pool health
@@ -358,19 +276,47 @@ sudo zpool status storagepool
 sudo zpool scrub storagepool
 
 # Check VPN connection
-sudo ip netns exec vpn curl -s https://api.ipify.org
+sudo ip netns exec wg-vpn curl -s https://api.ipify.org
 
 # Service logs
-journalctl -u immich -f
 journalctl -u jellyfin -f
-
-# Docker logs (Immich)
+journalctl -u radarr -f
 docker logs immich_server -f
+
+# Restart all *arr services
+sudo systemctl restart jellyfin radarr sonarr bazarr prowlarr jellyseerr
+
+# Restart Immich
+cd /var/lib/immich && docker compose restart
 ```
 
 ## Troubleshooting
 
 See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Radarr/Sonarr can't write to /data/media | Run `sudo chown -R root:media /data/media && sudo chmod -R 775 /data/media` |
+| Immich 500 error | Fix permissions: `sudo chown -R 999:999 /var/lib/immich/postgres /data/immich` |
+| Jellyseerr "Failed to create tag" | Disable "Tag Requests" in Jellyseerr → Settings → Radarr |
+| Deluge not downloading | Check VPN: `sudo ip netns exec wg-vpn wg show` |
+| FlareSolverr not working | Check container: `docker logs flaresolverr` |
+
+## Access URLs (Local Network)
+
+| Service | URL |
+|---------|-----|
+| Jellyfin | http://192.168.0.171:8096 |
+| Jellyseerr | http://192.168.0.171:5055 |
+| Radarr | http://192.168.0.171:7878 |
+| Sonarr | http://192.168.0.171:8989 |
+| Bazarr | http://192.168.0.171:6767 |
+| Prowlarr | http://192.168.0.171:9696 |
+| Deluge | http://192.168.0.171:8112 |
+| Immich | http://192.168.0.171:2283 |
+| Uptime Kuma | http://192.168.0.171:3001 |
 
 ## License
 

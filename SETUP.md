@@ -1,18 +1,55 @@
-# NixOS Homelab Setup Guide
+# Karmalab Setup Guide
 
-This guide covers the one-time setup steps for your NixOS media server homelab.
+Complete guide to reproduce this NixOS homelab from scratch. This covers both the Nix configuration AND all manual steps required.
 
 ## Prerequisites
 
-- NixOS installed on NVMe drive (via disko)
-- 20TB USB HDD connected
+- ASUS NUC with Intel N150 (or similar x86_64 hardware)
+- 500GB+ NVMe SSD for OS
+- 20TB USB HDD for storage (or adjust quotas)
 - Surfshark VPN subscription with WireGuard credentials
+- Another machine to perform initial NixOS installation
 
-## Step 1: One-Time ZFS Pool Creation
+## Part 1: Initial NixOS Installation
 
-The USB HDD ZFS pool must be created manually once. This is intentional - disko doesn't handle hot-pluggable USB drives well.
+### 1.1 Boot NixOS Installer
 
-### 1.1 Identify the USB HDD
+Download NixOS minimal ISO and boot from USB.
+
+### 1.2 Partition NVMe with Disko
+
+The `disko-config.nix` handles NVMe partitioning automatically during install.
+
+```bash
+# From installer, clone the repo
+nix-shell -p git
+git clone https://github.com/someshkar/karmalab /tmp/karmalab
+
+# Run disko to partition the NVMe
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/karmalab/disko-config.nix
+```
+
+### 1.3 Install NixOS
+
+```bash
+# Generate hardware config
+sudo nixos-generate-config --root /mnt
+
+# Copy hardware-configuration.nix to the repo
+cp /mnt/etc/nixos/hardware-configuration.nix /tmp/karmalab/
+
+# Install
+sudo nixos-install --flake /tmp/karmalab#karmalab
+
+# Reboot
+reboot
+```
+
+## Part 2: ZFS Pool Creation (One-Time)
+
+The USB HDD ZFS pool must be created manually. This is intentional - disko doesn't handle hot-pluggable USB drives well.
+
+### 2.1 Identify the USB HDD
 
 ```bash
 # List all block devices
@@ -27,7 +64,7 @@ You should see something like:
 usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0 -> ../../sda
 ```
 
-### 1.2 Create the ZFS Pool
+### 2.2 Create the ZFS Pool
 
 **WARNING: This will erase all data on the disk!**
 
@@ -46,203 +83,372 @@ sudo zpool create \
   /dev/disk/by-id/usb-Seagate_Expansion_HDD_00000000NT17VP0M-0:0
 ```
 
-### 1.3 Create the Root Dataset
+### 2.3 Create Root Dataset
 
 ```bash
 # Create root data dataset with legacy mountpoint
 sudo zfs create -o mountpoint=legacy storagepool/data
 
-# Verify
+# Mount it
+sudo mkdir -p /data
+sudo mount -t zfs storagepool/data /data
+```
+
+### 2.4 Verify Pool
+
+```bash
+sudo zpool status storagepool
 sudo zfs list
 ```
 
-### 1.4 Verify Pool Import
+The remaining datasets (media, services, immich) will be created automatically by the `create-zfs-datasets` systemd service on the next rebuild.
 
-```bash
-# Export and reimport to verify
-sudo zpool export storagepool
-sudo zpool import storagepool
+## Part 3: Surfshark WireGuard VPN Setup
 
-# Check pool status
-sudo zpool status storagepool
-```
-
-The remaining datasets (media, services) will be created automatically by the `create-zfs-datasets` systemd service on the next boot.
-
-## Step 2: Configure Surfshark WireGuard VPN
-
-### 2.1 Get WireGuard Configuration from Surfshark
+### 3.1 Get WireGuard Config from Surfshark
 
 1. Log in to [Surfshark](https://my.surfshark.com/vpn/manual-setup/main/wireguard)
 2. Go to VPN → Manual Setup → WireGuard
 3. Generate a new key pair
-4. Download the configuration file for your preferred server
+4. Download configuration for your preferred server (e.g., Singapore)
 
-### 2.2 Create WireGuard Configuration File
+### 3.2 Create WireGuard Config File
 
 ```bash
-# Create wireguard directory
 sudo mkdir -p /etc/wireguard
-
-# Create configuration file
 sudo nano /etc/wireguard/surfshark.conf
 ```
 
-Add the following content (replace with your actual values):
+Add (replace with your actual values):
 
 ```ini
 [Interface]
 PrivateKey = YOUR_PRIVATE_KEY_HERE
-# Note: Address is configured in the systemd service
 
 [Peer]
 PublicKey = SURFSHARK_SERVER_PUBLIC_KEY
 AllowedIPs = 0.0.0.0/0
-Endpoint = SERVER_HOSTNAME:51820
+Endpoint = sg-sng.prod.surfshark.com:51820
 PersistentKeepalive = 25
 ```
 
-**Example with typical Surfshark values:**
-
-```ini
-[Interface]
-PrivateKey = yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=
-
-[Peer]
-PublicKey = Ew0ioVK8wYjnRkQrXhPpAy/lYT6lCLvQ3lmKWQ/SDXE=
-AllowedIPs = 0.0.0.0/0
-Endpoint = us-dal.prod.surfshark.com:51820
-PersistentKeepalive = 25
-```
-
-### 2.3 Secure the Configuration
+### 3.3 Secure the Config
 
 ```bash
 sudo chmod 600 /etc/wireguard/surfshark.conf
 sudo chown root:root /etc/wireguard/surfshark.conf
 ```
 
-## Step 3: Apply NixOS Configuration
+## Part 4: Immich Setup
+
+### 4.1 Create Immich Environment File
 
 ```bash
-# Update flake.lock
-nix flake update
+# Generate a secure database password
+openssl rand -base64 32
+# Save this password!
 
-# Build and switch to new configuration
-sudo nixos-rebuild switch --flake .#nuc-server
+# Create .env file
+sudo nano /var/lib/immich/.env
 ```
 
-## Step 4: Verify Services
-
-### 4.1 Check ZFS Pool Import
+Add:
 
 ```bash
-# Check pool status
+IMMICH_VERSION=v2.4.1
+UPLOAD_LOCATION=/data/immich/photos
+DB_DATA_LOCATION=/var/lib/immich/postgres
+MODEL_CACHE_LOCATION=/var/lib/immich/model-cache
+DB_USERNAME=postgres
+DB_DATABASE_NAME=immich
+DB_PASSWORD=YOUR_GENERATED_PASSWORD_HERE
+DB_STORAGE_TYPE=SSD
+TZ=Asia/Kolkata
+```
+
+### 4.2 Copy Docker Compose File
+
+```bash
+sudo cp /etc/nixos/docker/immich/docker-compose.yml /var/lib/immich/
+sudo chmod 600 /var/lib/immich/.env
+```
+
+### 4.3 Fix Permissions (Critical!)
+
+```bash
+# Immich containers run as UID 999
+sudo chown -R 999:999 /var/lib/immich/postgres
+sudo chown -R 999:999 /var/lib/immich/model-cache
+sudo chown -R 999:999 /data/immich/photos
+sudo chown -R 999:999 /data/immich/upload
+```
+
+## Part 5: Apply NixOS Configuration
+
+```bash
+# Clone repo to the server
+git clone https://github.com/someshkar/karmalab ~/karmalab
+
+# Link to /etc/nixos (optional, for convenience)
+sudo ln -sf ~/karmalab /etc/nixos
+
+# Build and switch
+sudo nixos-rebuild switch --flake /etc/nixos#karmalab
+```
+
+## Part 6: Verify Core Services
+
+### 6.1 Check ZFS
+
+```bash
 sudo zpool status storagepool
-
-# Check datasets
 sudo zfs list
-
-# Check mounts
 mount | grep storagepool
 ```
 
-### 4.2 Check VPN Namespace
+### 6.2 Check VPN Namespace
 
 ```bash
-# List network namespaces
+# List namespaces
 ip netns list
+# Should show: wg-vpn
 
-# Check VPN connection
-sudo ip netns exec vpn curl -s https://api.ipify.org
-# Should show Surfshark VPN IP, not your real IP
-
-# Check WireGuard status
-sudo ip netns exec vpn wg show
+# Check VPN IP (should be Surfshark, not your ISP)
+sudo ip netns exec wg-vpn curl -s https://api.ipify.org
+echo ""
+curl -s https://api.ipify.org
+# These should be DIFFERENT IPs
 ```
 
-### 4.3 Check Services
+### 6.3 Check Services
 
 ```bash
-# Check all media services
-sudo systemctl status jellyfin prowlarr radarr sonarr bazarr jellyseerr
-
-# Check Deluge (runs in VPN namespace)
+sudo systemctl status jellyfin radarr sonarr bazarr prowlarr jellyseerr
 sudo systemctl status deluged deluge-web
-
-# Check port forwarding
-sudo systemctl status deluge-port-forward
+sudo systemctl status immich uptime-kuma
+docker ps  # Should show immich containers
 ```
 
-## Step 5: Initial Service Configuration
+## Part 7: Service Configuration (Web UI)
 
-### 5.1 Jellyfin (Port 8096)
+This is the manual configuration required in each service's web interface.
 
-1. Access: `http://<server-ip>:8096` or via Tailscale
-2. Complete setup wizard
-3. Add media libraries:
+### 7.1 Jellyfin (http://IP:8096)
+
+1. Complete setup wizard, create admin account
+2. Add libraries:
    - Movies: `/data/media/movies`
    - TV Shows: `/data/media/tv`
-4. Enable hardware transcoding:
+3. Enable hardware transcoding:
    - Dashboard → Playback → Transcoding
-   - Hardware acceleration: VAAPI
+   - Hardware acceleration: **VAAPI**
    - VA-API Device: `/dev/dri/renderD128`
+   - Enable hardware decoding for all formats
+   - Enable hardware encoding
 
-### 5.2 Deluge (Port 8112)
+### 7.2 Deluge (http://IP:8112)
 
-1. Access: `http://<server-ip>:8112`
-2. Default password: `deluge`
-3. **Change password immediately!**
-4. Configure download paths:
+1. Default password: `deluge`
+2. **Change password immediately** in Preferences → Interface
+3. Configure download paths in Preferences → Downloads:
    - Download to: `/data/media/downloads/incomplete`
    - Move completed to: `/data/media/downloads/complete`
-5. Enable remote connections for arr stack
+4. Enable remote connections:
+   - Preferences → Daemon → Allow Remote Connections
+   - Note the daemon port (default: 58846)
 
-### 5.3 Prowlarr (Port 9696)
+### 7.3 Prowlarr (http://IP:9696)
 
-1. Access: `http://<server-ip>:9696`
-2. Add indexers
-3. Generate API key: Settings → General → API Key
-4. Configure apps (Radarr, Sonarr connections)
+1. Complete setup, create auth if prompted
+2. **Add FlareSolverr proxy:**
+   - Settings → Indexers → Add Indexer Proxy → FlareSolverr
+   - Host: `http://localhost:8191`
+   - Request Timeout: `60`
+   - Test → Save
+3. **Add indexers** (e.g., 1337x):
+   - Indexers → Add Indexer → Select indexer
+   - Enable FlareSolverr for Cloudflare-protected sites
+   - Set **Minimum Seeders: 20** (for public trackers)
+4. **Get API Key:**
+   - Settings → General → Security → API Key (copy this)
+5. **Add Apps (Radarr/Sonarr):**
+   - Settings → Apps → Add Application → Radarr
+   - Prowlarr Server: `http://localhost:9696`
+   - Radarr Server: `http://localhost:7878`
+   - API Key: (Radarr's API key - get from Radarr first)
+   - Sync Level: Full Sync
+   - Test → Save
+   - Repeat for Sonarr (`http://localhost:8989`)
+6. Click **Sync App Indexers** to push indexers
 
-### 5.4 Radarr (Port 7878)
+### 7.4 Radarr (http://IP:7878)
 
-1. Access: `http://<server-ip>:7878`
-2. Settings → Media Management:
-   - Root folder: `/data/media/movies`
-3. Settings → Download Clients:
-   - Add Deluge: Host `localhost`, Port `58846`
-4. Settings → Indexers:
-   - Add from Prowlarr sync
+1. Complete setup
+2. **Get API Key:** Settings → General → Security → API Key
+3. **Add Root Folder:**
+   - Settings → Media Management → Root Folders → Add Root Folder
+   - Path: `/data/media/movies`
+4. **Add Download Client:**
+   - Settings → Download Clients → + → Deluge
+   - Host: `localhost`
+   - Port: `58846` (daemon port, NOT 8112)
+   - Password: (your Deluge daemon password)
+   - Category: `radarr`
+   - Test → Save
+5. **Create Quality Profile (recommended):**
+   - Settings → Profiles → + (Add)
+   - Name: `1080p-Small`
+   - Enable ONLY: HDTV-1080p, WEBRip-1080p, WEB-DL 1080p
+   - **Uncheck** Remux-1080p, Bluray-1080p Raw
+   - Upgrade Until: WEB-DL 1080p
+   - Save
+6. **Set Size Limits:**
+   - Settings → Quality
+   - WEB-DL 1080p: Max ~35 MB/min (about 4GB for 2hr movie)
 
-### 5.5 Sonarr (Port 8989)
+### 7.5 Sonarr (http://IP:8989)
 
-1. Access: `http://<server-ip>:8989`
-2. Settings → Media Management:
-   - Root folder: `/data/media/tv`
-3. Settings → Download Clients:
-   - Add Deluge: Host `localhost`, Port `58846`
-4. Settings → Indexers:
-   - Add from Prowlarr sync
+Same as Radarr:
+1. Get API Key
+2. Add Root Folder: `/data/media/tv`
+3. Add Deluge download client (same settings, category: `sonarr`)
+4. Create quality profile `1080p-Small`
 
-### 5.6 Bazarr (Port 6767)
+### 7.6 Bazarr (http://IP:6767)
 
-1. Access: `http://<server-ip>:6767`
-2. Connect to Radarr and Sonarr
-3. Configure subtitle providers
+1. **Connect to Radarr:**
+   - Settings → Radarr → Enable
+   - Host: `localhost`, Port: `7878`
+   - API Key: (Radarr's API key)
+   - Test → Save
+2. **Connect to Sonarr:**
+   - Settings → Sonarr → Enable
+   - Host: `localhost`, Port: `8989`
+   - API Key: (Sonarr's API key)
+   - Test → Save
+3. **Add Subtitle Providers:**
+   - Settings → Providers → +
+   - Recommended: Podnapisi, OpenSubtitles.com (needs free account)
+4. **Configure Languages:**
+   - Settings → Languages → Add preferred languages
 
-### 5.7 Jellyseerr (Port 5055)
+### 7.7 Jellyseerr (http://IP:5055)
 
-1. Access: `http://<server-ip>:5055`
-2. Sign in with Jellyfin admin account
-3. Connect to Radarr and Sonarr
-4. Import Jellyfin users
+1. Select **Jellyfin** as media server
+2. Sign in with Jellyfin admin credentials
+3. **Configure Radarr:**
+   - Add Radarr Server
+   - URL: `http://localhost:7878`
+   - API Key: (Radarr's API key)
+   - Quality Profile: `1080p-Small` (or your profile)
+   - Root Folder: `/data/media/movies`
+   - **Disable "Tag Requests"** (causes 400 errors)
+   - Test → Save
+4. **Configure Sonarr:**
+   - Add Sonarr Server
+   - URL: `http://localhost:8989`
+   - API Key: (Sonarr's API key)
+   - Quality Profile: `1080p-Small`
+   - Root Folder: `/data/media/tv`
+   - **Disable "Tag Requests"**
+   - Test → Save
+5. Import Jellyfin users if desired
+
+### 7.8 Immich (http://IP:2283)
+
+1. Create admin account on first access
+2. Configure settings as desired:
+   - Storage Template: Enable for organized folder structure
+   - Machine Learning: Enabled by default
+3. **Mobile App:**
+   - Download "Immich" app
+   - Server URL: `http://IP:2283`
+   - Login with admin credentials
+   - Enable Background Backup
+
+### 7.9 Uptime Kuma (http://IP:3001)
+
+1. Create admin account
+2. Add monitors for each service:
+
+| Monitor | Type | URL/Host | Interval |
+|---------|------|----------|----------|
+| Jellyfin | HTTP(s) | `http://localhost:8096` | 60s |
+| Radarr | HTTP(s) | `http://localhost:7878` | 60s |
+| Sonarr | HTTP(s) | `http://localhost:8989` | 60s |
+| Prowlarr | HTTP(s) | `http://localhost:9696` | 60s |
+| Bazarr | HTTP(s) | `http://localhost:6767` | 60s |
+| Jellyseerr | HTTP(s) | `http://localhost:5055` | 60s |
+| Immich | HTTP(s) | `http://localhost:2283/api/server/ping` | 60s |
+| Deluge | TCP Port | `localhost:58846` | 60s |
+| FlareSolverr | HTTP(s) | `http://localhost:8191/health` | 60s |
+
+## Part 8: Test the Full Flow
+
+1. **Request a movie in Jellyseerr**
+2. **Check Radarr** → Movies → Should show the movie searching
+3. **Check Deluge** → Should see download starting
+4. **Verify VPN:** `sudo ip netns exec wg-vpn curl -s https://api.ipify.org`
+5. **After download:** Radarr imports to `/data/media/movies`
+6. **Check Jellyfin** → Movie appears in library
+7. **Bazarr** → Should fetch subtitles automatically
 
 ## Troubleshooting
 
-### ZFS Pool Not Importing
+### Radarr/Sonarr: "Folder not writable by user"
 
-If the pool doesn't import after boot:
+```bash
+sudo chown -R root:media /data/media
+sudo chmod -R 775 /data/media
+sudo chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads
+```
+
+### Immich: 500 Error
+
+PostgreSQL permissions issue:
+
+```bash
+cd /var/lib/immich && docker compose down
+sudo chown -R 999:999 /var/lib/immich/postgres
+sudo chown -R 999:999 /var/lib/immich/model-cache
+sudo chown -R 999:999 /data/immich/photos
+sudo chown -R 999:999 /data/immich/upload
+docker compose up -d
+```
+
+If database is corrupted:
+```bash
+cd /var/lib/immich && docker compose down
+sudo rm -rf /var/lib/immich/postgres/*
+docker compose up -d
+# Re-create admin account
+```
+
+### Jellyseerr: "Failed to create tag" Error
+
+Disable "Tag Requests" in Jellyseerr → Settings → Radarr/Sonarr.
+
+### VPN Not Working
+
+```bash
+# Check namespace exists
+ip netns list
+
+# Check WireGuard status
+sudo ip netns exec wg-vpn wg show
+
+# Check logs
+journalctl -u wireguard-vpn-namespace.service
+journalctl -u wireguard-vpn.service
+```
+
+### Deluge Not Downloading
+
+1. Check VPN is connected: `sudo ip netns exec wg-vpn curl -s https://api.ipify.org`
+2. Check port forwarding: `sudo systemctl status deluge-port-forward`
+3. Check Deluge daemon: `sudo systemctl status deluged`
+
+### ZFS Pool Not Importing
 
 ```bash
 # Check if device is present
@@ -251,310 +457,93 @@ ls -la /dev/disk/by-id/ | grep -i seagate
 # Manual import
 sudo zpool import storagepool
 
-# Check for import errors
-dmesg | grep -i zfs
+# Check logs
 journalctl -u zfs-import-storagepool.service
 ```
 
-### VPN Not Connecting
+### NixOS Rebuild Fails
 
 ```bash
-# Check namespace exists
-ip netns list
+# Check for syntax errors
+nix flake check
 
-# Check WireGuard interface
-sudo ip netns exec vpn ip link show
+# Build without switching to see errors
+nixos-rebuild build --flake /etc/nixos#karmalab
 
-# Check WireGuard config
-sudo ip netns exec vpn wg show
-
-# Check logs
-journalctl -u wireguard-vpn.service
-```
-
-### Services Not Starting
-
-```bash
-# Check systemd dependencies
-systemctl list-dependencies jellyfin.service
-
-# Check service logs
-journalctl -u jellyfin.service -f
-
-# Check if storage is available
-ls -la /data
-ls -la /var/lib/jellyfin
-```
-
-### Deluge Connection Issues from *arr Stack
-
-```bash
-# Verify port forwarding is running
-sudo systemctl status deluge-port-forward
-
-# Test connection from host
-nc -zv localhost 58846
-
-# Test connection in namespace
-sudo ip netns exec vpn nc -zv localhost 58846
+# Check specific service config
+nix eval .#nixosConfigurations.karmalab.config.services.radarr
 ```
 
 ## Maintenance
 
-### ZFS Scrub (Automatic Weekly)
+### Daily/Automatic
+
+- ZFS auto-snapshots (configured in storage.nix)
+- ZFS weekly scrub
+
+### Manual Checks
 
 ```bash
-# Manual scrub
-sudo zpool scrub storagepool
-
-# Check scrub status
+# Pool health
 sudo zpool status storagepool
+
+# Dataset usage
+sudo zfs list -o name,used,avail,quota
+
+# Service status
+sudo systemctl status jellyfin radarr sonarr
+
+# Docker containers
+docker ps
+
+# VPN status
+sudo ip netns exec wg-vpn wg show
 ```
 
-### Check VPN IP
+### Backup Service Configs
 
 ```bash
-# Current VPN IP
-sudo ip netns exec vpn curl -s https://api.ipify.org
-
-# Compare with real IP
-curl -s https://api.ipify.org
-```
-
-### Backup Service Configurations
-
-```bash
-# Snapshot service datasets
+# Manual snapshot
 sudo zfs snapshot -r storagepool/services@backup-$(date +%Y%m%d)
 
 # List snapshots
 sudo zfs list -t snapshot
 ```
 
-## Step 6: Immich Photo Management Setup
-
-Immich is a self-hosted Google Photos alternative that runs via Docker Compose.
-
-### 6.1 Create Immich Environment File
+## SSH Access
 
 ```bash
-# Create the Immich working directory
-sudo mkdir -p /var/lib/immich
-
-# Copy the example env file
-sudo cp /etc/nixos/docker/immich/.env.example /var/lib/immich/.env
-
-# Edit with your settings
-sudo nano /var/lib/immich/.env
+# From your Mac (after adding SSH key)
+ssh somesh@192.168.0.171
+# Or if configured in ~/.ssh/config:
+ssh karmalab
 ```
 
-**Required settings in `.env`:**
+SSH config (`~/.ssh/config`):
+```
+Host karmalab
+    HostName 192.168.0.171
+    User somesh
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+## Updating
 
 ```bash
-# IMPORTANT: Generate a strong random password
-DB_PASSWORD=your_secure_database_password_here
-
-# Optional: Change upload location if needed
-# UPLOAD_LOCATION=/data/immich/photos
-
-# Optional: Change ML cache location if needed
-# MODEL_CACHE_LOCATION=/var/lib/immich/model-cache
+# On the server
+cd ~/karmalab
+git pull
+sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 ```
 
-**Generate a secure password:**
+## File Locations Summary
 
-```bash
-# Generate a random 32-character password
-openssl rand -base64 32
-```
-
-### 6.2 Copy Docker Compose File
-
-```bash
-# Copy the compose file
-sudo cp /etc/nixos/docker/immich/docker-compose.yml /var/lib/immich/
-
-# Set proper permissions
-sudo chmod 600 /var/lib/immich/.env
-```
-
-### 6.3 Start Immich
-
-```bash
-# Start the Immich service
-sudo systemctl start immich
-
-# Check status
-sudo systemctl status immich
-
-# View logs
-journalctl -u immich -f
-
-# Or view Docker logs directly
-docker logs immich_server -f
-docker logs immich_machine_learning -f
-```
-
-### 6.4 Initial Immich Configuration
-
-1. Access: `http://<server-ip>:2283` or via Tailscale
-2. Create admin account on first access
-3. Configure:
-   - **Storage Template**: Settings → Storage Template → Enable
-   - **Machine Learning**: Enabled by default (CPU)
-   - **Hardware Transcoding**: Uses Intel Quick Sync (VAAPI) automatically
-
-### 6.5 Verify Hardware Transcoding
-
-```bash
-# Check if GPU is passed through to container
-docker exec immich_server ls -la /dev/dri
-
-# Should show:
-# renderD128  (Intel Quick Sync)
-# card0
-```
-
-### 6.6 Mobile App Setup
-
-1. Download Immich app from App Store / Play Store
-2. Server URL: `http://<server-ip>:2283` (or Tailscale IP)
-3. Login with admin credentials
-4. Enable auto-backup in app settings
-
-## Step 7: Uptime Kuma Monitoring Setup
-
-Uptime Kuma is a self-hosted monitoring tool that watches your services.
-
-### 7.1 Start Uptime Kuma
-
-```bash
-# Start the service (should start automatically after nixos-rebuild)
-sudo systemctl start uptime-kuma
-
-# Check status
-sudo systemctl status uptime-kuma
-
-# View logs
-journalctl -u uptime-kuma -f
-```
-
-### 7.2 Initial Configuration
-
-1. Access: `http://<server-ip>:3001` (Tailscale only)
-2. Create admin account on first access
-3. **IMPORTANT**: Save your admin credentials securely!
-
-### 7.3 Add Service Monitors
-
-Add monitors for each service:
-
-| Monitor Name | Type | URL/Host | Interval |
-|-------------|------|----------|----------|
-| Jellyfin | HTTP(s) | `http://localhost:8096` | 60s |
-| Radarr | HTTP(s) | `http://localhost:7878` | 60s |
-| Sonarr | HTTP(s) | `http://localhost:8989` | 60s |
-| Bazarr | HTTP(s) | `http://localhost:6767` | 60s |
-| Prowlarr | HTTP(s) | `http://localhost:9696` | 60s |
-| Jellyseerr | HTTP(s) | `http://localhost:5055` | 60s |
-| Immich | HTTP(s) | `http://localhost:2283/api/server/ping` | 60s |
-| Deluge | TCP Port | `localhost:58846` | 60s |
-| VPN Status | HTTP(s) | Custom script (see below) | 300s |
-
-### 7.4 VPN Health Monitor (Optional)
-
-Create a status page for VPN health by adding a "Push" monitor that your VPN health check script can ping.
-
-### 7.5 Configure Notifications (Optional)
-
-Go to Settings → Notifications to add:
-- Telegram bot
-- Discord webhook
-- Email (SMTP)
-- Pushover
-- And many more...
-
-## Troubleshooting
-
-### Immich Not Starting
-
-```bash
-# Check if Docker is running
-sudo systemctl status docker
-
-# Check if .env file exists
-ls -la /var/lib/immich/.env
-
-# Check Immich service logs
-journalctl -u immich -e
-
-# Check Docker container logs
-docker ps -a  # See container status
-docker logs immich_server
-docker logs immich_postgres
-```
-
-### Immich Database Issues
-
-```bash
-# Check PostgreSQL health
-docker exec immich_postgres pg_isready
-
-# View PostgreSQL logs
-docker logs immich_postgres
-
-# If database is corrupted, you may need to recreate:
-# WARNING: This deletes all Immich data!
-docker-compose -f /var/lib/immich/docker-compose.yml down -v
-sudo rm -rf /var/lib/immich/postgres/*
-sudo systemctl restart immich
-```
-
-### Uptime Kuma Not Accessible
-
-```bash
-# Check service status
-sudo systemctl status uptime-kuma
-
-# Check if port is listening
-ss -tlnp | grep 3001
-
-# Check firewall
-sudo iptables -L -n | grep 3001
-```
-
-## File Structure
-
-```
-/
-├── boot/                    # EFI partition (NVMe)
-├── data/                    # ZFS storage pool root
-│   ├── media/
-│   │   ├── movies/          # Movie files
-│   │   ├── tv/              # TV show files
-│   │   └── downloads/
-│   │       ├── complete/    # Completed downloads
-│   │       └── incomplete/  # In-progress downloads
-│   └── immich/
-│       ├── photos/          # Photo library (ZFS, 1TB quota)
-│       └── upload/          # Temporary uploads (ZFS, 50GB)
-├── var/lib/
-│   ├── jellyfin/           # Jellyfin config (ZFS)
-│   ├── deluge/             # Deluge config (ZFS)
-│   ├── radarr/             # Radarr config (ZFS)
-│   ├── sonarr/             # Sonarr config (ZFS)
-│   ├── bazarr/             # Bazarr config (ZFS)
-│   ├── prowlarr/           # Prowlarr config (ZFS)
-│   ├── jellyseerr/         # Jellyseerr config (ZFS)
-│   ├── private/
-│   │   └── uptime-kuma/    # Uptime Kuma data (ZFS)
-│   └── immich/             # Immich working directory (NVMe)
-│       ├── docker-compose.yml
-│       ├── .env
-│       ├── postgres/       # Database (NVMe for speed)
-│       └── model-cache/    # ML models (NVMe for speed)
-├── var/cache/
-│   └── jellyfin/           # Jellyfin transcoding cache (ZFS)
-└── etc/wireguard/
-    └── surfshark.conf      # WireGuard VPN configuration
-```
+| Path | Purpose | Permissions |
+|------|---------|-------------|
+| `/etc/wireguard/surfshark.conf` | VPN config | root:root 600 |
+| `/var/lib/immich/.env` | Immich secrets | root:root 600 |
+| `/var/lib/immich/docker-compose.yml` | Immich compose | root:root 644 |
+| `/var/lib/immich/postgres/` | Immich DB | 999:999 |
+| `/var/lib/immich/model-cache/` | ML models | 999:999 |
+| `/data/media/` | Media files | root:media 775 |
+| `/data/immich/` | Photos | 999:999 755 |
