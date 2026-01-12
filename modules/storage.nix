@@ -264,6 +264,14 @@ in
       set_property "$POOL/immich/upload" "quota" "50G"
       set_property "$POOL/immich/upload" "com.sun:auto-snapshot" "false"
       
+      # ===== SET IMMICH DIRECTORY PERMISSIONS =====
+      # UID/GID 999 is the postgres/immich user inside containers
+      echo "--- Setting Immich directory permissions ---"
+      chown -R 999:999 /data/immich/photos
+      chown -R 999:999 /data/immich/upload
+      chmod -R 755 /data/immich/photos
+      chmod -R 755 /data/immich/upload
+      
       # ===== MEDIA DATASETS =====
       echo "--- Creating Media datasets ---"
       create_dataset "$POOL/media" -o mountpoint=/data/media -o compression=lz4 -o atime=off
@@ -364,9 +372,10 @@ in
   
   systemd.tmpfiles.rules = [
     # Immich database and model cache on NVMe for performance
+    # UID/GID 999 is the postgres user inside the Immich containers
     "d /var/lib/immich 0755 root root -"
-    "d /var/lib/immich/postgres 0700 root root -"
-    "d /var/lib/immich/model-cache 0755 root root -"
+    "d /var/lib/immich/postgres 0700 999 999 -"
+    "d /var/lib/immich/model-cache 0755 999 999 -"
   ];
   
   # ============================================================================
