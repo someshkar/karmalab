@@ -1,0 +1,6 @@
+# Secrets (created on NUC, not in git)
+secrets/
+
+# Result symlinks from nix build
+result
+result-*
