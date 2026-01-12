@@ -44,7 +44,17 @@ in
     listenPort = 8082;
     openFirewall = false;  # Accessed via Caddy on port 80
 
-    # Allow the dashboard to be accessed
+    # Allow access via various hostnames/IPs (required since NixOS 25.05)
+    allowedHosts = [
+      "192.168.0.200"
+      "karmalab"
+      "karmalab.local"
+      "karmalab.tail*"  # Tailscale MagicDNS
+      "localhost"
+      "127.0.0.1"
+    ];
+
+    # Dashboard settings
     settings = {
       title = "Karmalab";
       description = "Home Server Dashboard";
