@@ -81,8 +81,8 @@ in
       
       # Service settings
       service = {
-        # Disable registration after initial setup (security)
-        DISABLE_REGISTRATION = false;  # Set to true after creating admin
+        # Disable public registration - only admin can create accounts
+        DISABLE_REGISTRATION = true;
         
         # Require sign-in to view anything
         REQUIRE_SIGNIN_VIEW = false;
