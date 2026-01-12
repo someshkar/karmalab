@@ -14,8 +14,8 @@
 #   MacBook (Syncthing) <---> Karmalab (Syncthing) <---> iPhone (Sushitrain)
 #
 # Storage:
-# - Data directory: /var/lib/syncthing (on NVMe SSD for fast sync)
-# - Shared folders stored under /var/lib/syncthing/sync/
+# - Config/database: /var/lib/syncthing (managed by NixOS module)
+# - Synced folders: /var/lib/syncthing/sync/
 #
 # Access:
 # - Web UI: http://192.168.0.171:8384 (requires authentication)
@@ -27,7 +27,7 @@
 # 2. Set up GUI username/password in Settings -> GUI
 # 3. Note the Device ID for pairing
 # 4. Add remote devices (MacBook, iPhone)
-# 5. Create shared folders (e.g., "Obsidian")
+# 5. Create shared folders (e.g., "Obsidian") pointing to /var/lib/syncthing/sync/Obsidian
 #
 # iPhone App:
 # - Install "Sushitrain" (Synctrain) via TestFlight:
@@ -43,13 +43,12 @@ let
   syncPort = 22000;
   discoveryPort = 21027;
   
-  # Paths
-  dataDir = "/var/lib/syncthing";
+  # Paths - let NixOS module manage dataDir, we just create sync subdirectory
   syncDir = "/var/lib/syncthing/sync";
 in
 {
   # ============================================================================
-  # SYNCTHING SERVICE
+  # SYNCTHING SERVICE (using NixOS native module)
   # ============================================================================
   
   services.syncthing = {
@@ -59,17 +58,18 @@ in
     user = "somesh";
     group = "users";
     
-    # Data and config directory
-    dataDir = dataDir;
-    configDir = "${dataDir}/.config/syncthing";
+    # Let NixOS module manage these directories with correct permissions
+    # dataDir is where config/database lives (default: /var/lib/syncthing)
+    # The module automatically creates this with correct ownership
+    dataDir = "/var/lib/syncthing";
     
     # Open firewall for sync protocol
     openDefaultPorts = true;
     
-    # GUI settings
+    # GUI settings - listen on all interfaces
     guiAddress = "0.0.0.0:${toString guiPort}";
     
-    # Override default settings
+    # Declarative settings
     settings = {
       # Global options
       options = {
@@ -114,11 +114,13 @@ in
   # DIRECTORY SETUP
   # ============================================================================
   
+  # Create sync subdirectory for shared folders
+  # The parent /var/lib/syncthing is managed by the NixOS syncthing module
   systemd.tmpfiles.rules = [
     # Main sync directory for shared folders
     "d ${syncDir} 0750 somesh users -"
     
-    # Obsidian vault directory (will be created when folder is added)
+    # Obsidian vault directory (ready for when you add the folder)
     "d ${syncDir}/Obsidian 0750 somesh users -"
   ];
   
@@ -127,30 +129,13 @@ in
   # ============================================================================
   
   networking.firewall = {
-    # Sync protocol ports (opened by openDefaultPorts, but explicit here)
-    allowedTCPPorts = [ syncPort guiPort ];
-    allowedUDPPorts = [ syncPort discoveryPort ];
+    # GUI port (sync ports already opened by openDefaultPorts)
+    allowedTCPPorts = [ guiPort ];
     
     # Also allow on Tailscale interface
     interfaces."tailscale0" = {
       allowedTCPPorts = [ syncPort guiPort ];
       allowedUDPPorts = [ syncPort discoveryPort ];
-    };
-  };
-  
-  # ============================================================================
-  # SYSTEMD SERVICE OVERRIDES
-  # ============================================================================
-  
-  systemd.services.syncthing = {
-    # Ensure syncthing starts after network is available
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    
-    # Restart on failure
-    serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = "10s";
     };
   };
 }
