@@ -14,11 +14,15 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Bazarr** | 6767 | Working | Subtitle automation (needs providers configured) |
 | **Jellyseerr** | 5055 | Working | Media request interface |
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
+| **aria2** | 6800/6880 | New | HTTP/FTP download manager with AriaNg web UI |
 | **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
 | **Syncthing** | 8384 | Running | File sync for Obsidian vault (set GUI auth at first access) |
 | **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
+| **Homepage** | 80 | New | Service dashboard with system metrics (via Caddy) |
+| **Tailscale** | - | New | VPN for remote access (exit node enabled) |
+| **Cloudflare Tunnel** | - | New | External access without port forwarding |
 
 ## Hardware
 
@@ -29,7 +33,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **RAM** | 16GB DDR5 |
 | **Boot/OS** | 500GB NVMe SSD |
 | **Storage** | 20TB Seagate Expansion USB HDD (ZFS) |
-| **Network** | WiFi (wlo1) - will move to 2.5GbE Ethernet |
+| **Network** | Ethernet (enp1s0) - Static IP 192.168.0.200 |
 
 ## Architecture
 
@@ -38,24 +42,35 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
                                   │
                     ┌─────────────┴─────────────┐
                     │                           │
-              Cloudflare Tunnel           Tailscale VPN
-              (Phase 3 - Future)          (Phase 3 - Future)
+              Cloudflare Tunnel            Tailscale VPN
+              (External Access)            (Remote Admin)
                     │                           │
     ┌───────────────┼───────────────┐           │
     │               │               │           │
     v               v               v           v
 ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────────────────────┐
-│ Jellyfin│   │ Immich  │   │Jellyseerr│  │ Radarr, Sonarr, Prowlarr│
+│Jellyfin │   │ Immich  │   │Jellyseerr│  │ Radarr, Sonarr, Prowlarr│
 │  :8096  │   │  :2283  │   │  :5055  │   │ Bazarr, Deluge, etc.    │
 └─────────┘   └─────────┘   └─────────┘   └─────────────────────────┘
-                    │
-                    │ Docker
-    ┌───────────────┼───────────────┐
-    │               │               │
-┌───────┐     ┌─────────┐     ┌──────────┐
-│ Redis │     │Postgres │     │ ML Model │
-│(Valkey)│    │pgvector │     │  (CPU)   │
-└───────┘     └─────────┘     └──────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+              ┌─────────┐             ┌─────────┐
+              │Homepage │             │  Caddy  │
+              │  :8082  │◄────────────│   :80   │
+              └─────────┘             └─────────┘
+                                           │
+                              ┌────────────┴────────────┐
+                              │    Local Network        │
+                              │   http://192.168.0.200  │
+                              └─────────────────────────┘
+
+External Access (Cloudflare Tunnel):
+  - jellyfin.somesh.dev → Jellyfin
+  - immich.somesh.dev   → Immich
+  - request.somesh.dev  → Jellyseerr
+  - git.somesh.dev      → Forgejo
+  - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 
 ### VPN Isolation (Deluge)
@@ -177,11 +192,16 @@ karmalab/
 │   ├── storage.nix               # ZFS pool and dataset management
 │   ├── wireguard-vpn.nix         # VPN namespace for torrents
 │   └── services/
+│       ├── aria2.nix             # HTTP/FTP download manager
+│       ├── caddy.nix             # Reverse proxy (port 80 → Homepage)
+│       ├── cloudflared.nix       # Cloudflare Tunnel for external access
 │       ├── deluge.nix            # Native Deluge in VPN namespace
 │       ├── flaresolverr.nix      # Cloudflare bypass (Docker)
 │       ├── forgejo.nix           # Self-hosted Git server
+│       ├── homepage.nix          # Service dashboard with Glances
 │       ├── immich.nix            # Immich Docker Compose service
 │       ├── syncthing.nix         # File synchronization
+│       ├── tailscale.nix         # Tailscale VPN (remote access)
 │       ├── timemachine.nix       # macOS Time Machine backup server
 │       └── uptime-kuma.nix       # Service monitoring
 ├── docker/
@@ -218,14 +238,15 @@ karmalab/
 - [x] Minimum seeders configuration in Prowlarr
 - [ ] Uptime Kuma monitors for all services
 - [ ] Bazarr subtitle provider configuration
-- [ ] Homepage dashboard (single pane of glass)
+- [x] Homepage dashboard (single pane of glass)
 
-### Phase 3: External Access - PLANNED
+### Phase 3: External Access - COMPLETE
 
-- [ ] Tailscale VPN for remote access
-- [ ] Cloudflare Tunnel for public services
-- [ ] SSL/HTTPS for all services
-- [ ] Subdomain routing (jellyfin.somesh.xyz, etc.)
+- [x] Tailscale VPN for remote access (exit node enabled)
+- [x] Cloudflare Tunnel for public services
+- [x] Homepage dashboard (single pane of glass)
+- [x] aria2 download manager with AriaNg web UI
+- [x] Caddy reverse proxy (port 80 → Homepage)
 
 ### Phase 4: Book Stack - PLANNED
 

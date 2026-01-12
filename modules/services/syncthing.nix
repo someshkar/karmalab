@@ -19,8 +19,9 @@
 #
 # Access:
 # - Web UI: http://192.168.0.200:8384 (requires authentication)
-# - Sync Protocol: Port 22000 (TCP/UDP)
+# - Sync Protocol: Port 22000 (TCP only - for Cloudflare Tunnel compatibility)
 # - Local Discovery: Port 21027 (UDP)
+# - External: sync.somesh.dev (via Cloudflare Tunnel)
 #
 # Post-deployment setup:
 # 1. Access Web UI at http://192.168.0.200:8384
@@ -28,6 +29,11 @@
 # 3. Note the Device ID for pairing
 # 4. Add remote devices (MacBook, iPhone)
 # 5. Create shared folders (e.g., "Obsidian") pointing to /var/lib/syncthing/sync/Obsidian
+#
+# Remote device configuration:
+# - For devices connecting via Cloudflare Tunnel, set the server address to:
+#   tcp://sync.somesh.dev:443
+# - This bypasses global relay servers for faster direct sync
 #
 # iPhone App:
 # - Install "Sushitrain" (Synctrain) via TestFlight:
@@ -85,6 +91,13 @@ in
         # Local discovery (find devices on LAN)
         localAnnounceEnabled = true;
         localAnnouncePort = discoveryPort;
+        
+        # Listen on TCP only (required for Cloudflare Tunnel)
+        # QUIC/UDP doesn't work through Cloudflare Tunnel
+        listenAddresses = [
+          "tcp://0.0.0.0:${toString syncPort}"
+          "dynamic+https://relays.syncthing.net/endpoint"  # Fallback to relays
+        ];
         
         # Limit bandwidth if needed (0 = unlimited)
         maxSendKbps = 0;

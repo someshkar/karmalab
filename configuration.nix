@@ -16,14 +16,23 @@
 #
 # INFRASTRUCTURE:
 # - Deluge: Torrent client with VPN isolation (Surfshark WireGuard)
+# - aria2: HTTP/FTP download manager with AriaNg web UI
 # - Uptime Kuma: Service monitoring and status pages
 # - Time Machine: macOS backup server (Samba with vfs_fruit)
+# - Homepage: Service dashboard with system metrics (Glances)
+# - Caddy: Reverse proxy for local network access
 #
 # PRODUCTIVITY:
 # - Syncthing: File synchronization (Obsidian vault sync)
 # - Forgejo: Self-hosted Git server
 # - Vaultwarden: Password manager (planned)
 # - Nextcloud: File sync and collaboration (planned)
+#
+# NETWORKING:
+# - Tailscale: Mesh VPN for secure remote access (exit node enabled)
+# - Cloudflare Tunnel: External access without port forwarding
+#   - git.somesh.dev, immich.somesh.dev, jellyfin.somesh.dev
+#   - request.somesh.dev, sync.somesh.dev
 #
 # Key Design Principles:
 # - Graceful degradation: System boots even if 20TB USB HDD is disconnected
@@ -49,6 +58,11 @@
     ./modules/services/timemachine.nix  # Time Machine backup server (Samba)
     ./modules/services/syncthing.nix    # File synchronization (Obsidian vault)
     ./modules/services/forgejo.nix      # Self-hosted Git server
+    ./modules/services/tailscale.nix    # Tailscale VPN (remote access + exit node)
+    ./modules/services/caddy.nix        # Reverse proxy for Homepage
+    ./modules/services/homepage.nix     # Service dashboard with Glances
+    ./modules/services/aria2.nix        # HTTP/FTP download manager
+    ./modules/services/cloudflared.nix  # Cloudflare Tunnel for external access
   ];
 
   # ============================================================================
