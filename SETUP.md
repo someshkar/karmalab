@@ -474,6 +474,48 @@ nixos-rebuild build --flake /etc/nixos#karmalab
 nix eval .#nixosConfigurations.karmalab.config.services.radarr
 ```
 
+### NixOS Rebuild Stuck or "Unit Already Loaded" Error
+
+If you Ctrl+C during a rebuild, the transient systemd unit may linger:
+
+```bash
+# Check if the switch service is still running
+sudo systemctl status nixos-rebuild-switch-to-configuration.service
+
+# Stop it if it's stuck
+sudo systemctl stop nixos-rebuild-switch-to-configuration.service
+
+# Reset failed units
+sudo systemctl reset-failed
+
+# Then retry the rebuild
+sudo nixos-rebuild switch --flake /etc/nixos#karmalab
+```
+
+### Git Pull Permission Error
+
+If `git pull` fails with "insufficient permission for adding an object":
+
+```bash
+# This happens when sudo nixos-rebuild creates .git files as root
+sudo chown -R somesh:users ~/karmalab
+
+# Then retry git pull
+git pull
+```
+
+### Syncthing Permission Denied
+
+If Syncthing crashes with "mkdir /var/lib/syncthing/.config: permission denied":
+
+```bash
+# Fix ownership of syncthing directory
+sudo chown -R somesh:users /var/lib/syncthing
+
+# Restart the service
+sudo systemctl restart syncthing
+```
+
 ## Maintenance
 
 ### Daily/Automatic
@@ -892,9 +934,10 @@ When you set up Cloudflare Tunnel (Phase 3), you can expose Forgejo at `https://
 | `/var/lib/immich/model-cache/` | ML models | 999:999 |
 | `/data/media/` | Media files | root:media 775 |
 | `/data/immich/` | Photos | 999:999 755 |
-| `/data/timemachine/` | Time Machine backups | root:root 770 |
+| `/data/timemachine/` | Time Machine backups | somesh:users 770 |
 | `/data/nextcloud/` | Nextcloud files (future) | root:root 750 |
-| `/var/lib/syncthing/` | Syncthing data & config | somesh:users |
-| `/var/lib/syncthing/sync/` | Synced folders (Obsidian, etc.) | somesh:users |
+| `/var/lib/syncthing/` | Syncthing data & config | somesh:users 750 |
+| `/var/lib/syncthing/sync/` | Synced folders (Obsidian, etc.) | somesh:users 750 |
 | `/var/lib/forgejo/` | Forgejo data & repositories | forgejo:forgejo |
+| `~/karmalab/` | NixOS configuration repo | somesh:users |
 

@@ -14,11 +14,11 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Bazarr** | 6767 | Working | Subtitle automation (needs providers configured) |
 | **Jellyseerr** | 5055 | Working | Media request interface |
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
-| **Immich** | 2283 | Working | Google Photos alternative |
+| **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
-| **Time Machine** | 445 | Ready | macOS backup server (needs smbpasswd setup) |
-| **Syncthing** | 8384 | Ready | File sync for Obsidian vault (needs GUI setup) |
-| **Forgejo** | 3030 | Ready | Self-hosted Git server (needs initial setup) |
+| **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
+| **Syncthing** | 8384 | Running | File sync for Obsidian vault (set GUI auth at first access) |
+| **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
 
 ## Hardware
 
@@ -237,9 +237,9 @@ karmalab/
 
 - [ ] Vaultwarden (password manager)
 - [ ] Nextcloud (file sync - 1TB allocated)
-- [x] **Time Machine** (macOS network backup - 1.5TB allocated)
-- [x] **Syncthing** (file sync for Obsidian vault)
-- [x] **Forgejo** (self-hosted Git server)
+- [x] **Time Machine** (macOS network backup - 1.5TB allocated) - Running
+- [x] **Syncthing** (file sync for Obsidian vault) - Running
+- [x] **Forgejo** (self-hosted Git server) - Running
 
 ### Phase 6: Hardening & Backups - PLANNED
 
@@ -319,6 +319,9 @@ See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
 | Jellyseerr "Failed to create tag" | Disable "Tag Requests" in Jellyseerr → Settings → Radarr |
 | Deluge not downloading | Check VPN: `sudo ip netns exec wg-vpn wg show` |
 | FlareSolverr not working | Check container: `docker logs flaresolverr` |
+| Syncthing permission denied | Run `sudo chown -R somesh:users /var/lib/syncthing` |
+| Git pull permission error | Run `sudo chown -R somesh:users ~/karmalab` |
+| nixos-rebuild stuck/failed | Run `sudo systemctl stop nixos-rebuild-switch-to-configuration.service` then retry |
 
 ## Access URLs (Local Network)
 
