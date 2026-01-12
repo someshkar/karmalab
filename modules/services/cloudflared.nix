@@ -53,19 +53,20 @@ in
     serviceConfig = {
       Type = "simple";
       
-      # Run as root to read /etc/nixos/secrets/
+      # Run as root to read secrets
       User = "root";
       
-      # Read token from file and run tunnel
+      # Use cloudflared's native --token-file flag (cleaner than bash wrapper)
       # The token contains the tunnel ID and credentials
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.cloudflared}/bin/cloudflared tunnel run --token $(cat ${tunnelTokenFile})'";
+      ExecStart = "${pkgs.cloudflared}/bin/cloudflared tunnel run --token-file ${tunnelTokenFile}";
       
       Restart = "on-failure";
       RestartSec = "5s";
       
-      # Security hardening (compatible with running as root)
+      # Security hardening
+      # Note: ProtectHome=true would break access to /etc/nixos/secrets
+      # because /etc/nixos is symlinked to /home/somesh/karmalab
       NoNewPrivileges = true;
-      ProtectHome = true;
       PrivateTmp = true;
     };
   };
