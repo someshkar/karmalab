@@ -74,7 +74,7 @@ let
   audiobooksDir = "/data/media/audiobooks";
   
   # Docker image
-  image = "ghcr.io/calibrain/shelfmark:stable";
+  image = "ghcr.io/calibrain/shelfmark:latest";
 in
 {
   # ============================================================================

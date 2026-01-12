@@ -405,6 +405,14 @@
   ];
 
   # ============================================================================
+  # VIRTUALISATION (DOCKER)
+  # ============================================================================
+
+  # Set Docker as the backend for OCI containers
+  # (Used by Shelfmark, Flaresolverr via virtualisation.oci-containers)
+  virtualisation.oci-containers.backend = "docker";
+
+  # ============================================================================
   # NIX CONFIGURATION
   # ============================================================================
 
