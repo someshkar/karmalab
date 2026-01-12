@@ -112,11 +112,9 @@ in
       
       # Security settings
       security = {
-        # Install lock - prevents re-running install after setup
-        INSTALL_LOCK = false;  # Will be set to true after initial setup
-        
         # Minimum password length
         MIN_PASSWORD_LENGTH = 8;
+        # Note: INSTALL_LOCK is managed automatically by NixOS module
       };
       
       # UI settings
