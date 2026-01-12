@@ -13,17 +13,33 @@
 # Storage Architecture:
 # ┌─────────────────────────────────────────────────────────────────────┐
 # │ NVMe SSD (500GB) - Fast storage for databases and caches           │
-# │   /var/lib/immich/postgres/    - Immich database (10GB)            │
-# │   /var/lib/immich/model-cache/ - ML models (20GB)                  │
-# │   /var/lib/uptime-kuma/        - Monitoring config (1GB)           │
+# │   /var/lib/immich/postgres/    - Immich database                   │
+# │   /var/lib/immich/model-cache/ - ML models (~20GB)                 │
+# │   /var/lib/uptime-kuma/        - Monitoring config                 │
+# │   /var/lib/nextcloud/          - Nextcloud database/config         │
 # └─────────────────────────────────────────────────────────────────────┘
 # ┌─────────────────────────────────────────────────────────────────────┐
-# │ USB HDD ZFS Pool (20TB) - Large storage for media and photos       │
-# │   storagepool/data             - Root mount at /data               │
-# │   storagepool/media/           - Movies, TV, Downloads             │
-# │   storagepool/immich/photos/   - Photo library (1TB quota)         │
-# │   storagepool/immich/upload/   - Temp uploads (50GB quota)         │
-# │   storagepool/services/        - Service configurations            │
+# │ USB HDD ZFS Pool (20TB) - Large storage for media, photos, backups │
+# │                                                                     │
+# │   MEDIA (6.5TB total):                                             │
+# │     storagepool/media/movies/       - Movies (2TB quota)           │
+# │     storagepool/media/tv/           - TV Shows (2TB quota)         │
+# │     storagepool/media/downloads/    - Temp downloads (500GB)       │
+# │     storagepool/media/ebooks/       - Ebooks (100GB quota)         │
+# │     storagepool/media/audiobooks/   - Audiobooks (1TB quota)       │
+# │                                                                     │
+# │   IMMICH (2TB total):                                              │
+# │     storagepool/immich/photos/      - Photo library (2TB quota)    │
+# │     storagepool/immich/upload/      - Temp uploads (50GB)          │
+# │                                                                     │
+# │   CLOUD & BACKUP (2.5TB total):                                    │
+# │     storagepool/nextcloud/          - Nextcloud files (1TB quota)  │
+# │     storagepool/timemachine/        - Mac backups (1.5TB quota)    │
+# │                                                                     │
+# │   SERVICES (~150GB):                                               │
+# │     storagepool/services/           - Service configs              │
+# │                                                                     │
+# │   UNALLOCATED: ~7.75TB for future expansion                        │
 # └─────────────────────────────────────────────────────────────────────┘
 #
 # ============================================================================
@@ -253,9 +269,9 @@ in
       echo "--- Creating Immich datasets ---"
       create_dataset "$POOL/immich" -o mountpoint=none -o compression=lz4
       
-      # Photo library (1TB quota, 1M recordsize for large files)
+      # Photo library (2TB quota, 1M recordsize for large files)
       create_dataset "$POOL/immich/photos" -o mountpoint=legacy
-      set_property "$POOL/immich/photos" "quota" "1T"
+      set_property "$POOL/immich/photos" "quota" "2T"
       set_property "$POOL/immich/photos" "recordsize" "1M"
       set_property "$POOL/immich/photos" "atime" "off"
       
@@ -276,26 +292,36 @@ in
       echo "--- Creating Media datasets ---"
       create_dataset "$POOL/media" -o mountpoint=/data/media -o compression=lz4 -o atime=off
       
-      # Movies (6TB quota, 1M recordsize for large files)
+      # Movies (2TB quota, 1M recordsize for large files)
       create_dataset "$POOL/media/movies"
-      set_property "$POOL/media/movies" "quota" "6T"
+      set_property "$POOL/media/movies" "quota" "2T"
       set_property "$POOL/media/movies" "recordsize" "1M"
       
-      # TV Shows (6TB quota, 1M recordsize for large files)
+      # TV Shows (2TB quota, 1M recordsize for large files)
       create_dataset "$POOL/media/tv"
-      set_property "$POOL/media/tv" "quota" "6T"
+      set_property "$POOL/media/tv" "quota" "2T"
       set_property "$POOL/media/tv" "recordsize" "1M"
       
-      # Downloads
+      # Downloads (500GB total)
       create_dataset "$POOL/media/downloads"
-      set_property "$POOL/media/downloads" "quota" "2T"
+      set_property "$POOL/media/downloads" "quota" "500G"
       
       create_dataset "$POOL/media/downloads/complete"
-      set_property "$POOL/media/downloads/complete" "quota" "1T"
+      set_property "$POOL/media/downloads/complete" "quota" "400G"
       
       create_dataset "$POOL/media/downloads/incomplete"
-      set_property "$POOL/media/downloads/incomplete" "quota" "500G"
+      set_property "$POOL/media/downloads/incomplete" "quota" "200G"
       set_property "$POOL/media/downloads/incomplete" "com.sun:auto-snapshot" "false"
+      
+      # Ebooks (100GB quota - text files are tiny)
+      create_dataset "$POOL/media/ebooks"
+      set_property "$POOL/media/ebooks" "quota" "100G"
+      set_property "$POOL/media/ebooks" "recordsize" "128K"
+      
+      # Audiobooks (1TB quota - ~1000-2000 audiobooks)
+      create_dataset "$POOL/media/audiobooks"
+      set_property "$POOL/media/audiobooks" "quota" "1T"
+      set_property "$POOL/media/audiobooks" "recordsize" "1M"
       
       # ===== SET MEDIA DIRECTORY PERMISSIONS =====
       # Allow media group (radarr, sonarr, bazarr, deluge, jellyfin) to write
@@ -304,7 +330,29 @@ in
       chmod -R 775 /data/media
       
       # Ensure new files/dirs inherit group ownership
-      chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads /data/media/downloads/complete /data/media/downloads/incomplete
+      chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads /data/media/downloads/complete /data/media/downloads/incomplete /data/media/ebooks /data/media/audiobooks
+      
+      # ===== NEXTCLOUD DATASET =====
+      echo "--- Creating Nextcloud dataset ---"
+      create_dataset "$POOL/nextcloud" -o mountpoint=/data/nextcloud -o compression=lz4 -o atime=off
+      set_property "$POOL/nextcloud" "quota" "1T"
+      set_property "$POOL/nextcloud" "recordsize" "128K"
+      
+      # Set Nextcloud directory permissions (will be owned by nextcloud user)
+      chown -R root:root /data/nextcloud
+      chmod -R 750 /data/nextcloud
+      
+      # ===== TIME MACHINE DATASET =====
+      echo "--- Creating Time Machine dataset ---"
+      create_dataset "$POOL/timemachine" -o mountpoint=/data/timemachine -o compression=lz4 -o atime=off
+      set_property "$POOL/timemachine" "quota" "1536G"  # 1.5TB (3x 512GB Mac drive)
+      set_property "$POOL/timemachine" "recordsize" "1M"
+      # Disable snapshots for Time Machine - it manages its own versioning
+      set_property "$POOL/timemachine" "com.sun:auto-snapshot" "false"
+      
+      # Set Time Machine directory permissions
+      chown -R root:root /data/timemachine
+      chmod -R 770 /data/timemachine
       
       # ===== SERVICE CONFIG DATASETS =====
       echo "--- Creating Service datasets ---"

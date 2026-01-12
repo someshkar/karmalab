@@ -43,6 +43,7 @@
     ./modules/services/immich.nix   # Immich photo management (Docker)
     ./modules/services/uptime-kuma.nix # Service monitoring
     ./modules/services/flaresolverr.nix # Cloudflare bypass for Prowlarr
+    ./modules/services/timemachine.nix  # Time Machine backup server (Samba)
   ];
 
   # ============================================================================

@@ -16,6 +16,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
 | **Immich** | 2283 | Working | Google Photos alternative |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
+| **Time Machine** | 445 | Ready | macOS backup server (needs smbpasswd setup) |
 
 ## Hardware
 
@@ -99,33 +100,40 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 │  /nix                        Nix store                                      │
 │  /var/lib/immich/postgres/   Immich database - UID 999:999                  │
 │  /var/lib/immich/model-cache/ML models - UID 999:999                        │
+│  /var/lib/nextcloud/         Nextcloud database/config (future)             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                  USB HDD ZFS Pool (20TB) - storagepool                      │
+│              USB HDD ZFS Pool (20TB) - storagepool                          │
+│              Total Allocated: ~10.25TB | Unallocated: ~7.75TB               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  storagepool/data                    /data (root mount)                     │
-│  │                                                                          │
-│  ├── storagepool/media               /data/media (root:media, 775)          │
-│  │   ├── movies                      /data/media/movies (6TB quota)         │
-│  │   ├── tv                          /data/media/tv (6TB quota)             │
-│  │   └── downloads                   /data/media/downloads                  │
-│  │       ├── complete                (1TB quota)                            │
-│  │       └── incomplete              (500GB, no snapshots)                  │
-│  │                                                                          │
-│  ├── storagepool/immich              Photo storage (999:999)                │
-│  │   ├── photos                      /data/immich/photos (1TB quota)        │
-│  │   └── upload                      /data/immich/upload (50GB)             │
-│  │                                                                          │
-│  └── storagepool/services            Service configurations                 │
-│      ├── jellyfin/config             /var/lib/jellyfin (10GB)               │
-│      ├── jellyfin/cache              /var/cache/jellyfin (100GB)            │
-│      ├── deluge/config               /var/lib/deluge (5GB)                  │
-│      ├── radarr                      /var/lib/radarr (5GB)                  │
-│      ├── sonarr                      /var/lib/sonarr (5GB)                  │
-│      └── bazarr                      /var/lib/bazarr (5GB)                  │
+│  MEDIA (5.6TB total):                                                       │
+│  ├── storagepool/media/movies       /data/media/movies (2TB quota)          │
+│  ├── storagepool/media/tv           /data/media/tv (2TB quota)              │
+│  ├── storagepool/media/downloads    /data/media/downloads (500GB)           │
+│  │   ├── complete                   (400GB)                                 │
+│  │   └── incomplete                 (200GB, no snapshots)                   │
+│  ├── storagepool/media/ebooks       /data/media/ebooks (100GB)              │
+│  └── storagepool/media/audiobooks   /data/media/audiobooks (1TB)            │
+│                                                                             │
+│  IMMICH (2TB total):                                                        │
+│  ├── storagepool/immich/photos      /data/immich/photos (2TB quota)         │
+│  └── storagepool/immich/upload      /data/immich/upload (50GB)              │
+│                                                                             │
+│  CLOUD & BACKUP (2.5TB total):                                              │
+│  ├── storagepool/nextcloud          /data/nextcloud (1TB quota)             │
+│  └── storagepool/timemachine        /data/timemachine (1.5TB quota)         │
+│                                                                             │
+│  SERVICES (~150GB):                                                         │
+│  └── storagepool/services           Service configurations                  │
+│      ├── jellyfin/config            /var/lib/jellyfin (10GB)                │
+│      ├── jellyfin/cache             /var/cache/jellyfin (100GB)             │
+│      ├── deluge/config              /var/lib/deluge (5GB)                   │
+│      ├── radarr                     /var/lib/radarr (5GB)                   │
+│      ├── sonarr                     /var/lib/sonarr (5GB)                   │
+│      └── bazarr                     /var/lib/bazarr (5GB)                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -170,6 +178,7 @@ karmalab/
 │       ├── deluge.nix            # Native Deluge in VPN namespace
 │       ├── flaresolverr.nix      # Cloudflare bypass (Docker)
 │       ├── immich.nix            # Immich Docker Compose service
+│       ├── timemachine.nix       # macOS Time Machine backup server
 │       └── uptime-kuma.nix       # Service monitoring
 ├── docker/
 │   └── immich/
@@ -220,10 +229,11 @@ karmalab/
 - [ ] Audiobookshelf (audiobook streaming)
 - [ ] Calibre-Web (ebook library)
 
-### Phase 5: Productivity - PLANNED
+### Phase 5: Productivity & Backup - PLANNED
 
 - [ ] Vaultwarden (password manager)
-- [ ] Nextcloud (file sync) - maybe
+- [ ] Nextcloud (file sync - 1TB allocated)
+- [x] **Time Machine** (macOS network backup - 1.5TB allocated)
 
 ### Phase 6: Hardening & Backups - PLANNED
 

@@ -547,3 +547,115 @@ sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 | `/var/lib/immich/model-cache/` | ML models | 999:999 |
 | `/data/media/` | Media files | root:media 775 |
 | `/data/immich/` | Photos | 999:999 755 |
+| `/data/timemachine/` | Time Machine backups | root:root 770 |
+| `/data/nextcloud/` | Nextcloud files (future) | root:root 750 |
+
+## Part 9: Time Machine Backup Server Setup
+
+The NixOS configuration includes a Samba-based Time Machine server with Apple's `vfs_fruit` extensions for native macOS support.
+
+### 9.1 Create Samba User (One-Time)
+
+After deploying the NixOS configuration, create a Samba user:
+
+```bash
+# Create Samba password for your user
+sudo smbpasswd -a somesh
+# Enter a password (can be different from your login password)
+```
+
+### 9.2 Verify Samba Service
+
+```bash
+# Check Samba status
+sudo systemctl status samba-smbd
+
+# Check Time Machine share is advertised
+avahi-browse -at | grep -i time
+# Should show: _adisk._tcp
+```
+
+### 9.3 Connect from macOS
+
+1. **Open System Settings** → **General** → **Time Machine**
+2. Click **Add Backup Disk...** (or **Select Backup Disk...** on older macOS)
+3. You should see **"karmalab Time Machine"** in the list (auto-discovered via Bonjour)
+4. Select it and click **Use Disk**
+5. Enter credentials:
+   - Username: `somesh`
+   - Password: (the password you set with `smbpasswd`)
+6. Click **Connect**
+
+### 9.4 First Backup
+
+The first backup will take a long time depending on:
+- Size of your Mac's data
+- Network speed (WiFi vs Ethernet)
+
+For a 512GB Mac over WiFi, expect 12-24 hours for the initial backup.
+
+### 9.5 Verify Backup is Working
+
+On the NUC:
+```bash
+# Check Time Machine directory
+ls -la /data/timemachine/
+
+# You should see a sparse bundle file like:
+# YourMacName.sparsebundle/
+
+# Check ZFS usage
+zfs list storagepool/timemachine
+```
+
+On macOS:
+- System Settings → Time Machine should show "Last backup: [timestamp]"
+- The backup disk should show available space
+
+### 9.6 Time Machine Tips
+
+1. **Wired is better**: First backup over Ethernet is much faster than WiFi
+2. **Don't disconnect during backup**: Let backups complete naturally
+3. **Quota is enforced**: The 1.5TB quota means Time Machine will auto-prune old backups when full
+4. **Power Nap**: Enable Power Nap on your Mac for backups while sleeping (System Settings → Battery → Options)
+
+### 9.7 Troubleshooting Time Machine
+
+**Share not appearing on Mac:**
+```bash
+# Check Avahi is running
+sudo systemctl status avahi-daemon
+
+# Check Samba is running
+sudo systemctl status samba-smbd
+
+# Check firewall
+sudo iptables -L -n | grep 445
+```
+
+**"The network backup disk could not be accessed":**
+```bash
+# Check Samba logs
+sudo tail -f /var/log/samba/log.smbd
+
+# Verify Samba user exists
+sudo pdbedit -L | grep somesh
+```
+
+**Backup stuck or failing:**
+```bash
+# Check disk space
+zfs list storagepool/timemachine
+
+# Check for sparse bundle lock files
+ls -la /data/timemachine/*.sparsebundle/
+
+# If stuck, you may need to remove lock files (only when not backing up!)
+# rm /data/timemachine/*.sparsebundle/token
+```
+
+**Reset Time Machine on Mac (last resort):**
+1. System Settings → Time Machine → Remove backup disk
+2. Delete the sparse bundle on the server: `sudo rm -rf /data/timemachine/*.sparsebundle`
+3. Re-add the backup disk in Time Machine settings
+
