@@ -28,16 +28,26 @@
 #
 # Access:
 # - Local: http://192.168.0.200:8084
-# - No external access (local use only for downloading)
+# - External: https://shelfmark.somesh.dev (via Cloudflare Tunnel)
+#
+# Security:
+# - ⚠️  IMPORTANT: Enable authentication in Shelfmark settings after deployment!
+# - Settings → Authentication → Enable login requirement
+# - Create admin account (username: somesh) with a STRONG password
+# - Until auth is enabled, anyone with the URL can access Shelfmark
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:8084
-# 2. Configure download paths in Settings:
+# 1. Access http://192.168.0.200:8084 or https://shelfmark.somesh.dev
+# 2. **PRIORITY: Enable Authentication (Settings → Authentication)**
+#    - Enable "Require Authentication"
+#    - Create admin account: username "somesh", STRONG password
+#    - Save and test login
+# 3. Configure download paths in Settings:
 #    - Ebooks: /books/ebooks/calibre-library
 #    - Audiobooks: /books/audiobooks
-# 3. Optional: Configure metadata providers (Hardcover API key)
-# 4. Optional: Add IRC/Prowlarr sources
-# 5. Start searching and downloading!
+# 4. Optional: Configure metadata providers (Hardcover API key)
+# 5. Optional: Add IRC/Prowlarr sources
+# 6. Start searching and downloading!
 #
 # File Processing:
 # - Customizable download paths and file renaming

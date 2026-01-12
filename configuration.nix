@@ -35,8 +35,8 @@
 # - Tailscale: Mesh VPN for secure remote access (exit node enabled)
 # - Cloudflare Tunnel: External access without port forwarding
 #   - git.somesh.dev, immich.somesh.dev, jellyfin.somesh.dev
-#   - request.somesh.dev, sync.somesh.dev, vault.somesh.dev
-#   - audiobooks.somesh.dev, books.somesh.dev
+#   - jellyseer.somesh.dev, sync.somesh.dev, vault.somesh.dev
+#   - abs.somesh.dev, books.somesh.dev, shelfmark.somesh.dev
 #
 # Key Design Principles:
 # - Graceful degradation: System boots even if 20TB USB HDD is disconnected

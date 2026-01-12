@@ -16,8 +16,8 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
 | **aria2** | 6800/6880 | Working | HTTP/FTP download manager with AriaNg web UI |
 | **Calibre-Web** | 8083 | New | Ebook library web interface (books.somesh.dev) |
-| **Shelfmark** | 8084 | New | Book & audiobook downloader (local only) |
-| **Audiobookshelf** | 13378 | Working | Audiobook server (audiobooks.somesh.dev) |
+| **Shelfmark** | 8084 | New | Book & audiobook downloader (shelfmark.somesh.dev) ⚠️ Enable auth! |
+| **Audiobookshelf** | 13378 | Working | Audiobook server (abs.somesh.dev) |
 | **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
@@ -72,11 +72,12 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 External Access (Cloudflare Tunnel):
   - jellyfin.somesh.dev → Jellyfin
   - immich.somesh.dev   → Immich
-  - request.somesh.dev  → Jellyseerr
+  - jellyseer.somesh.dev → Jellyseerr
   - git.somesh.dev      → Forgejo
   - vault.somesh.dev    → Vaultwarden
-  - audiobooks.somesh.dev → Audiobookshelf
+  - abs.somesh.dev      → Audiobookshelf
   - books.somesh.dev    → Calibre-Web
+  - shelfmark.somesh.dev → Shelfmark (⚠️ enable auth!)
   - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 

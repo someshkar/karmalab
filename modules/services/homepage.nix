@@ -379,7 +379,7 @@ in
             "Jellyseerr (External)" = [
               {
                 icon = "jellyseerr.svg";
-                href = "https://request.somesh.dev";
+                href = "https://jellyseer.somesh.dev";
               }
             ];
           }
@@ -395,7 +395,7 @@ in
             "Audiobookshelf (External)" = [
               {
                 icon = "audiobookshelf.svg";
-                href = "https://audiobooks.somesh.dev";
+                href = "https://abs.somesh.dev";
               }
             ];
           }
@@ -404,6 +404,14 @@ in
               {
                 icon = "calibre-web.svg";
                 href = "https://books.somesh.dev";
+              }
+            ];
+          }
+          {
+            "Shelfmark (External)" = [
+              {
+                icon = "calibre.svg";
+                href = "https://shelfmark.somesh.dev";
               }
             ];
           }
