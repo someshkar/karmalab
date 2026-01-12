@@ -53,6 +53,9 @@ in
     serviceConfig = {
       Type = "simple";
       
+      # Run as root to read /etc/nixos/secrets/
+      User = "root";
+      
       # Read token from file and run tunnel
       # The token contains the tunnel ID and credentials
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.cloudflared}/bin/cloudflared tunnel run --token $(cat ${tunnelTokenFile})'";
@@ -60,15 +63,10 @@ in
       Restart = "on-failure";
       RestartSec = "5s";
       
-      # Security hardening
-      DynamicUser = true;
+      # Security hardening (compatible with running as root)
       NoNewPrivileges = true;
-      ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;
-      
-      # Allow reading the token file
-      SupplementaryGroups = [ ];
     };
   };
 
