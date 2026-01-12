@@ -6,7 +6,7 @@
 # Cloudflare Tunnel provides secure external access to homelab services
 # without exposing ports or requiring a static IP.
 #
-# Exposed Services:
+# Exposed Services (configured in Cloudflare Zero Trust dashboard):
 # - git.somesh.dev      → Forgejo (port 3030)
 # - immich.somesh.dev   → Immich (port 2283)
 # - jellyfin.somesh.dev → Jellyfin (port 8096)
@@ -15,11 +15,14 @@
 #
 # Setup:
 # 1. Create tunnel in Cloudflare Zero Trust dashboard
-# 2. Add public hostnames for each service
+# 2. Add public hostnames for each service in the dashboard
 # 3. Copy tunnel token to /etc/nixos/secrets/cloudflared-tunnel-token
 #
 # The tunnel token is from the "Install connector" step in Cloudflare dashboard.
 # It looks like: eyJhIjoiYWM2NzY3ODU3YjQ0Mjg0MTVkODgyMTgx...
+#
+# This uses token-based authentication (not credentials file), which means
+# all routing/ingress rules are managed in the Cloudflare dashboard, not here.
 #
 # ============================================================================
 
@@ -31,30 +34,41 @@ let
 in
 {
   # ============================================================================
-  # CLOUDFLARED SERVICE
+  # CLOUDFLARED TUNNEL SERVICE (Token-based)
   # ============================================================================
+  #
+  # We use a custom systemd service instead of services.cloudflared.tunnels
+  # because the NixOS module expects a credentials JSON file, but we have
+  # a tunnel token from the Cloudflare dashboard.
+  #
 
-  services.cloudflared = {
-    enable = true;
+  systemd.services.cloudflared-tunnel = {
+    description = "Cloudflare Tunnel (token-based)";
+    documentation = [ "https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" ];
     
-    # Use tunnel token for authentication
-    # The token contains all configuration including ingress rules
-    # that were set up in the Cloudflare dashboard
-    tunnels = {
-      "karmalab" = {
-        credentialsFile = tunnelTokenFile;
-        default = "http_status:404";
-        
-        # Ingress rules - these should match what's in Cloudflare dashboard
-        # The dashboard config takes precedence, but we define them here for documentation
-        ingress = {
-          "git.somesh.dev" = "http://localhost:3030";
-          "immich.somesh.dev" = "http://localhost:2283";
-          "jellyfin.somesh.dev" = "http://localhost:8096";
-          "request.somesh.dev" = "http://localhost:5055";
-          # Note: sync.somesh.dev (TCP) is configured in dashboard only
-        };
-      };
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    
+    serviceConfig = {
+      Type = "simple";
+      
+      # Read token from file and run tunnel
+      # The token contains the tunnel ID and credentials
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.cloudflared}/bin/cloudflared tunnel run --token $(cat ${tunnelTokenFile})'";
+      
+      Restart = "on-failure";
+      RestartSec = "5s";
+      
+      # Security hardening
+      DynamicUser = true;
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+      
+      # Allow reading the token file
+      SupplementaryGroups = [ ];
     };
   };
 
