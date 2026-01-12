@@ -55,7 +55,9 @@ in
     # Environment configuration
     config = {
       # Server settings
-      DOMAIN = "https://${domain}";
+      # TEMPORARY: Using local HTTP URL for initial setup
+      # After Cloudflare Tunnel is configured, change back to: "https://${domain}"
+      DOMAIN = "http://192.168.0.200:${toString httpPort}";
       ROCKET_ADDRESS = "0.0.0.0";
       ROCKET_PORT = httpPort;
       
