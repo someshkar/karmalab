@@ -17,6 +17,8 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Immich** | 2283 | Working | Google Photos alternative |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Ready | macOS backup server (needs smbpasswd setup) |
+| **Syncthing** | 8384 | Ready | File sync for Obsidian vault (needs GUI setup) |
+| **Forgejo** | 3030 | Ready | Self-hosted Git server (needs initial setup) |
 
 ## Hardware
 
@@ -177,7 +179,9 @@ karmalab/
 │   └── services/
 │       ├── deluge.nix            # Native Deluge in VPN namespace
 │       ├── flaresolverr.nix      # Cloudflare bypass (Docker)
+│       ├── forgejo.nix           # Self-hosted Git server
 │       ├── immich.nix            # Immich Docker Compose service
+│       ├── syncthing.nix         # File synchronization
 │       ├── timemachine.nix       # macOS Time Machine backup server
 │       └── uptime-kuma.nix       # Service monitoring
 ├── docker/
@@ -229,11 +233,13 @@ karmalab/
 - [ ] Audiobookshelf (audiobook streaming)
 - [ ] Calibre-Web (ebook library)
 
-### Phase 5: Productivity & Backup - PLANNED
+### Phase 5: Productivity & Backup - IN PROGRESS
 
 - [ ] Vaultwarden (password manager)
 - [ ] Nextcloud (file sync - 1TB allocated)
 - [x] **Time Machine** (macOS network backup - 1.5TB allocated)
+- [x] **Syncthing** (file sync for Obsidian vault)
+- [x] **Forgejo** (self-hosted Git server)
 
 ### Phase 6: Hardening & Backups - PLANNED
 
@@ -327,6 +333,9 @@ See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
 | Deluge | http://192.168.0.171:8112 |
 | Immich | http://192.168.0.171:2283 |
 | Uptime Kuma | http://192.168.0.171:3001 |
+| Syncthing | http://192.168.0.171:8384 |
+| Forgejo | http://192.168.0.171:3030 |
+| Forgejo SSH | ssh://git@192.168.0.171:2222 |
 
 ## License
 

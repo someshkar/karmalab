@@ -659,3 +659,242 @@ ls -la /data/timemachine/*.sparsebundle/
 2. Delete the sparse bundle on the server: `sudo rm -rf /data/timemachine/*.sparsebundle`
 3. Re-add the backup disk in Time Machine settings
 
+## Part 10: Syncthing File Synchronization Setup
+
+Syncthing provides decentralized file synchronization, perfect for syncing your Obsidian vault across devices.
+
+### 10.1 Access Syncthing Web UI
+
+After deploying the NixOS configuration:
+
+1. Open **http://192.168.0.171:8384** in your browser
+2. You'll see a warning about no GUI authentication - we'll fix that next
+
+### 10.2 Set Up GUI Authentication (Important!)
+
+1. Click **Actions** (top right) → **Settings**
+2. Go to the **GUI** tab
+3. Set **GUI Authentication User**: `somesh` (or your preferred username)
+4. Set **GUI Authentication Password**: (choose a strong password)
+5. Click **Save**
+
+### 10.3 Note Your Device ID
+
+1. Click **Actions** → **Show ID**
+2. Copy the Device ID (a long string like `XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX`)
+3. You'll need this to pair other devices
+
+### 10.4 Set Up MacBook (Syncthing Desktop)
+
+1. **Install Syncthing** on your Mac:
+   ```bash
+   brew install syncthing
+   brew services start syncthing
+   ```
+
+2. Open **http://localhost:8384** on your Mac
+
+3. **Add Karmalab as Remote Device:**
+   - Click **Add Remote Device**
+   - Enter the Device ID from step 10.3
+   - Name: `karmalab`
+   - Click **Save**
+
+4. **On Karmalab**, accept the incoming device request
+
+5. **Create Obsidian Shared Folder (on Mac):**
+   - Click **Add Folder**
+   - Folder Label: `Obsidian`
+   - Folder Path: `/Users/yourname/path/to/obsidian/vault`
+   - Go to **Sharing** tab → Check `karmalab`
+   - Click **Save**
+
+6. **On Karmalab**, accept the folder share:
+   - Set path to `/var/lib/syncthing/sync/Obsidian`
+   - Click **Save**
+
+### 10.5 Set Up iPhone (Sushitrain/Synctrain)
+
+1. **Install Sushitrain** via TestFlight:
+   - Open: https://testflight.apple.com/join/2f54I4CM
+   - Install the app
+
+2. **Open Sushitrain** and complete initial setup
+
+3. **Add Karmalab as Remote Device:**
+   - Go to **Devices** → **Add Device**
+   - Enter the Karmalab Device ID
+   - Name: `karmalab`
+
+4. **On Karmalab**, accept the device request
+
+5. **Share the Obsidian folder with iPhone:**
+   - On Karmalab Syncthing Web UI
+   - Click on the **Obsidian** folder → **Edit**
+   - Go to **Sharing** tab → Check the iPhone device
+   - Click **Save**
+
+6. **On Sushitrain**, accept the folder share
+
+### 10.6 Syncthing Tips
+
+- **First sync takes time**: Initial sync of your Obsidian vault may take a while depending on size
+- **Conflicts**: If the same file is edited on multiple devices simultaneously, Syncthing creates a `.sync-conflict` file
+- **Selective sync**: Sushitrain supports on-demand file access - you don't need to download everything to your iPhone
+- **File versioning**: Syncthing keeps old versions of files by default (staggered versioning)
+
+### 10.7 Verify Sync is Working
+
+```bash
+# On Karmalab, check Syncthing status
+systemctl status syncthing
+
+# Check sync folder contents
+ls -la /var/lib/syncthing/sync/Obsidian/
+
+# View Syncthing logs
+journalctl -u syncthing -f
+```
+
+## Part 11: Forgejo Git Server Setup
+
+Forgejo is a lightweight, self-hosted Git forge for hosting your personal repositories.
+
+### 11.1 Access Forgejo Web UI
+
+After deploying the NixOS configuration:
+
+1. Open **http://192.168.0.171:3030** in your browser
+2. You'll see the initial setup wizard
+
+### 11.2 Complete Initial Setup
+
+1. **Database Settings** (pre-configured, just verify):
+   - Database Type: `SQLite3`
+
+2. **General Settings:**
+   - Site Title: `Karmalab Git` (or your preference)
+   - Repository Root Path: (leave default)
+   - LFS Root Path: (leave default)
+
+3. **Optional Settings** → **Administrator Account:**
+   - Administrator Username: `somesh`
+   - Password: (choose a strong password)
+   - Email: your email
+
+4. Click **Install Forgejo**
+
+### 11.3 Add Your SSH Key
+
+1. Log in with your admin account
+2. Click your avatar (top right) → **Settings**
+3. Go to **SSH / GPG Keys**
+4. Click **Add Key**
+5. Paste your public SSH key:
+   ```bash
+   # On your Mac, copy your public key
+   cat ~/.ssh/id_ed25519.pub
+   # Or if using RSA:
+   cat ~/.ssh/id_rsa.pub
+   ```
+6. Click **Add Key**
+
+### 11.4 Create Your First Repository
+
+1. Click **+** (top right) → **New Repository**
+2. Fill in:
+   - Repository Name: `my-project`
+   - Visibility: Private (or Public)
+   - Initialize with README (optional)
+3. Click **Create Repository**
+
+### 11.5 Clone/Push Repositories
+
+**SSH (recommended):**
+```bash
+# Clone
+git clone ssh://git@192.168.0.171:2222/somesh/my-project.git
+
+# Or add remote to existing repo
+git remote add karmalab ssh://git@192.168.0.171:2222/somesh/my-project.git
+git push karmalab main
+```
+
+**HTTPS:**
+```bash
+# Clone
+git clone http://192.168.0.171:3030/somesh/my-project.git
+```
+
+### 11.6 SSH Config for Easier Access
+
+Add to your `~/.ssh/config`:
+
+```
+Host karmalab-git
+    HostName 192.168.0.171
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Then you can clone with:
+```bash
+git clone karmalab-git:somesh/my-project.git
+```
+
+### 11.7 Disable Public Registration (Security)
+
+After creating your admin account:
+
+1. Log in as admin
+2. Go to **Site Administration** (wrench icon)
+3. Click **Configuration** → **Service Configuration**
+4. Scroll to **Disable Registration** and enable it
+5. Click **Save**
+
+Or edit via NixOS (recommended):
+```nix
+# In modules/services/forgejo.nix, change:
+DISABLE_REGISTRATION = true;
+```
+Then rebuild: `sudo nixos-rebuild switch --flake /etc/nixos#karmalab`
+
+### 11.8 Verify Forgejo is Working
+
+```bash
+# Check service status
+systemctl status forgejo
+
+# Check SSH access
+ssh -p 2222 git@192.168.0.171
+# Should show: "Hi somesh! You've successfully authenticated..."
+
+# View logs
+journalctl -u forgejo -f
+```
+
+### 11.9 Future: Cloudflare Tunnel Access
+
+When you set up Cloudflare Tunnel (Phase 3), you can expose Forgejo at `https://git.somesh.xyz`:
+
+- Web UI works seamlessly over HTTPS
+- For SSH over Cloudflare, you'll need `cloudflared access` tunnel or use HTTPS cloning
+
+## File Locations Summary (Updated)
+
+| Path | Purpose | Permissions |
+|------|---------|-------------|
+| `/etc/wireguard/surfshark.conf` | VPN config | root:root 600 |
+| `/var/lib/immich/.env` | Immich secrets | root:root 600 |
+| `/var/lib/immich/docker-compose.yml` | Immich compose | root:root 644 |
+| `/var/lib/immich/postgres/` | Immich DB | 999:999 |
+| `/var/lib/immich/model-cache/` | ML models | 999:999 |
+| `/data/media/` | Media files | root:media 775 |
+| `/data/immich/` | Photos | 999:999 755 |
+| `/data/timemachine/` | Time Machine backups | root:root 770 |
+| `/data/nextcloud/` | Nextcloud files (future) | root:root 750 |
+| `/var/lib/syncthing/` | Syncthing data & config | somesh:users |
+| `/var/lib/syncthing/sync/` | Synced folders (Obsidian, etc.) | somesh:users |
+| `/var/lib/forgejo/` | Forgejo data & repositories | forgejo:forgejo |
+

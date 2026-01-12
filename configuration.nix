@@ -3,13 +3,13 @@
 # NIXOS HOMELAB CONFIGURATION - ASUS NUC MEDIA SERVER
 # ============================================================================
 #
-# This configuration provides a complete media server stack with 18 services:
+# This configuration provides a complete homelab stack with services for:
 #
 # MEDIA STACK:
 # - Jellyfin: Media streaming with Intel Quick Sync hardware transcoding
 # - Radarr/Sonarr/Bazarr/Prowlarr: Media automation (*arr stack)
 # - Jellyseerr: User-friendly media request interface
-# - Readarr/Audiobookshelf/Calibre-Web: Book management (Phase 2)
+# - Readarr/Audiobookshelf/Calibre-Web: Book management (planned)
 #
 # PHOTOS:
 # - Immich: Self-hosted Google Photos alternative (Docker)
@@ -17,10 +17,13 @@
 # INFRASTRUCTURE:
 # - Deluge: Torrent client with VPN isolation (Surfshark WireGuard)
 # - Uptime Kuma: Service monitoring and status pages
+# - Time Machine: macOS backup server (Samba with vfs_fruit)
 #
-# PRODUCTIVITY (Phase 3):
-# - Vaultwarden: Password manager
-# - Nextcloud: File sync and collaboration
+# PRODUCTIVITY:
+# - Syncthing: File synchronization (Obsidian vault sync)
+# - Forgejo: Self-hosted Git server
+# - Vaultwarden: Password manager (planned)
+# - Nextcloud: File sync and collaboration (planned)
 #
 # Key Design Principles:
 # - Graceful degradation: System boots even if 20TB USB HDD is disconnected
@@ -44,6 +47,8 @@
     ./modules/services/uptime-kuma.nix # Service monitoring
     ./modules/services/flaresolverr.nix # Cloudflare bypass for Prowlarr
     ./modules/services/timemachine.nix  # Time Machine backup server (Samba)
+    ./modules/services/syncthing.nix    # File synchronization (Obsidian vault)
+    ./modules/services/forgejo.nix      # Self-hosted Git server
   ];
 
   # ============================================================================
