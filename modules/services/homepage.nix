@@ -120,13 +120,6 @@ in
               description = "Media streaming server";
               href = "http://${serverIP}:8096";
               siteMonitor = "http://${serverIP}:8096";
-              widget = {
-                type = "jellyfin";
-                url = "http://${serverIP}:8096";
-                key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
-                enableBlocks = true;
-                enableNowPlaying = true;
-              };
             };
           }
           {
@@ -135,11 +128,6 @@ in
               description = "Media request manager";
               href = "http://${serverIP}:5055";
               siteMonitor = "http://${serverIP}:5055";
-              widget = {
-                type = "jellyseerr";
-                url = "http://${serverIP}:5055";
-                key = "{{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}";
-              };
             };
           }
         ];
@@ -154,11 +142,6 @@ in
               description = "Movie automation";
               href = "http://${serverIP}:7878";
               siteMonitor = "http://${serverIP}:7878";
-              widget = {
-                type = "radarr";
-                url = "http://${serverIP}:7878";
-                key = "{{HOMEPAGE_VAR_RADARR_API_KEY}}";
-              };
             };
           }
           {
@@ -167,11 +150,6 @@ in
               description = "TV show automation";
               href = "http://${serverIP}:8989";
               siteMonitor = "http://${serverIP}:8989";
-              widget = {
-                type = "sonarr";
-                url = "http://${serverIP}:8989";
-                key = "{{HOMEPAGE_VAR_SONARR_API_KEY}}";
-              };
             };
           }
           {
@@ -180,11 +158,6 @@ in
               description = "Subtitle automation";
               href = "http://${serverIP}:6767";
               siteMonitor = "http://${serverIP}:6767";
-              widget = {
-                type = "bazarr";
-                url = "http://${serverIP}:6767";
-                key = "{{HOMEPAGE_VAR_BAZARR_API_KEY}}";
-              };
             };
           }
           {
@@ -193,11 +166,6 @@ in
               description = "Indexer manager";
               href = "http://${serverIP}:9696";
               siteMonitor = "http://${serverIP}:9696";
-              widget = {
-                type = "prowlarr";
-                url = "http://${serverIP}:9696";
-                key = "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}";
-              };
             };
           }
         ];
@@ -212,11 +180,6 @@ in
               description = "Torrent client (VPN)";
               href = "http://${serverIP}:8112";
               siteMonitor = "http://${serverIP}:8112";
-              widget = {
-                type = "deluge";
-                url = "http://${serverIP}:8112";
-                password = "{{HOMEPAGE_VAR_DELUGE_PASSWORD}}";
-              };
             };
           }
           {
@@ -224,7 +187,7 @@ in
               icon = "ariang.svg";
               description = "HTTP/FTP download manager";
               href = "http://${serverIP}:6880";
-              siteMonitor = "http://${serverIP}:6800/jsonrpc";
+              siteMonitor = "http://${serverIP}:6880";
             };
           }
         ];
@@ -239,11 +202,6 @@ in
               description = "Photo management";
               href = "http://${serverIP}:2283";
               siteMonitor = "http://${serverIP}:2283";
-              widget = {
-                type = "immich";
-                url = "http://${serverIP}:2283";
-                key = "{{HOMEPAGE_VAR_IMMICH_API_KEY}}";
-              };
             };
           }
         ];
@@ -258,11 +216,6 @@ in
               description = "Service monitoring";
               href = "http://${serverIP}:3001";
               siteMonitor = "http://${serverIP}:3001";
-              widget = {
-                type = "uptimekuma";
-                url = "http://${serverIP}:3001";
-                slug = "karmalab";
-              };
             };
           }
           {
@@ -420,12 +373,6 @@ in
         };
       }
       {
-        resources = {
-          label = "Storage Pool";
-          disk = "/storagepool";
-        };
-      }
-      {
         datetime = {
           text_size = "xl";
           format = {
@@ -436,25 +383,5 @@ in
         };
       }
     ];
-  };
-
-  # ============================================================================
-  # ENVIRONMENT FILE FOR API KEYS
-  # ============================================================================
-
-  # Homepage reads API keys from environment variables
-  # Create /etc/nixos/secrets/homepage.env with:
-  # HOMEPAGE_VAR_JELLYFIN_API_KEY=your-key
-  # HOMEPAGE_VAR_JELLYSEERR_API_KEY=your-key
-  # HOMEPAGE_VAR_RADARR_API_KEY=your-key
-  # HOMEPAGE_VAR_SONARR_API_KEY=your-key
-  # HOMEPAGE_VAR_BAZARR_API_KEY=your-key
-  # HOMEPAGE_VAR_PROWLARR_API_KEY=your-key
-  # HOMEPAGE_VAR_DELUGE_PASSWORD=your-password
-  # HOMEPAGE_VAR_IMMICH_API_KEY=your-key
-
-  systemd.services.homepage-dashboard.serviceConfig = {
-    EnvironmentFile = lib.mkIf (builtins.pathExists "/etc/nixos/secrets/homepage.env") 
-      "/etc/nixos/secrets/homepage.env";
   };
 }
