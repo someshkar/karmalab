@@ -8,14 +8,21 @@
 #
 # Use Case:
 # - Obsidian vault sync across MacBook, iPhone (Sushitrain), and server
+# - Calibre library sync between server and MacBook (for Kindle workflow)
 # - Server acts as always-on sync node and backup
 #
 # Architecture:
 #   MacBook (Syncthing) <---> Karmalab (Syncthing) <---> iPhone (Sushitrain)
+#   
+#   Synced Folders:
+#   - Obsidian vault: /var/lib/syncthing/sync/Obsidian
+#   - Calibre library: /data/media/ebooks/calibre-library
 #
 # Storage:
 # - Config/database: /var/lib/syncthing (managed by NixOS module)
-# - Synced folders: /var/lib/syncthing/sync/
+# - Synced folders:
+#   * Obsidian: /var/lib/syncthing/sync/Obsidian
+#   * Calibre: /data/media/ebooks/calibre-library (bidirectional)
 #
 # Access:
 # - Web UI: http://192.168.0.200:8384 (requires authentication)
@@ -28,7 +35,11 @@
 # 2. Set up GUI username/password in Settings -> GUI
 # 3. Note the Device ID for pairing
 # 4. Add remote devices (MacBook, iPhone)
-# 5. Create shared folders (e.g., "Obsidian") pointing to /var/lib/syncthing/sync/Obsidian
+# 5. Create shared folders:
+#    a) Obsidian: /var/lib/syncthing/sync/Obsidian (bidirectional)
+#    b) Calibre Library: /data/media/ebooks/calibre-library (bidirectional)
+#       - On Mac, point to: /Users/somesh/Calibre Library
+#       - This enables: Server downloads → Mac Calibre app → USB to Kindle
 #
 # Remote device configuration:
 # - For devices connecting via Cloudflare Tunnel, set the server address to:
@@ -51,6 +62,7 @@ let
   
   # Paths - let NixOS module manage dataDir, we just create sync subdirectory
   syncDir = "/var/lib/syncthing/sync";
+  calibreLibrary = "/data/media/ebooks/calibre-library";
 in
 {
   # ============================================================================
@@ -124,6 +136,15 @@ in
   };
   
   # ============================================================================
+  # USER CONFIGURATION
+  # ============================================================================
+  
+  # Add syncthing user to media group for Calibre library access
+  users.users.somesh = {
+    extraGroups = [ "media" ];
+  };
+  
+  # ============================================================================
   # DIRECTORY SETUP
   # ============================================================================
   
@@ -135,6 +156,9 @@ in
     
     # Obsidian vault directory (ready for when you add the folder)
     "d ${syncDir}/Obsidian 0750 somesh users -"
+    
+    # Ensure Calibre library has correct permissions for syncing
+    "d ${calibreLibrary} 0775 somesh media -"
   ];
   
   # ============================================================================

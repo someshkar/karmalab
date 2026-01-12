@@ -12,6 +12,9 @@
 # - jellyfin.somesh.dev → Jellyfin (port 8096)
 # - request.somesh.dev  → Jellyseerr (port 5055)
 # - sync.somesh.dev     → Syncthing protocol (port 22000, TCP)
+# - vault.somesh.dev    → Vaultwarden (port 8222)
+# - audiobooks.somesh.dev → Audiobookshelf (port 13378)
+# - books.somesh.dev    → Calibre-Web (port 8083)
 #
 # Setup:
 # 1. Create tunnel in Cloudflare Zero Trust dashboard

@@ -9,8 +9,11 @@
 # - Jellyfin: Media streaming with Intel Quick Sync hardware transcoding
 # - Radarr/Sonarr/Bazarr/Prowlarr: Media automation (*arr stack)
 # - Jellyseerr: User-friendly media request interface
-# - Audiobookshelf: Audiobook and ebook streaming server
-# - Readarr/Calibre-Web: Book automation (planned)
+#
+# BOOKS:
+# - Calibre-Web: Ebook library web interface
+# - Shelfmark: Unified book & audiobook downloader
+# - Audiobookshelf: Audiobook streaming server
 #
 # PHOTOS:
 # - Immich: Self-hosted Google Photos alternative (Docker)
@@ -24,16 +27,16 @@
 # - Caddy: Reverse proxy for local network access
 #
 # PRODUCTIVITY:
-# - Syncthing: File synchronization (Obsidian vault sync)
+# - Syncthing: File synchronization (Obsidian vault + Calibre library sync)
 # - Forgejo: Self-hosted Git server
 # - Vaultwarden: Self-hosted password manager (Bitwarden-compatible)
-# - Nextcloud: File sync and collaboration (planned)
 #
 # NETWORKING:
 # - Tailscale: Mesh VPN for secure remote access (exit node enabled)
 # - Cloudflare Tunnel: External access without port forwarding
 #   - git.somesh.dev, immich.somesh.dev, jellyfin.somesh.dev
-#   - request.somesh.dev, sync.somesh.dev
+#   - request.somesh.dev, sync.somesh.dev, vault.somesh.dev
+#   - audiobooks.somesh.dev, books.somesh.dev
 #
 # Key Design Principles:
 # - Graceful degradation: System boots even if 20TB USB HDD is disconnected
@@ -57,7 +60,7 @@
     ./modules/services/uptime-kuma.nix # Service monitoring
     ./modules/services/flaresolverr.nix # Cloudflare bypass for Prowlarr
     ./modules/services/timemachine.nix  # Time Machine backup server (Samba)
-    ./modules/services/syncthing.nix    # File synchronization (Obsidian vault)
+    ./modules/services/syncthing.nix    # File synchronization (Obsidian + Calibre)
     ./modules/services/forgejo.nix      # Self-hosted Git server
     ./modules/services/tailscale.nix    # Tailscale VPN (remote access + exit node)
     ./modules/services/caddy.nix        # Reverse proxy for Homepage
@@ -65,7 +68,9 @@
     ./modules/services/aria2.nix        # HTTP/FTP download manager
     ./modules/services/cloudflared.nix  # Cloudflare Tunnel for external access
     ./modules/services/vaultwarden.nix  # Password manager
-    ./modules/services/audiobookshelf.nix  # Audiobook & ebook server
+    ./modules/services/audiobookshelf.nix  # Audiobook server
+    ./modules/services/calibre-web.nix  # Ebook library web interface
+    ./modules/services/shelfmark.nix    # Book & audiobook downloader
   ];
 
   # ============================================================================

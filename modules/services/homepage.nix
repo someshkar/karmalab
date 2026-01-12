@@ -145,9 +145,25 @@ in
       {
         "Books" = [
           {
+            "Calibre-Web" = {
+              icon = "calibre-web.svg";
+              description = "Ebook library web interface";
+              href = "http://${serverIP}:8083";
+              siteMonitor = "http://${serverIP}:8083";
+            };
+          }
+          {
+            "Shelfmark" = {
+              icon = "calibre.svg";
+              description = "Book & audiobook downloader";
+              href = "http://${serverIP}:8084";
+              siteMonitor = "http://${serverIP}:8084";
+            };
+          }
+          {
             "Audiobookshelf" = {
               icon = "audiobookshelf.svg";
-              description = "Audiobook & ebook server";
+              description = "Audiobook server";
               href = "http://${serverIP}:13378";
               siteMonitor = "http://${serverIP}:13378";
             };
@@ -380,6 +396,14 @@ in
               {
                 icon = "audiobookshelf.svg";
                 href = "https://audiobooks.somesh.dev";
+              }
+            ];
+          }
+          {
+            "Calibre-Web (External)" = [
+              {
+                icon = "calibre-web.svg";
+                href = "https://books.somesh.dev";
               }
             ];
           }

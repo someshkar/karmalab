@@ -17,9 +17,10 @@
 #
 # Storage:
 # - Config/database: /var/lib/audiobookshelf (on NVMe SSD)
-# - Audiobooks: /data/media/audiobooks (on ZFS, 1TB quota)
-# - Ebooks: /data/media/ebooks (on ZFS, 100GB quota)
+# - Audiobooks: /data/media/audiobooks (on ZFS, 500GB quota)
 # - Podcasts: /data/media/podcasts (on ZFS)
+# 
+# Note: Ebooks are now managed by Calibre-Web, not Audiobookshelf
 #
 # Access:
 # - Local: http://192.168.0.200:13378
@@ -34,13 +35,11 @@
 # 2. Create admin account
 # 3. Add libraries:
 #    - Audiobooks: /audiobooks (type: Audiobook)
-#    - Ebooks: /ebooks (type: Book)
 #    - Podcasts: /podcasts (type: Podcast)
 # 4. Install mobile app and connect to server
 #
-# Integration with Readarr (future):
-# - Readarr can automate audiobook/ebook downloads
-# - Downloaded files go to /data/media/audiobooks or /data/media/ebooks
+# Integration with Shelfmark:
+# - Shelfmark downloads audiobooks → /data/media/audiobooks
 # - Audiobookshelf auto-scans and imports
 #
 # ============================================================================
@@ -54,7 +53,6 @@ let
   # Paths
   configDir = "/var/lib/audiobookshelf";
   audiobooksDir = "/data/media/audiobooks";
-  ebooksDir = "/data/media/ebooks";
   podcastsDir = "/data/media/podcasts";
 in
 {

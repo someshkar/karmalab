@@ -14,17 +14,19 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Bazarr** | 6767 | Working | Subtitle automation (needs providers configured) |
 | **Jellyseerr** | 5055 | Working | Media request interface |
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
-| **aria2** | 6800/6880 | New | HTTP/FTP download manager with AriaNg web UI |
-| **Audiobookshelf** | 13378 | New | Audiobook & ebook server with iOS/Android apps |
+| **aria2** | 6800/6880 | Working | HTTP/FTP download manager with AriaNg web UI |
+| **Calibre-Web** | 8083 | New | Ebook library web interface (books.somesh.dev) |
+| **Shelfmark** | 8084 | New | Book & audiobook downloader (local only) |
+| **Audiobookshelf** | 13378 | Working | Audiobook server (audiobooks.somesh.dev) |
 | **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
-| **Syncthing** | 8384 | Running | File sync for Obsidian vault (set GUI auth at first access) |
+| **Syncthing** | 8384 | Running | File sync (Obsidian + Calibre library) |
 | **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
-| **Vaultwarden** | 8222 | New | Self-hosted password manager (Bitwarden-compatible) |
-| **Homepage** | 80 | New | Service dashboard with system metrics (via Caddy) |
-| **Tailscale** | - | New | VPN for remote access (exit node enabled) |
-| **Cloudflare Tunnel** | - | New | External access without port forwarding |
+| **Vaultwarden** | 8222 | Working | Self-hosted password manager (Bitwarden-compatible) |
+| **Homepage** | 80 | Working | Service dashboard with system metrics (via Caddy) |
+| **Tailscale** | - | Working | VPN for remote access (exit node enabled) |
+| **Cloudflare Tunnel** | - | Working | External access without port forwarding |
 
 ## Hardware
 
@@ -74,6 +76,7 @@ External Access (Cloudflare Tunnel):
   - git.somesh.dev      → Forgejo
   - vault.somesh.dev    → Vaultwarden
   - audiobooks.somesh.dev → Audiobookshelf
+  - books.somesh.dev    → Calibre-Web
   - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 
