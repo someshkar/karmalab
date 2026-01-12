@@ -43,8 +43,8 @@ let
   httpPort = 3030;
   sshPort = 2222;
   
-  # Domain (for future Cloudflare Tunnel)
-  domain = "192.168.0.200";
+  # Domain for external access via Cloudflare Tunnel
+  domain = "git.somesh.dev";
 in
 {
   # ============================================================================
@@ -68,7 +68,7 @@ in
         HTTP_PORT = httpPort;
         HTTP_ADDR = "0.0.0.0";
         DOMAIN = domain;
-        ROOT_URL = "http://${domain}:${toString httpPort}/";
+        ROOT_URL = "https://${domain}/";
         
         # SSH settings
         START_SSH_SERVER = true;
