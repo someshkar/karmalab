@@ -55,14 +55,12 @@ in
     # Environment configuration
     config = {
       # Server settings
-      # TEMPORARY: Using local HTTP URL for initial setup
-      # After Cloudflare Tunnel is configured, change back to: "https://${domain}"
-      DOMAIN = "http://192.168.0.200:${toString httpPort}";
+      DOMAIN = "https://${domain}";
       ROCKET_ADDRESS = "0.0.0.0";
       ROCKET_PORT = httpPort;
       
-      # Signups - set to false after creating your account!
-      SIGNUPS_ALLOWED = true;
+      # Signups - DISABLED after account creation for security
+      SIGNUPS_ALLOWED = false;
       
       # Invitations - allow inviting users even when signups disabled
       INVITATIONS_ALLOWED = true;
