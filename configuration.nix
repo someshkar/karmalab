@@ -9,7 +9,8 @@
 # - Jellyfin: Media streaming with Intel Quick Sync hardware transcoding
 # - Radarr/Sonarr/Bazarr/Prowlarr: Media automation (*arr stack)
 # - Jellyseerr: User-friendly media request interface
-# - Readarr/Audiobookshelf/Calibre-Web: Book management (planned)
+# - Audiobookshelf: Audiobook and ebook streaming server
+# - Readarr/Calibre-Web: Book automation (planned)
 #
 # PHOTOS:
 # - Immich: Self-hosted Google Photos alternative (Docker)
@@ -25,7 +26,7 @@
 # PRODUCTIVITY:
 # - Syncthing: File synchronization (Obsidian vault sync)
 # - Forgejo: Self-hosted Git server
-# - Vaultwarden: Password manager (planned)
+# - Vaultwarden: Self-hosted password manager (Bitwarden-compatible)
 # - Nextcloud: File sync and collaboration (planned)
 #
 # NETWORKING:
@@ -63,6 +64,8 @@
     ./modules/services/homepage.nix     # Service dashboard with Glances
     ./modules/services/aria2.nix        # HTTP/FTP download manager
     ./modules/services/cloudflared.nix  # Cloudflare Tunnel for external access
+    ./modules/services/vaultwarden.nix  # Password manager
+    ./modules/services/audiobookshelf.nix  # Audiobook & ebook server
   ];
 
   # ============================================================================

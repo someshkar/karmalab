@@ -15,11 +15,13 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Jellyseerr** | 5055 | Working | Media request interface |
 | **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
 | **aria2** | 6800/6880 | New | HTTP/FTP download manager with AriaNg web UI |
+| **Audiobookshelf** | 13378 | New | Audiobook & ebook server with iOS/Android apps |
 | **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
 | **Syncthing** | 8384 | Running | File sync for Obsidian vault (set GUI auth at first access) |
 | **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
+| **Vaultwarden** | 8222 | New | Self-hosted password manager (Bitwarden-compatible) |
 | **Homepage** | 80 | New | Service dashboard with system metrics (via Caddy) |
 | **Tailscale** | - | New | VPN for remote access (exit node enabled) |
 | **Cloudflare Tunnel** | - | New | External access without port forwarding |
@@ -70,6 +72,8 @@ External Access (Cloudflare Tunnel):
   - immich.somesh.dev   → Immich
   - request.somesh.dev  → Jellyseerr
   - git.somesh.dev      → Forgejo
+  - vault.somesh.dev    → Vaultwarden
+  - audiobooks.somesh.dev → Audiobookshelf
   - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 
@@ -193,6 +197,7 @@ karmalab/
 │   ├── wireguard-vpn.nix         # VPN namespace for torrents
 │   └── services/
 │       ├── aria2.nix             # HTTP/FTP download manager
+│       ├── audiobookshelf.nix    # Audiobook & ebook server
 │       ├── caddy.nix             # Reverse proxy (port 80 → Homepage)
 │       ├── cloudflared.nix       # Cloudflare Tunnel for external access
 │       ├── deluge.nix            # Native Deluge in VPN namespace
@@ -203,7 +208,8 @@ karmalab/
 │       ├── syncthing.nix         # File synchronization
 │       ├── tailscale.nix         # Tailscale VPN (remote access)
 │       ├── timemachine.nix       # macOS Time Machine backup server
-│       └── uptime-kuma.nix       # Service monitoring
+│       ├── uptime-kuma.nix       # Service monitoring
+│       └── vaultwarden.nix       # Password manager
 ├── docker/
 │   └── immich/
 │       ├── docker-compose.yml    # Immich container stack
@@ -248,15 +254,15 @@ karmalab/
 - [x] aria2 download manager with AriaNg web UI
 - [x] Caddy reverse proxy (port 80 → Homepage)
 
-### Phase 4: Book Stack - PLANNED
+### Phase 4: Book Stack - IN PROGRESS
 
-- [ ] Readarr (ebook automation)
-- [ ] Audiobookshelf (audiobook streaming)
-- [ ] Calibre-Web (ebook library)
+- [ ] Readarr (ebook/audiobook automation)
+- [x] **Audiobookshelf** (audiobook & ebook streaming) - New
+- [ ] Calibre-Web (ebook library - optional)
 
 ### Phase 5: Productivity & Backup - IN PROGRESS
 
-- [ ] Vaultwarden (password manager)
+- [x] **Vaultwarden** (password manager) - New
 - [ ] Nextcloud (file sync - 1TB allocated)
 - [x] **Time Machine** (macOS network backup - 1.5TB allocated) - Running
 - [x] **Syncthing** (file sync for Obsidian vault) - Running
@@ -360,6 +366,8 @@ See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
 | Syncthing | http://192.168.0.200:8384 |
 | Forgejo | http://192.168.0.200:3030 |
 | Forgejo SSH | ssh://git@192.168.0.200:2222 |
+| Vaultwarden | http://192.168.0.200:8222 |
+| Audiobookshelf | http://192.168.0.200:13378 |
 
 ## License
 

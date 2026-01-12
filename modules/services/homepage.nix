@@ -63,6 +63,10 @@ in
           style = "column";
           icon = "mdi-play-circle";
         };
+        Books = {
+          style = "column";
+          icon = "mdi-book-open-page-variant";
+        };
         "Arr Stack" = {
           style = "column";
           icon = "mdi-download";
@@ -78,6 +82,10 @@ in
         Infrastructure = {
           style = "column";
           icon = "mdi-server";
+        };
+        Security = {
+          style = "column";
+          icon = "mdi-shield-lock";
         };
         System = {
           style = "row";
@@ -128,6 +136,20 @@ in
               description = "Media request manager";
               href = "http://${serverIP}:5055";
               siteMonitor = "http://${serverIP}:5055";
+            };
+          }
+        ];
+      }
+
+      # Books (Audiobooks & Ebooks)
+      {
+        "Books" = [
+          {
+            "Audiobookshelf" = {
+              icon = "audiobookshelf.svg";
+              description = "Audiobook & ebook server";
+              href = "http://${serverIP}:13378";
+              siteMonitor = "http://${serverIP}:13378";
             };
           }
         ];
@@ -244,6 +266,20 @@ in
         ];
       }
 
+      # Security
+      {
+        "Security" = [
+          {
+            "Vaultwarden" = {
+              icon = "vaultwarden.svg";
+              description = "Password manager";
+              href = "http://${serverIP}:8222";
+              siteMonitor = "http://${serverIP}:8222";
+            };
+          }
+        ];
+      }
+
       # System metrics via Glances
       {
         "System" = [
@@ -328,6 +364,22 @@ in
               {
                 icon = "jellyseerr.svg";
                 href = "https://request.somesh.dev";
+              }
+            ];
+          }
+          {
+            "Vaultwarden (External)" = [
+              {
+                icon = "vaultwarden.svg";
+                href = "https://vault.somesh.dev";
+              }
+            ];
+          }
+          {
+            "Audiobookshelf (External)" = [
+              {
+                icon = "audiobookshelf.svg";
+                href = "https://audiobooks.somesh.dev";
               }
             ];
           }
