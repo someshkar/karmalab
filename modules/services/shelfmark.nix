@@ -27,9 +27,9 @@
 # - Audiobook downloads: /data/media/audiobooks (auto-imported by Audiobookshelf)
 #
 # Network:
-# - Runs in Iceland VPN namespace for unrestricted access to book sources
-# - All downloads/searches go through Iceland VPN (bypasses India/Singapore blocks)
-# - WebUI accessible via local network through port forwarding
+# - Runs on host network (not tunneled through VPN)
+# - Book sources (Anna's Archive, Z-Library) accessible from India without VPN
+# - WebUI directly accessible on local network
 #
 # Access:
 # - Local: http://192.168.0.200:8084
@@ -83,32 +83,21 @@ let
 in
 {
   # ============================================================================
-  # DOCKER CONTAINER IN ICELAND VPN NAMESPACE
+  # DOCKER CONTAINER ON HOST NETWORK
   # ============================================================================
   
-  # Custom systemd service to run Docker container in Iceland VPN namespace
-  # This ensures all book source traffic (Anna's Archive, Z-Library, etc.)
-  # goes through Iceland VPN to bypass geo-blocks
-  #
-  # NETWORKING DESIGN:
-  # - Container runs INSIDE vpn-iceland namespace (10.200.2.2)
-  # - Does NOT expose ports to host network (no -p flag)
-  # - Port forwarding handled by separate shelfmark-port-forward service
-  # - This prevents port conflicts between Docker and socat
-  # - WebUI accessible at 192.168.0.200:8084 via socat forwarding
+  # Simple Docker container running on host network
+  # Book sources (Anna's Archive, Z-Library) are accessible from India
+  # without requiring VPN tunneling
   
   systemd.services.docker-shelfmark = {
-    description = "Shelfmark Book Downloader (Iceland VPN Isolated)";
+    description = "Shelfmark Book Downloader";
     
     after = [ 
       "docker.service" 
-      "wireguard-vpn-iceland.service"
       "storage-online.target" 
     ];
-    requires = [ 
-      "docker.service" 
-      "wireguard-vpn-iceland.service" 
-    ];
+    requires = [ "docker.service" ];
     wants = [ "storage-online.target" ];
     wantedBy = [ "multi-user.target" ];
     
@@ -126,27 +115,23 @@ in
       ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
     '';
     
-    # Start: Run container in Iceland namespace
-    # NOTE: Uses --network=host to bind to namespace network directly
-    # Container listens on 0.0.0.0:8084 inside namespace (accessible at 10.200.2.2:8084 from host)
-    # Port forwarding handled by shelfmark-port-forward service (host -> namespace)
+    # Start: Run container on host network
     script = ''
-      ${pkgs.iproute2}/bin/ip netns exec vpn-iceland \
-        ${pkgs.docker}/bin/docker run \
-          --name=shelfmark \
-          --network=host \
-          --rm \
-          -v ${configDir}:/config \
-          -v ${ebooksDir}:/books/ebooks/calibre-library \
-          -v ${audiobooksDir}:/books/audiobooks \
-          -e TZ=Asia/Kolkata \
-          -e PUID=2000 \
-          -e PGID=2000 \
-          -e FLASK_PORT=8084 \
-          -e INGEST_DIR=/books \
-          -e SEARCH_MODE=direct \
-          -e LOG_LEVEL=INFO \
-          ${image}
+      ${pkgs.docker}/bin/docker run \
+        --name=shelfmark \
+        -p ${toString httpPort}:8084 \
+        --rm \
+        -v ${configDir}:/config \
+        -v ${ebooksDir}:/books/ebooks/calibre-library \
+        -v ${audiobooksDir}:/books/audiobooks \
+        -e TZ=Asia/Kolkata \
+        -e PUID=2000 \
+        -e PGID=2000 \
+        -e FLASK_PORT=8084 \
+        -e INGEST_DIR=/books \
+        -e SEARCH_MODE=direct \
+        -e LOG_LEVEL=INFO \
+        ${image}
     '';
     
     # Stop: Graceful container stop
@@ -156,26 +141,6 @@ in
     
     postStop = ''
       ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
-    '';
-  };
-  
-  # Port forwarding for Shelfmark (Iceland namespace -> host)
-  # Forwards host:8084 -> namespace:10.200.2.2:8084
-  # This allows local network access to the container running in the isolated namespace
-  systemd.services.shelfmark-port-forward = {
-    description = "Forward Shelfmark port from host to Iceland VPN namespace";
-    after = [ "docker-shelfmark.service" "netns-vpn-iceland-veth.service" ];
-    requires = [ "netns-vpn-iceland-veth.service" ];
-    wantedBy = [ "multi-user.target" ];
-    
-    serviceConfig = {
-      Type = "simple";
-      Restart = "always";
-      RestartSec = "5s";
-    };
-    
-    script = ''
-      ${pkgs.socat}/bin/socat TCP-LISTEN:${toString httpPort},fork,reuseaddr TCP:10.200.2.2:${toString httpPort}
     '';
   };
   
