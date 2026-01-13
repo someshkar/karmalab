@@ -89,6 +89,13 @@ in
   # Custom systemd service to run Docker container in Iceland VPN namespace
   # This ensures all book source traffic (Anna's Archive, Z-Library, etc.)
   # goes through Iceland VPN to bypass geo-blocks
+  #
+  # NETWORKING DESIGN:
+  # - Container runs INSIDE vpn-iceland namespace (10.200.2.2)
+  # - Does NOT expose ports to host network (no -p flag)
+  # - Port forwarding handled by separate shelfmark-port-forward service
+  # - This prevents port conflicts between Docker and socat
+  # - WebUI accessible at 192.168.0.200:8084 via socat forwarding
   
   systemd.services.docker-shelfmark = {
     description = "Shelfmark Book Downloader (Iceland VPN Isolated)";
@@ -120,12 +127,13 @@ in
     '';
     
     # Start: Run container in Iceland namespace
+    # NOTE: No -p flag! Port forwarding handled by shelfmark-port-forward service
+    # Container listens on 10.200.2.2:8084 inside namespace only
     script = ''
       ${pkgs.iproute2}/bin/ip netns exec vpn-iceland \
         ${pkgs.docker}/bin/docker run \
           --name=shelfmark \
           --rm \
-          -p 8084:8084 \
           -v ${configDir}:/config \
           -v ${ebooksDir}:/books/ebooks/calibre-library \
           -v ${audiobooksDir}:/books/audiobooks \
@@ -150,6 +158,8 @@ in
   };
   
   # Port forwarding for Shelfmark (Iceland namespace -> host)
+  # Forwards host:8084 -> namespace:10.200.2.2:8084
+  # This allows local network access to the container running in the isolated namespace
   systemd.services.shelfmark-port-forward = {
     description = "Forward Shelfmark port from host to Iceland VPN namespace";
     after = [ "docker-shelfmark.service" "netns-vpn-iceland-veth.service" ];
