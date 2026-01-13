@@ -127,12 +127,14 @@ in
     '';
     
     # Start: Run container in Iceland namespace
-    # NOTE: No -p flag! Port forwarding handled by shelfmark-port-forward service
-    # Container listens on 10.200.2.2:8084 inside namespace only
+    # NOTE: Uses --network=host to bind to namespace network directly
+    # Container listens on 0.0.0.0:8084 inside namespace (accessible at 10.200.2.2:8084 from host)
+    # Port forwarding handled by shelfmark-port-forward service (host -> namespace)
     script = ''
       ${pkgs.iproute2}/bin/ip netns exec vpn-iceland \
         ${pkgs.docker}/bin/docker run \
           --name=shelfmark \
+          --network=host \
           --rm \
           -v ${configDir}:/config \
           -v ${ebooksDir}:/books/ebooks/calibre-library \
