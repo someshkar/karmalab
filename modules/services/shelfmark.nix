@@ -26,6 +26,11 @@
 # - Ebook downloads: /data/media/ebooks/calibre-library (auto-imported by Calibre-Web)
 # - Audiobook downloads: /data/media/audiobooks (auto-imported by Audiobookshelf)
 #
+# Network:
+# - Runs in Iceland VPN namespace for unrestricted access to book sources
+# - All downloads/searches go through Iceland VPN (bypasses India/Singapore blocks)
+# - WebUI accessible via local network through port forwarding
+#
 # Access:
 # - Local: http://192.168.0.200:8084
 # - External: https://shelfmark.somesh.dev (via Cloudflare Tunnel)
@@ -78,37 +83,88 @@ let
 in
 {
   # ============================================================================
-  # DOCKER CONTAINER (using virtualisation.oci-containers)
+  # DOCKER CONTAINER IN ICELAND VPN NAMESPACE
   # ============================================================================
   
-  virtualisation.oci-containers.containers.shelfmark = {
-    inherit image;
+  # Custom systemd service to run Docker container in Iceland VPN namespace
+  # This ensures all book source traffic (Anna's Archive, Z-Library, etc.)
+  # goes through Iceland VPN to bypass geo-blocks
+  
+  systemd.services.docker-shelfmark = {
+    description = "Shelfmark Book Downloader (Iceland VPN Isolated)";
     
-    autoStart = true;
-    
-    ports = [
-      "${toString httpPort}:8084"
+    after = [ 
+      "docker.service" 
+      "wireguard-vpn-iceland.service"
+      "storage-online.target" 
     ];
-    
-    volumes = [
-      "${configDir}:/config"
-      "${ebooksDir}:/books/ebooks/calibre-library"
-      "${audiobooksDir}:/books/audiobooks"
+    requires = [ 
+      "docker.service" 
+      "wireguard-vpn-iceland.service" 
     ];
+    wants = [ "storage-online.target" ];
+    wantedBy = [ "multi-user.target" ];
     
-    environment = {
-      TZ = "Asia/Kolkata";
-      PUID = "2000";  # media group GID (for file permissions)
-      PGID = "2000";  # media group GID
-      FLASK_PORT = "8084";
-      INGEST_DIR = "/books";
-      SEARCH_MODE = "direct";  # Start with direct mode (no setup required)
-      LOG_LEVEL = "INFO";
+    serviceConfig = {
+      Type = "simple";
+      Restart = "always";
+      RestartSec = "10s";
+      TimeoutStartSec = "0";
+      TimeoutStopSec = "120";
     };
     
-    extraOptions = [
-      "--network=host"  # Use host network for simplicity
-    ];
+    # Pre-start: Pull image and cleanup old container
+    preStart = ''
+      ${pkgs.docker}/bin/docker pull ${image}
+      ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
+    '';
+    
+    # Start: Run container in Iceland namespace
+    script = ''
+      ${pkgs.iproute2}/bin/ip netns exec vpn-iceland \
+        ${pkgs.docker}/bin/docker run \
+          --name=shelfmark \
+          --rm \
+          -p 8084:8084 \
+          -v ${configDir}:/config \
+          -v ${ebooksDir}:/books/ebooks/calibre-library \
+          -v ${audiobooksDir}:/books/audiobooks \
+          -e TZ=Asia/Kolkata \
+          -e PUID=2000 \
+          -e PGID=2000 \
+          -e FLASK_PORT=8084 \
+          -e INGEST_DIR=/books \
+          -e SEARCH_MODE=direct \
+          -e LOG_LEVEL=INFO \
+          ${image}
+    '';
+    
+    # Stop: Graceful container stop
+    preStop = ''
+      ${pkgs.docker}/bin/docker stop shelfmark 2>/dev/null || true
+    '';
+    
+    postStop = ''
+      ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
+    '';
+  };
+  
+  # Port forwarding for Shelfmark (Iceland namespace -> host)
+  systemd.services.shelfmark-port-forward = {
+    description = "Forward Shelfmark port from host to Iceland VPN namespace";
+    after = [ "docker-shelfmark.service" "netns-vpn-iceland-veth.service" ];
+    requires = [ "netns-vpn-iceland-veth.service" ];
+    wantedBy = [ "multi-user.target" ];
+    
+    serviceConfig = {
+      Type = "simple";
+      Restart = "always";
+      RestartSec = "5s";
+    };
+    
+    script = ''
+      ${pkgs.socat}/bin/socat TCP-LISTEN:${toString httpPort},fork,reuseaddr TCP:10.200.2.2:${toString httpPort}
+    '';
   };
   
   # ============================================================================
@@ -133,15 +189,5 @@ in
     interfaces."tailscale0" = {
       allowedTCPPorts = [ httpPort ];
     };
-  };
-  
-  # ============================================================================
-  # SYSTEMD SERVICE CONFIGURATION
-  # ============================================================================
-  
-  systemd.services."docker-shelfmark" = {
-    # Ensure shelfmark starts after storage and Docker are available
-    after = [ "docker.service" "network-online.target" "storage-online.target" ];
-    wants = [ "network-online.target" "storage-online.target" ];
   };
 }

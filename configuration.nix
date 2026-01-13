@@ -54,7 +54,8 @@
     ./hardware-configuration.nix
     ./disko-config.nix              # NVMe boot/root disk only
     ./modules/storage.nix           # ZFS pool management with graceful degradation
-    ./modules/wireguard-vpn.nix     # VPN namespace for Surfshark
+    ./modules/wireguard-vpn.nix     # VPN namespace for Surfshark (Singapore - torrents)
+    ./modules/wireguard-vpn-iceland.nix  # VPN namespace for Iceland (indexer/subtitle searches)
     ./modules/services/deluge.nix   # Native Deluge in VPN namespace
     ./modules/services/immich.nix   # Immich photo management (Docker)
     ./modules/services/uptime-kuma.nix # Service monitoring
@@ -297,8 +298,31 @@
   users.groups.prowlarr = {};
 
   systemd.services.prowlarr = {
-    after = [ "network-online.target" "storage-online.target" ];
-    wants = [ "network-online.target" "storage-online.target" ];
+    after = [ "wireguard-vpn-iceland.service" "network-online.target" "storage-online.target" ];
+    requires = [ "wireguard-vpn-iceland.service" ];
+    wants = [ "storage-online.target" ];
+    
+    serviceConfig = {
+      NetworkNamespacePath = "/var/run/netns/vpn-iceland";
+    };
+  };
+  
+  # Port forwarding for Prowlarr (Iceland namespace -> host)
+  systemd.services.prowlarr-port-forward = {
+    description = "Forward Prowlarr port from host to Iceland VPN namespace";
+    after = [ "prowlarr.service" "netns-vpn-iceland-veth.service" ];
+    requires = [ "netns-vpn-iceland-veth.service" ];
+    wantedBy = [ "multi-user.target" ];
+    
+    serviceConfig = {
+      Type = "simple";
+      Restart = "always";
+      RestartSec = "5s";
+    };
+    
+    script = ''
+      ${pkgs.socat}/bin/socat TCP-LISTEN:9696,fork,reuseaddr TCP:10.200.2.2:9696
+    '';
   };
 
   # ============================================================================
@@ -353,8 +377,31 @@
   users.users.bazarr.extraGroups = [ "media" ];
 
   systemd.services.bazarr = {
-    after = [ "storage-online.target" ];
+    after = [ "wireguard-vpn-iceland.service" "storage-online.target" ];
+    requires = [ "wireguard-vpn-iceland.service" ];
     wants = [ "storage-online.target" ];
+    
+    serviceConfig = {
+      NetworkNamespacePath = "/var/run/netns/vpn-iceland";
+    };
+  };
+  
+  # Port forwarding for Bazarr (Iceland namespace -> host)
+  systemd.services.bazarr-port-forward = {
+    description = "Forward Bazarr port from host to Iceland VPN namespace";
+    after = [ "bazarr.service" "netns-vpn-iceland-veth.service" ];
+    requires = [ "netns-vpn-iceland-veth.service" ];
+    wantedBy = [ "multi-user.target" ];
+    
+    serviceConfig = {
+      Type = "simple";
+      Restart = "always";
+      RestartSec = "5s";
+    };
+    
+    script = ''
+      ${pkgs.socat}/bin/socat TCP-LISTEN:6767,fork,reuseaddr TCP:10.200.2.2:6767
+    '';
   };
 
   # ============================================================================

@@ -20,8 +20,9 @@
 #
 # Integration:
 # - Works with existing Calibre library database
-# - Shelfmark downloads ebooks → Calibre library → Calibre-Web serves
+# - Shelfmark downloads ebooks → Calibre library → Auto-import → Calibre-Web serves
 # - Syncthing syncs Calibre library to MacBook for Kindle transfers
+# - Auto-import: Systemd path unit watches library and triggers refresh on new files
 #
 # Storage:
 # - Config/database: /var/lib/calibre-web (on NVMe SSD, 5GB quota)
@@ -61,10 +62,9 @@
 #
 # Workflow:
 # 1. Shelfmark downloads ebook → /data/media/ebooks/calibre-library
-# 2. Calibre (on Mac via Syncthing) auto-imports and updates metadata.db
-# 3. Syncthing syncs updated metadata.db back to server
-# 4. Calibre-Web serves the updated library
-# 5. Transfer to Kindle via USB from Mac Calibre app
+# 2. Systemd path unit detects new file → Restarts Calibre-Web (triggers library scan)
+# 3. Calibre-Web serves the updated library (book appears within ~10 seconds)
+# 4. Syncthing syncs to Mac → Transfer to Kindle via USB from Mac Calibre app
 #
 # ============================================================================
 
@@ -152,5 +152,45 @@ in
     # Ensure calibre-web starts after storage is available
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
+  };
+  
+  # ============================================================================
+  # AUTO-IMPORT: WATCH FOR NEW BOOKS
+  # ============================================================================
+  
+  # Path unit watches Calibre library directory for changes
+  # When new files are added (e.g., by Shelfmark), triggers library refresh
+  systemd.paths.calibre-library-watch = {
+    description = "Watch Calibre library for new books";
+    wantedBy = [ "multi-user.target" ];
+    
+    pathConfig = {
+      # Trigger on any changes to the directory (new books, modified files)
+      PathChanged = calibreLibrary;
+      # Wait 10 seconds before triggering (allows file writes to complete)
+      TriggerLimitIntervalSec = "10s";
+      TriggerLimitBurst = 1;
+      Unit = "calibre-web-refresh.service";
+    };
+  };
+  
+  # Service triggered by path unit to refresh library
+  systemd.services.calibre-web-refresh = {
+    description = "Trigger Calibre-Web library refresh";
+    
+    serviceConfig = {
+      Type = "oneshot";
+    };
+    
+    script = ''
+      echo "New file detected in Calibre library at $(date)"
+      echo "Waiting 5 seconds for file write to complete..."
+      sleep 5
+      
+      echo "Restarting Calibre-Web to import new books..."
+      ${pkgs.systemd}/bin/systemctl restart calibre-web.service
+      
+      echo "Calibre-Web restarted. New books should appear in library."
+    '';
   };
 }

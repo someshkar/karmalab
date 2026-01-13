@@ -4,20 +4,20 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 
 ## Current Status
 
-| Service | Port | Status | Notes |
-|---------|------|--------|-------|
-| **Jellyfin** | 8096 | Working | Media streaming, Intel Quick Sync HW transcoding |
-| **Prowlarr** | 9696 | Working | Indexer management with FlareSolverr |
-| **FlareSolverr** | 8191 | Working | Cloudflare bypass for Prowlarr |
-| **Radarr** | 7878 | Working | Movie automation |
-| **Sonarr** | 8989 | Working | TV show automation |
-| **Bazarr** | 6767 | Working | Subtitle automation (needs providers configured) |
-| **Jellyseerr** | 5055 | Working | Media request interface |
-| **Deluge** | 8112 | Working | Torrent client with VPN isolation (verified Singapore IP) |
-| **aria2** | 6800/6880 | Working | HTTP/FTP download manager with AriaNg web UI |
-| **Calibre-Web** | 8083 | New | Ebook library web interface (books.somesh.dev) |
-| **Shelfmark** | 8084 | New | Book & audiobook downloader (shelfmark.somesh.dev) ⚠️ Enable auth! |
-| **Audiobookshelf** | 13378 | Working | Audiobook server (abs.somesh.dev) |
+| Service | Port | VPN | Status | Notes |
+|---------|------|-----|--------|-------|
+| **Jellyfin** | 8096 | - | Working | Media streaming, Intel Quick Sync HW transcoding |
+| **Prowlarr** | 9696 | Iceland | Working | Indexer management, searches via Iceland VPN |
+| **FlareSolverr** | 8191 | - | Working | Cloudflare bypass for Prowlarr |
+| **Radarr** | 7878 | - | Working | Movie automation |
+| **Sonarr** | 8989 | - | Working | TV show automation |
+| **Bazarr** | 6767 | Iceland | Working | Subtitle automation via Iceland VPN |
+| **Jellyseerr** | 5055 | - | Working | Media request interface |
+| **Deluge** | 8112 | Singapore | Working | Torrent client (Singapore VPN for speed) |
+| **aria2** | 6800/6880 | - | Working | HTTP/FTP download manager with AriaNg web UI |
+| **Calibre-Web** | 8083 | - | New | Ebook library with auto-import (books.somesh.dev) |
+| **Shelfmark** | 8084 | Iceland | New | Book downloader via Iceland VPN ⚠️ Enable auth! |
+| **Audiobookshelf** | 13378 | - | Working | Audiobook server (abs.somesh.dev) |
 | **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
 | **Uptime Kuma** | 3001 | Running | Needs monitors configured |
 | **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
@@ -81,7 +81,7 @@ External Access (Cloudflare Tunnel):
   - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 
-### VPN Isolation (Deluge)
+### VPN Architecture (Dual VPN Setup)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -89,29 +89,51 @@ External Access (Cloudflare Tunnel):
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌────────────────────────────────────────────────────────────────────┐    │
-│  │ DEFAULT NAMESPACE (Host)                                           │    │
+│  │ DEFAULT NAMESPACE (Host: 192.168.0.200)                            │    │
 │  │                                                                    │    │
-│  │  wlo1 (WiFi) ────────────► LAN (192.168.0.x)                      │    │
-│  │  lo ─────────────────────► Localhost                               │    │
-│  │                                                                    │    │
-│  │  Services: Jellyfin, *arr stack, Immich, Uptime Kuma              │    │
+│  │  Services: Jellyfin, Radarr, Sonarr, Immich, etc.                 │    │
+│  │  - WebUIs accessible on local network                             │    │
+│  │  - Inter-service communication                                    │    │
 │  └────────────────────────────────────────────────────────────────────┘    │
-│                                      │                                      │
-│                                      │ veth pair                            │
-│                                      ▼                                      │
-│  ┌────────────────────────────────────────────────────────────────────┐    │
-│  │ VPN NAMESPACE (wg-vpn) - Isolated                                  │    │
-│  │                                                                    │    │
-│  │  wg-vpn ────────────────► Surfshark WireGuard (Singapore IP)      │    │
-│  │  veth-vpn ──────────────► Connection to host namespace            │    │
-│  │                                                                    │    │
-│  │  Services: Deluge (ALL torrent traffic via VPN)                   │    │
-│  │                                                                    │    │
-│  │  Kill Switch: All traffic blocked if VPN disconnects              │    │
-│  └────────────────────────────────────────────────────────────────────┘    │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+│                         │                           │                       │
+│                   veth pair (10.200.1.x)     veth pair (10.200.2.x)        │
+│                         │                           │                       │
+│  ┌──────────────────────▼───────────┐   ┌───────────▼──────────────────┐   │
+│  │ VPN NAMESPACE: vpn (Singapore)   │   │ VPN NAMESPACE: vpn-iceland   │   │
+│  │                                  │   │                              │   │
+│  │  wg-surfshark → Singapore       │   │  wg-iceland → Iceland        │   │
+│  │                                  │   │                              │   │
+│  │  Services:                       │   │  Services:                   │   │
+│  │  - Deluge (torrents)             │   │  - Prowlarr (indexers)       │   │
+│  │                                  │   │  - Bazarr (subtitles)        │   │
+│  │  Use: Speed-optimized            │   │  - Shelfmark (book sources)  │   │
+│  │       torrent downloads          │   │                              │   │
+│  │                                  │   │  Use: Access-optimized       │   │
+│  │  Kill Switch: Enabled            │   │       bypass geo-blocks      │   │
+│  │                                  │   │                              │   │
+│  │                                  │   │  Kill Switch: Enabled        │   │
+│  └──────────────────────────────────┘   └──────────────────────────────┘   │
+│           │                                       │                         │
+│           ▼                                       ▼                         │
+│    Surfshark Singapore                    Surfshark Iceland                │
+│           │                                       │                         │
+└───────────┼───────────────────────────────────────┼─────────────────────────┘
+            │                                       │
+            ▼                                       ▼
+    INTERNET (Torrents)                   INTERNET (Searches/Metadata)
 ```
+
+**Traffic Flow:**
+- **Singapore VPN (Speed):** Torrent downloads via Deluge
+- **Iceland VPN (Access):** Indexer/subtitle/book searches (bypasses India/Singapore blocks)
+- **Local Network:** All WebUIs, inter-service communication, media streaming
+- **Port Forwarding:** socat forwards ports from namespaces to host for WebUI access
+
+**Why Iceland?**
+- 1337x, OpenSubtitles blocked in India/Singapore → Iceland unrestricted
+- Anna's Archive, Z-Library may get blocked → Iceland provides reliable access
+- Most "free" internet in world → best for search/metadata services
+
 
 ## Storage Layout
 
