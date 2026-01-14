@@ -108,6 +108,16 @@ in
       # Create download directory if it doesn't exist
       mkdir -p ${downloadDir}
       chown ${aria2User}:${aria2Group} ${downloadDir}
+      
+      # Generate RPC secret if it doesn't exist
+      if [ ! -f ${rpcSecretFile} ]; then
+        echo "Generating aria2 RPC secret..."
+        mkdir -p $(dirname ${rpcSecretFile})
+        ${pkgs.openssl}/bin/openssl rand -base64 32 > ${rpcSecretFile}
+        chmod 600 ${rpcSecretFile}
+        echo "RPC secret saved to ${rpcSecretFile}"
+        echo "Configure AriaNg with this secret: $(cat ${rpcSecretFile})"
+      fi
     '';
     
     serviceConfig = {

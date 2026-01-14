@@ -154,7 +154,7 @@ in
           }
           {
             "Shelfmark" = {
-              icon = "calibre.svg";
+              icon = "https://github.com/calibrain/shelfmark/raw/main/src/frontend/public/logo.png";
               description = "Book & audiobook downloader";
               href = "http://${serverIP}:8084";
               siteMonitor = "http://${serverIP}:8084";
@@ -222,7 +222,7 @@ in
           }
           {
             "aria2" = {
-              icon = "ariang.svg";
+              icon = "aria2.svg";
               description = "HTTP/FTP download manager";
               href = "http://${serverIP}:6880";
               siteMonitor = "http://${serverIP}:6880";
@@ -453,7 +453,7 @@ in
         resources = {
           cpu = true;
           memory = true;
-          disk = "/";
+          disk = "/data";  # Show 20TB external drive usage
         };
       }
       {
