@@ -56,6 +56,7 @@
     ./modules/storage.nix           # ZFS pool management with graceful degradation
     ./modules/wireguard-vpn.nix     # VPN namespace for Surfshark (Singapore - torrents)
     ./modules/wireguard-vpn-iceland.nix  # VPN namespace for Iceland (indexer/subtitle searches)
+    ./modules/gluetun.nix           # Gluetun SOCKS5 proxy for Iceland VPN (Shelfmark/Prowlarr/Bazarr)
     ./modules/services/deluge.nix   # Native Deluge in VPN namespace
     ./modules/services/immich.nix   # Immich photo management (Docker)
     ./modules/services/uptime-kuma.nix # Service monitoring
