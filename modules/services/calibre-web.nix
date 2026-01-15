@@ -22,7 +22,7 @@
 # - Works with existing Calibre library database
 # - Shelfmark downloads ebooks → Calibre library → Auto-import → Calibre-Web serves
 # - Syncthing syncs Calibre library to MacBook for Kindle transfers
-# - Auto-import: Systemd path unit watches library and triggers refresh on new files
+# - Auto-import: Timer runs every 60s, uses `calibredb add` to import new files
 #
 # Storage:
 # - Config/database: /var/lib/calibre-web (on NVMe SSD, 5GB quota)
@@ -61,10 +61,11 @@
 # - Per-user bookshelves and reading progress
 #
 # Workflow:
-# 1. Shelfmark downloads ebook → /data/media/ebooks/calibre-library
-# 2. Systemd path unit detects new file → Restarts Calibre-Web (triggers library scan)
-# 3. Calibre-Web serves the updated library (book appears within ~10 seconds)
-# 4. Syncthing syncs to Mac → Transfer to Kindle via USB from Mac Calibre app
+# 1. Shelfmark downloads ebook → /data/media/ebooks/calibre-library/Author Name/
+# 2. Timer runs every 60s → Detects new file → Runs `calibredb add`
+# 3. Calibredb imports book → Organizes into Author/Title (ID)/ structure
+# 4. Calibre-Web automatically sees updated database (book appears immediately)
+# 5. Syncthing syncs to Mac → Transfer to Kindle via USB from Mac Calibre app
 #
 # ============================================================================
 
@@ -155,42 +156,72 @@ in
   };
   
   # ============================================================================
-  # AUTO-IMPORT: WATCH FOR NEW BOOKS
+  # AUTO-IMPORT: TIMER-BASED BOOK IMPORT
   # ============================================================================
   
-  # Path unit watches Calibre library directory for changes
-  # When new files are added (e.g., by Shelfmark), triggers library refresh
-  systemd.paths.calibre-library-watch = {
-    description = "Watch Calibre library for new books";
-    wantedBy = [ "multi-user.target" ];
-    
-    pathConfig = {
-      # Trigger on any changes to the directory (new books, modified files)
-      PathChanged = calibreLibrary;
-      # Wait 10 seconds before triggering (allows file writes to complete)
-      TriggerLimitIntervalSec = "10s";
-      TriggerLimitBurst = 1;
-      Unit = "calibre-web-refresh.service";
-    };
-  };
+  # Timer-based import using calibredb add command
+  # Runs every 60 seconds to find and import new books
+  # More reliable than path watcher (no trigger limits, no restart storms)
   
-  # Service triggered by path unit to refresh library
-  systemd.services.calibre-web-refresh = {
-    description = "Trigger Calibre-Web library refresh";
+  systemd.services.calibre-auto-import = {
+    description = "Auto-import new books to Calibre library";
+    after = [ "calibre-web.service" "storage-online.target" ];
+    wants = [ "storage-online.target" ];
     
     serviceConfig = {
       Type = "oneshot";
+      User = "calibre-web";
+      Group = "media";
     };
     
     script = ''
-      echo "New file detected in Calibre library at $(date)"
-      echo "Waiting 5 seconds for file write to complete..."
-      sleep 5
+      echo "Scanning for new books at $(date)"
       
-      echo "Restarting Calibre-Web to import new books..."
-      ${pkgs.systemd}/bin/systemctl restart calibre-web.service
+      # Find ebook files that are NOT already in Calibre's organized structure
+      # Calibre organizes books as: Author/Book Title (ID)/book.epub
+      # We look for books directly under author folders (no numeric ID subfolder)
       
-      echo "Calibre-Web restarted. New books should appear in library."
+      ${pkgs.findutils}/bin/find ${calibreLibrary} -type f \
+        \( -name "*.epub" -o -name "*.mobi" -o -name "*.pdf" -o -name "*.azw3" \) \
+        ! -path "*/(*([0-9]))*" \
+        ! -name "*.crdownload" \
+        ! -name "*.part" \
+        ! -name "*.tmp" \
+        -mmin +1 \
+        2>/dev/null | while IFS= read -r file; do
+        
+        if [ -f "$file" ]; then
+          echo "Found new book: $file"
+          
+          # Import to Calibre library using calibredb
+          if ${pkgs.calibre}/bin/calibredb add "$file" \
+            --library-path=${calibreLibrary} \
+            --automerge overwrite \
+            2>&1; then
+            
+            echo "Successfully imported: $file"
+            
+            # Remove the original file (calibredb copied it to proper location)
+            rm -f "$file" || echo "Warning: Could not remove original file"
+          else
+            echo "Failed to import: $file"
+          fi
+        fi
+      done
+      
+      echo "Import scan complete"
     '';
+  };
+  
+  # Timer to run auto-import every 60 seconds
+  systemd.timers.calibre-auto-import = {
+    description = "Auto-import new books timer";
+    wantedBy = [ "timers.target" ];
+    
+    timerConfig = {
+      OnBootSec = "2min";        # Wait 2 minutes after boot
+      OnUnitActiveSec = "60s";   # Run every 60 seconds
+      Unit = "calibre-auto-import.service";
+    };
   };
 }

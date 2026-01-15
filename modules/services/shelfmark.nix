@@ -127,8 +127,9 @@ in
         -e TZ=Asia/Kolkata \
         -e PUID=2000 \
         -e PGID=2000 \
+        -e UMASK=002 \
         -e FLASK_PORT=8084 \
-        -e INGEST_DIR=/books \
+        -e INGEST_DIR=/books/ebooks/calibre-library \
         -e SEARCH_MODE=direct \
         -e LOG_LEVEL=INFO \
         ${image}
