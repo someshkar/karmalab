@@ -18,12 +18,13 @@
 #                richer discovery with multi-source downloads
 #
 # Integration:
-# - Ebooks download to Calibre library → Calibre-Web serves → Syncthing syncs
+# - Ebooks download to /tmp/shelfmark-downloads (temporary, manual transfer to Mac)
 # - Audiobooks download to audiobooks directory → Audiobookshelf serves
+# - Shelfmark is a search UI only - user manually organizes ebooks with Calibre Desktop on Mac
 #
 # Storage:
 # - Config/database: /var/lib/shelfmark (on NVMe SSD, 10GB quota)
-# - Ebook downloads: /data/media/ebooks/calibre-library (auto-imported by Calibre-Web)
+# - Ebook downloads: /tmp/shelfmark-downloads (temporary, manually transfer to Mac)
 # - Audiobook downloads: /data/media/audiobooks (auto-imported by Audiobookshelf)
 #
 # Network:
@@ -48,11 +49,13 @@
 #    - Create admin account: username "somesh", STRONG password
 #    - Save and test login
 # 3. Configure download paths in Settings:
-#    - Ebooks: /books/ebooks/calibre-library
+#    - Ebooks: /books/downloads (temporary storage)
 #    - Audiobooks: /books/audiobooks
-# 4. Optional: Configure metadata providers (Hardcover API key)
-# 5. Optional: Add IRC/Prowlarr sources
-# 6. Start searching and downloading!
+# 4. Use Shelfmark web UI to download books directly to your Mac browser
+# 5. Or use scp to transfer from /tmp/shelfmark-downloads to Mac
+# 6. Organize with Calibre Desktop on Mac, sync via Syncthing to NUC
+# 7. Optional: Configure metadata providers (Hardcover API key)
+# 8. Optional: Add IRC/Prowlarr sources
 #
 # File Processing:
 # - Customizable download paths and file renaming
@@ -75,7 +78,7 @@ let
   
   # Paths
   configDir = "/var/lib/shelfmark";
-  ebooksDir = "/data/media/ebooks/calibre-library";
+  ebooksDir = "/tmp/shelfmark-downloads";  # Temporary downloads
   audiobooksDir = "/data/media/audiobooks";
   
   # Docker image
@@ -122,14 +125,14 @@ in
         -p ${toString httpPort}:8084 \
         --rm \
         -v ${configDir}:/config \
-        -v ${ebooksDir}:/books/ebooks/calibre-library \
+        -v ${ebooksDir}:/books/downloads \
         -v ${audiobooksDir}:/books/audiobooks \
         -e TZ=Asia/Kolkata \
         -e PUID=2000 \
         -e PGID=2000 \
         -e UMASK=002 \
         -e FLASK_PORT=8084 \
-        -e INGEST_DIR=/books/ebooks/calibre-library \
+        -e INGEST_DIR=/books/downloads \
         -e SEARCH_MODE=direct \
         -e LOG_LEVEL=INFO \
         ${image}
@@ -152,7 +155,8 @@ in
   # Ensure config directory exists with correct permissions
   systemd.tmpfiles.rules = [
     "d ${configDir} 0755 root root -"
-    # Note: ebook and audiobook directories already exist from other services
+    "d ${ebooksDir} 1777 root root -"  # World-writable temp directory
+    # Note: audiobook directory already exists from other services
   ];
   
   # ============================================================================
