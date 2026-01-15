@@ -97,17 +97,13 @@ in
     wantedBy = [ "multi-user.target" ];
     
     preStart = ''
-      # Create config directory
-      mkdir -p ${configDir}
-      chown ${aria2User}:${aria2Group} ${configDir}
+      # Create download directory if it doesn't exist
+      mkdir -p ${downloadDir}
+      chown ${aria2User}:${aria2Group} ${downloadDir}
       
       # Create session file if it doesn't exist
       touch ${sessionFile}
       chown ${aria2User}:${aria2Group} ${sessionFile}
-      
-      # Create download directory if it doesn't exist
-      mkdir -p ${downloadDir}
-      chown ${aria2User}:${aria2Group} ${downloadDir}
       
       # Generate RPC secret if it doesn't exist
       if [ ! -f ${rpcSecretFile} ]; then
@@ -125,6 +121,10 @@ in
       User = aria2User;
       Group = aria2Group;
       
+      # StateDirectory auto-creates /var/lib/aria2 with correct permissions
+      # This fixes the "Failed to set up mount namespacing" error
+      StateDirectory = "aria2";
+      
       # Build the command with optional RPC secret
       ExecStart = let
         secretArg = if builtins.pathExists rpcSecretFile 
@@ -140,7 +140,9 @@ in
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;
-      ReadWritePaths = [ configDir downloadDir ];
+      
+      # Only need write access to download directory (config dir handled by StateDirectory)
+      ReadWritePaths = [ downloadDir ];
     };
   };
 
