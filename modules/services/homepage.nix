@@ -23,13 +23,6 @@
 let
   # Service URLs for homepage
   serverIP = "192.168.0.200";
-  
-  # Local icon assets (stored in Nix store, served by Homepage)
-  # Using WebP format for smaller file sizes and faster loading
-  iconAssets = {
-    aria2 = ./homepage-assets/aria2-icon.webp;
-    shelfmark = ./homepage-assets/shelfmark-logo.webp;
-  };
 in
 {
   # ============================================================================
@@ -161,7 +154,7 @@ in
           }
           {
             "Shelfmark" = {
-              icon = "${iconAssets.shelfmark}";
+              icon = "https://raw.githubusercontent.com/calibrain/shelfmark/main/src/frontend/public/logo.png";
               description = "Book & audiobook downloader";
               href = "http://${serverIP}:8084";
               siteMonitor = "http://${serverIP}:8084";
@@ -229,7 +222,7 @@ in
           }
           {
             "aria2" = {
-              icon = "${iconAssets.aria2}";
+              icon = "https://raw.githubusercontent.com/devgianlu/Aria2App/master/Graphics/Icon.png";
               description = "HTTP/FTP download manager";
               href = "http://${serverIP}:6880";
               siteMonitor = "http://${serverIP}:6880";
@@ -417,7 +410,7 @@ in
           {
             "Shelfmark (External)" = [
               {
-                icon = "${iconAssets.shelfmark}";
+                icon = "https://raw.githubusercontent.com/calibrain/shelfmark/main/src/frontend/public/logo.png";
                 href = "https://shelfmark.somesh.dev";
               }
             ];
