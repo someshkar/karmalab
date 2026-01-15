@@ -96,29 +96,30 @@ in
     wants = [ "storage-online.target" ];
     wantedBy = [ "multi-user.target" ];
     
-    preStart = ''
-      # Ensure download directory exists (owned by root:media with setgid)
-      # No chown needed - aria2 runs as 'media' user and can write via group permissions
-      mkdir -p ${downloadDir} || true
-      
-      # Create session file if it doesn't exist
-      if [ ! -f "${sessionFile}" ]; then
-        touch ${sessionFile}
-        chown ${aria2User}:${aria2Group} ${sessionFile}
-      fi
-      
-      # Generate RPC secret if it doesn't exist
-      if [ ! -f ${rpcSecretFile} ]; then
-        echo "Generating aria2 RPC secret..."
-        # Directory created by systemd.tmpfiles.rules during system activation
-        ${pkgs.openssl}/bin/openssl rand -base64 32 > ${rpcSecretFile}
-        chmod 600 ${rpcSecretFile}
-        echo "RPC secret saved to ${rpcSecretFile}"
-        echo "Configure AriaNg with this secret: $(cat ${rpcSecretFile})"
-      fi
-    '';
-    
-    serviceConfig = {
+    serviceConfig = let
+      # Pre-start script that runs as root to handle privileged operations
+      preStartScript = pkgs.writeShellScript "aria2-prestart" ''
+        # Ensure download directory exists (owned by root:media with setgid)
+        # No chown needed - aria2 runs as 'media' user and can write via group permissions
+        mkdir -p ${downloadDir} || true
+        
+        # Create session file if it doesn't exist
+        if [ ! -f "${sessionFile}" ]; then
+          touch "${sessionFile}"
+          chown ${aria2User}:${aria2Group} "${sessionFile}"
+        fi
+        
+        # Generate RPC secret if it doesn't exist
+        # This runs as root so it can write to /etc/nixos/secrets/
+        if [ ! -f "${rpcSecretFile}" ]; then
+          echo "Generating aria2 RPC secret..."
+          ${pkgs.openssl}/bin/openssl rand -base64 32 > "${rpcSecretFile}"
+          chmod 600 "${rpcSecretFile}"
+          echo "RPC secret saved to ${rpcSecretFile}"
+          echo "Configure AriaNg with this secret: $(cat ${rpcSecretFile})"
+        fi
+      '';
+    in {
       Type = "simple";
       User = aria2User;
       Group = aria2Group;
@@ -126,6 +127,10 @@ in
       # StateDirectory auto-creates /var/lib/aria2 with correct permissions
       # This fixes the "Failed to set up mount namespacing" error
       StateDirectory = "aria2";
+      
+      # Pre-start script runs as root (the "+" prefix overrides User=)
+      # This allows writing to /etc/nixos/secrets/ which is root-only
+      ExecStartPre = "+${preStartScript}";
       
       # Build the command with optional RPC secret
       ExecStart = let
