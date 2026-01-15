@@ -410,7 +410,7 @@ in
           {
             "Shelfmark (External)" = [
               {
-                icon = "calibre.svg";
+                icon = "https://github.com/calibrain/shelfmark/raw/main/src/frontend/public/logo.png";
                 href = "https://shelfmark.somesh.dev";
               }
             ];
