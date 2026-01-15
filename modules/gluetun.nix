@@ -1,16 +1,20 @@
 { config, pkgs, lib, ... }:
 
 {
-  # Gluetun VPN container for SOCKS5 proxy
-  # Connects to Surfshark Iceland for geo-unblocking services
+  # Gluetun VPN container for HTTP proxy
+  # Connects to Surfshark Iceland VPN for geo-unblocking services
   # Used by: Shelfmark, Prowlarr, Bazarr
+  #
+  # Note: Gluetun does not support native SOCKS5. It only provides:
+  # - HTTP proxy (standard HTTP/HTTPS tunneling) - port 8888
+  # - Shadowsocks (SOCKS5-based but requires Shadowsocks clients) - not used
+  # All services are configured to use the HTTP proxy.
   
   virtualisation.oci-containers.containers.gluetun = {
     image = "qmcgaw/gluetun:latest";
     autoStart = true;
     
     ports = [
-      "0.0.0.0:1080:8388"  # SOCKS5 proxy (accessible from LAN)
       "0.0.0.0:8888:8888"  # HTTP proxy (accessible from LAN)
     ];
     
@@ -22,7 +26,7 @@
       
       # Proxy configuration
       HTTPPROXY = "on";
-      SHADOWSOCKS = "off";
+      SHADOWSOCKS = "off";  # Not used - requires Shadowsocks clients
       
       # Firewall configuration
       FIREWALL_OUTBOUND_SUBNETS = "192.168.0.0/24";  # Allow LAN access
@@ -64,7 +68,7 @@
         fi
         
         # Check VPN connection
-        if ! ${pkgs.docker}/bin/docker logs gluetun 2>&1 | tail -50 | grep -q "connected"; then
+        if ! ${pkgs.docker}/bin/docker logs gluetun 2>&1 | tail -50 | grep -q "ip address\|Public IP"; then
           echo "WARNING: VPN may not be connected yet"
           exit 0
         fi
@@ -73,11 +77,11 @@
         IP=$(${pkgs.docker}/bin/docker exec gluetun wget -qO- https://api.ipify.org || echo "unknown")
         echo "Gluetun public IP: $IP"
         
-        # Check SOCKS5 proxy
-        if ${pkgs.curl}/bin/curl --socks5 127.0.0.1:1080 -m 5 https://api.ipify.org >/dev/null 2>&1; then
-          echo "SOCKS5 proxy working"
+        # Check HTTP proxy
+        if ${pkgs.curl}/bin/curl --proxy http://127.0.0.1:8888 -m 5 https://api.ipify.org >/dev/null 2>&1; then
+          echo "HTTP proxy working"
         else
-          echo "WARNING: SOCKS5 proxy not responding"
+          echo "WARNING: HTTP proxy not responding"
         fi
         
         echo "Gluetun health check complete"
@@ -96,6 +100,6 @@
     };
   };
   
-  # Open firewall for SOCKS5 and HTTP proxy
-  networking.firewall.allowedTCPPorts = [ 1080 8888 ];
+  # Open firewall for HTTP proxy
+  networking.firewall.allowedTCPPorts = [ 8888 ];
 }
