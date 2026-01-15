@@ -20,9 +20,9 @@
 #
 # Integration:
 # - Works with existing Calibre library database
-# - Shelfmark downloads ebooks → Calibre library → Auto-import → Calibre-Web serves
-# - Syncthing syncs Calibre library to MacBook for Kindle transfers
-# - Auto-import: Timer runs every 60s, uses `calibredb add` to import new files
+# - Shelfmark (search UI) → Download to Mac → Calibre Desktop (Mac) → Syncthing → NUC
+# - Calibre-Web displays the synced library (no auto-import, Mac does organization)
+# - Syncthing provides bidirectional sync between Mac and NUC
 #
 # Storage:
 # - Config/database: /var/lib/calibre-web (on NVMe SSD, 5GB quota)
@@ -60,12 +60,13 @@
 # - Admin can create additional users
 # - Per-user bookshelves and reading progress
 #
-# Workflow:
-# 1. Shelfmark downloads ebook → /data/media/ebooks/calibre-library/Author Name/
-# 2. Timer runs every 60s → Detects new file → Runs `calibredb add`
-# 3. Calibredb imports book → Organizes into Author/Title (ID)/ structure
-# 4. Calibre-Web automatically sees updated database (book appears immediately)
-# 5. Syncthing syncs to Mac → Transfer to Kindle via USB from Mac Calibre app
+# Workflow (Mac-Centric with Syncthing):
+# 1. Use Shelfmark web UI to search and download ebooks (saves to /tmp on NUC or Mac browser)
+# 2. Transfer ebook to Mac (via Shelfmark download or scp from NUC)
+# 3. Add to Calibre Desktop on Mac → Auto-fetch metadata, organize, curate
+# 4. Syncthing automatically syncs Mac Calibre library → NUC /data/media/ebooks/calibre-library/
+# 5. Calibre-Web detects updated metadata.db → Book appears in web UI immediately
+# 6. Read via Calibre-Web, download formats, or sync to Kindle via Mac
 #
 # ============================================================================
 
@@ -129,9 +130,6 @@ in
     
     # Ensure Calibre library directory has correct permissions
     "d ${calibreLibrary} 0775 root media -"
-    
-    # State directory for tracking processed imports
-    "d /var/lib/calibre-auto-import 0755 calibre-web media -"
   ];
   
   # ============================================================================
@@ -156,101 +154,5 @@ in
     # Ensure calibre-web starts after storage is available
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
-  };
-  
-  # ============================================================================
-  # AUTO-IMPORT: TIMER-BASED BOOK IMPORT
-  # ============================================================================
-  
-  # Timer-based import using calibredb add command
-  # Runs every 60 seconds to find and import new books
-  # More reliable than path watcher (no trigger limits, no restart storms)
-  
-  systemd.services.calibre-auto-import = {
-    description = "Auto-import new books to Calibre library";
-    after = [ "calibre-web.service" "storage-online.target" ];
-    wants = [ "storage-online.target" ];
-    
-    serviceConfig = {
-      Type = "oneshot";
-      User = "calibre-web";
-      Group = "media";
-    };
-    
-    script = ''
-      set -euo pipefail
-      
-      LIBRARY_PATH="${calibreLibrary}"
-      PROCESSED_FILE="/var/lib/calibre-auto-import/processed.txt"
-      
-      # Create processed file if doesn't exist
-      touch "$PROCESSED_FILE"
-      
-      echo "$(date): Starting Calibre auto-import scan..."
-      
-      count=0
-      
-      # Find ebook files at exactly depth 3 (Author/book.epub)
-      # Calibre's organized structure is at depth 4+ (Author/Book (ID)/book.epub)
-      ${pkgs.findutils}/bin/find "$LIBRARY_PATH" \
-        -maxdepth 3 -mindepth 3 \
-        -type f \
-        \( -name "*.epub" -o -name "*.mobi" -o -name "*.pdf" -o -name "*.azw3" \) \
-        ! -name "*.crdownload" \
-        ! -name "*.part" \
-        ! -name "*.tmp" \
-        -mmin +5 \
-        -print0 2>/dev/null | while IFS= read -r -d $'\0' file; do
-        
-        if [ ! -f "$file" ]; then
-          continue
-        fi
-        
-        # Calculate file hash for tracking
-        file_hash=$(${pkgs.coreutils}/bin/sha256sum "$file" | ${pkgs.coreutils}/bin/cut -d' ' -f1)
-        
-        # Check if already processed
-        if ${pkgs.gnugrep}/bin/grep -q "^$file_hash|" "$PROCESSED_FILE" 2>/dev/null; then
-          echo "$(date): Skipping already processed: $(basename "$file")"
-          continue
-        fi
-        
-        echo "$(date): Found new book: $file"
-        
-        # Import with calibredb
-        if output=$(${pkgs.calibre}/bin/calibredb add "$file" \
-          --library-path="$LIBRARY_PATH" \
-          --automerge=overwrite 2>&1); then
-          
-          # Extract book ID from output
-          book_id=$(echo "$output" | ${pkgs.gnugrep}/bin/grep -oP 'Added book ids: \K[0-9]+' || echo "merged")
-          echo "$(date): Successfully imported book ID $book_id: $(basename "$file")"
-          
-          # Record as processed (hash|filepath|timestamp)
-          echo "$file_hash|$file|$(${pkgs.coreutils}/bin/date +%s)" >> "$PROCESSED_FILE"
-          
-          # Remove original file (now imported into Calibre structure)
-          ${pkgs.coreutils}/bin/rm -f "$file" || echo "$(date): Warning: Could not remove original file"
-          
-          count=$((count + 1))
-        else
-          echo "$(date): ERROR importing $file: $output" >&2
-        fi
-      done
-      
-      echo "$(date): Import scan complete. Processed $count new books."
-    '';
-  };
-  
-  # Timer to run auto-import every 60 seconds
-  systemd.timers.calibre-auto-import = {
-    description = "Auto-import new books timer";
-    wantedBy = [ "timers.target" ];
-    
-    timerConfig = {
-      OnBootSec = "2min";        # Wait 2 minutes after boot
-      OnUnitActiveSec = "60s";   # Run every 60 seconds
-      Unit = "calibre-auto-import.service";
-    };
   };
 }
