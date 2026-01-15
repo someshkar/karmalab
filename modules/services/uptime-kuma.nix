@@ -13,8 +13,9 @@
 # - Certificate expiry monitoring
 #
 # Access:
-# - Local: http://localhost:3001
+# - LAN: http://192.168.0.200:3001
 # - Tailscale: http://nuc-server:3001
+# - External: https://status.somesh.dev (via Cloudflare Tunnel)
 #
 # Note: Notifications are a post-setup task - configure manually via UI
 #
@@ -37,6 +38,10 @@ in
     settings = {
       # Port to listen on
       PORT = toString uptimeKumaPort;
+      
+      # Listen on all interfaces (not just 127.0.0.1)
+      HOST = "0.0.0.0";
+      
       # DATA_DIR is managed automatically by NixOS (defaults to /var/lib/uptime-kuma/)
     };
   };
@@ -54,9 +59,13 @@ in
   # ============================================================================
   # FIREWALL
   # ============================================================================
-  # Only accessible via Tailscale (admin interface)
+  # Accessible from LAN, Tailscale, and Cloudflare Tunnel
   
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 
-    uptimeKumaPort 
-  ];
+  networking.firewall = {
+    # Allow LAN access
+    allowedTCPPorts = [ uptimeKumaPort ];
+    
+    # Allow Tailscale access
+    interfaces."tailscale0".allowedTCPPorts = [ uptimeKumaPort ];
+  };
 }

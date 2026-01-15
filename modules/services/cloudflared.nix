@@ -16,6 +16,8 @@
 # - abs.somesh.dev      → Audiobookshelf (port 13378)
 # - books.somesh.dev    → Calibre-Web (port 8083)
 # - shelfmark.somesh.dev → Shelfmark (port 8084)
+# - home.somesh.dev     → Homepage Dashboard (port 8082)
+# - status.somesh.dev   → Uptime Kuma (port 3001) [optional]
 #
 # Setup:
 # 1. Create tunnel in Cloudflare Zero Trust dashboard
