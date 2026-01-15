@@ -97,13 +97,15 @@ in
     wantedBy = [ "multi-user.target" ];
     
     preStart = ''
-      # Create download directory if it doesn't exist
-      mkdir -p ${downloadDir}
-      chown ${aria2User}:${aria2Group} ${downloadDir}
+      # Ensure download directory exists (owned by root:media with setgid)
+      # No chown needed - aria2 runs as 'media' user and can write via group permissions
+      mkdir -p ${downloadDir} || true
       
       # Create session file if it doesn't exist
-      touch ${sessionFile}
-      chown ${aria2User}:${aria2Group} ${sessionFile}
+      if [ ! -f "${sessionFile}" ]; then
+        touch ${sessionFile}
+        chown ${aria2User}:${aria2Group} ${sessionFile}
+      fi
       
       # Generate RPC secret if it doesn't exist
       if [ ! -f ${rpcSecretFile} ]; then
