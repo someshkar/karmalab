@@ -415,6 +415,14 @@ in
               }
             ];
           }
+          {
+            "Uptime Kuma (External)" = [
+              {
+                icon = "uptime-kuma.svg";
+                href = "https://status.somesh.dev";
+              }
+            ];
+          }
         ];
       }
       {
