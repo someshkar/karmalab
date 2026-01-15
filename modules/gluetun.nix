@@ -31,9 +31,9 @@
       TZ = "Asia/Kolkata";
     };
     
-    # Mount credentials file
-    volumes = [
-      "/etc/gluetun/surfshark-credentials:/gluetun/env:ro"
+    # Load credentials from environment file
+    environmentFiles = [
+      "/etc/gluetun/surfshark-credentials"
     ];
     
     # Required capabilities for VPN

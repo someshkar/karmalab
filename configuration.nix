@@ -229,6 +229,13 @@
   users.users = {
     root.hashedPassword = "$6$7uZoxc.V7nO7O7Bu$ufKbXcj5V32y2kZjrob2CkBgk8C6TfrWXotSaxKTrt2UfTfY59m9AACUISTIDKeY3ZHbfxPFr0s4FsNB/Q1Ni.";
     
+    # System user for media services (aria2, etc.)
+    media = {
+      isSystemUser = true;
+      group = "media";
+      uid = 2000;  # Match GID for consistency
+    };
+    
     somesh = {
       isNormalUser = true;
       description = "Somesh";
