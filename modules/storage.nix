@@ -350,8 +350,8 @@ in
       # Disable snapshots for Time Machine - it manages its own versioning
       set_property "$POOL/timemachine" "com.sun:auto-snapshot" "false"
       
-      # Set Time Machine directory permissions
-      chown -R root:root /data/timemachine
+      # Set Time Machine directory permissions (owned by somesh for Samba access)
+      chown -R somesh:users /data/timemachine
       chmod -R 770 /data/timemachine
       
       # ===== SERVICE CONFIG DATASETS =====
