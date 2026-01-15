@@ -23,6 +23,13 @@
 let
   # Service URLs for homepage
   serverIP = "192.168.0.200";
+  
+  # Local icon assets (stored in Nix store, served by Homepage)
+  # Using WebP format for smaller file sizes and faster loading
+  iconAssets = {
+    aria2 = ./homepage-assets/aria2-icon.webp;
+    shelfmark = ./homepage-assets/shelfmark-logo.webp;
+  };
 in
 {
   # ============================================================================
@@ -46,7 +53,7 @@ in
 
     # Allow access via various hostnames/IPs (required since NixOS 25.05)
     # This is a comma-separated string, not a list
-    allowedHosts = "192.168.0.200,karmalab,karmalab.local,karmalab.tail*,localhost,127.0.0.1";
+    allowedHosts = "192.168.0.200,karmalab,karmalab.local,karmalab.tail*,home.somesh.dev,localhost,127.0.0.1";
 
     # Dashboard settings
     settings = {
@@ -154,7 +161,7 @@ in
           }
           {
             "Shelfmark" = {
-              icon = "https://github.com/calibrain/shelfmark/raw/main/src/frontend/public/logo.png";
+              icon = "${iconAssets.shelfmark}";
               description = "Book & audiobook downloader";
               href = "http://${serverIP}:8084";
               siteMonitor = "http://${serverIP}:8084";
@@ -222,7 +229,7 @@ in
           }
           {
             "aria2" = {
-              icon = "aria2.svg";
+              icon = "${iconAssets.aria2}";
               description = "HTTP/FTP download manager";
               href = "http://${serverIP}:6880";
               siteMonitor = "http://${serverIP}:6880";
@@ -410,7 +417,7 @@ in
           {
             "Shelfmark (External)" = [
               {
-                icon = "https://github.com/calibrain/shelfmark/raw/main/src/frontend/public/logo.png";
+                icon = "${iconAssets.shelfmark}";
                 href = "https://shelfmark.somesh.dev";
               }
             ];
