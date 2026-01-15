@@ -129,6 +129,9 @@ in
     
     # Ensure Calibre library directory has correct permissions
     "d ${calibreLibrary} 0775 root media -"
+    
+    # State directory for tracking processed imports
+    "d /var/lib/calibre-auto-import 0755 calibre-web media -"
   ];
   
   # ============================================================================
@@ -175,41 +178,67 @@ in
     };
     
     script = ''
-      echo "Scanning for new books at $(date)"
+      set -euo pipefail
       
-      # Find ebook files that are NOT already in Calibre's organized structure
-      # Calibre organizes books as: Author/Book Title (ID)/book.epub
-      # We look for books directly under author folders (no numeric ID subfolder)
+      LIBRARY_PATH="${calibreLibrary}"
+      PROCESSED_FILE="/var/lib/calibre-auto-import/processed.txt"
       
-      ${pkgs.findutils}/bin/find ${calibreLibrary} -type f \
+      # Create processed file if doesn't exist
+      touch "$PROCESSED_FILE"
+      
+      echo "$(date): Starting Calibre auto-import scan..."
+      
+      count=0
+      
+      # Find ebook files at exactly depth 3 (Author/book.epub)
+      # Calibre's organized structure is at depth 4+ (Author/Book (ID)/book.epub)
+      ${pkgs.findutils}/bin/find "$LIBRARY_PATH" \
+        -maxdepth 3 -mindepth 3 \
+        -type f \
         \( -name "*.epub" -o -name "*.mobi" -o -name "*.pdf" -o -name "*.azw3" \) \
-        ! -path "*/(*([0-9]))*" \
         ! -name "*.crdownload" \
         ! -name "*.part" \
         ! -name "*.tmp" \
-        -mmin +1 \
-        2>/dev/null | while IFS= read -r file; do
+        -mmin +5 \
+        -print0 2>/dev/null | while IFS= read -r -d $'\0' file; do
         
-        if [ -f "$file" ]; then
-          echo "Found new book: $file"
+        if [ ! -f "$file" ]; then
+          continue
+        fi
+        
+        # Calculate file hash for tracking
+        file_hash=$(${pkgs.coreutils}/bin/sha256sum "$file" | ${pkgs.coreutils}/bin/cut -d' ' -f1)
+        
+        # Check if already processed
+        if ${pkgs.gnugrep}/bin/grep -q "^$file_hash|" "$PROCESSED_FILE" 2>/dev/null; then
+          echo "$(date): Skipping already processed: $(basename "$file")"
+          continue
+        fi
+        
+        echo "$(date): Found new book: $file"
+        
+        # Import with calibredb
+        if output=$(${pkgs.calibre}/bin/calibredb add "$file" \
+          --library-path="$LIBRARY_PATH" \
+          --automerge=overwrite 2>&1); then
           
-          # Import to Calibre library using calibredb
-          if ${pkgs.calibre}/bin/calibredb add "$file" \
-            --library-path=${calibreLibrary} \
-            --automerge overwrite \
-            2>&1; then
-            
-            echo "Successfully imported: $file"
-            
-            # Remove the original file (calibredb copied it to proper location)
-            rm -f "$file" || echo "Warning: Could not remove original file"
-          else
-            echo "Failed to import: $file"
-          fi
+          # Extract book ID from output
+          book_id=$(echo "$output" | ${pkgs.gnugrep}/bin/grep -oP 'Added book ids: \K[0-9]+' || echo "merged")
+          echo "$(date): Successfully imported book ID $book_id: $(basename "$file")"
+          
+          # Record as processed (hash|filepath|timestamp)
+          echo "$file_hash|$file|$(${pkgs.coreutils}/bin/date +%s)" >> "$PROCESSED_FILE"
+          
+          # Remove original file (now imported into Calibre structure)
+          ${pkgs.coreutils}/bin/rm -f "$file" || echo "$(date): Warning: Could not remove original file"
+          
+          count=$((count + 1))
+        else
+          echo "$(date): ERROR importing $file: $output" >&2
         fi
       done
       
-      echo "Import scan complete"
+      echo "$(date): Import scan complete. Processed $count new books."
     '';
   };
   
