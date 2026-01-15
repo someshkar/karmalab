@@ -110,7 +110,7 @@ in
       # Generate RPC secret if it doesn't exist
       if [ ! -f ${rpcSecretFile} ]; then
         echo "Generating aria2 RPC secret..."
-        mkdir -p $(dirname ${rpcSecretFile})
+        # Directory created by systemd.tmpfiles.rules during system activation
         ${pkgs.openssl}/bin/openssl rand -base64 32 > ${rpcSecretFile}
         chmod 600 ${rpcSecretFile}
         echo "RPC secret saved to ${rpcSecretFile}"
@@ -154,6 +154,16 @@ in
   
   # AriaNg is served by Caddy on port 6880 (see caddy.nix)
   # The package is referenced there directly
+
+  # ============================================================================
+  # SECRETS DIRECTORY SETUP
+  # ============================================================================
+  
+  # Ensure /etc/nixos/secrets directory exists before service starts
+  # This allows the preStart script to write the RPC secret file
+  systemd.tmpfiles.rules = [
+    "d /etc/nixos/secrets 0700 root root -"
+  ];
 
   # ============================================================================
   # FIREWALL CONFIGURATION
