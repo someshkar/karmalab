@@ -199,7 +199,25 @@ Prowlarr's API key will be used by Radarr and Sonarr:
 2. Copy the **API Key** (looks like: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`)
 3. **Save this API key** - you'll need it for Radarr and Sonarr setup
 
-### Step 5: Enable Sync to Applications
+### Step 5: Configure HTTP Proxy (Iceland VPN)
+
+Prowlarr uses Gluetun's HTTP proxy to route indexer searches through Iceland VPN, bypassing geo-blocks on sites like 1337x:
+
+1. Go to **Settings** → **General**
+2. Scroll to **Proxy** section
+3. Configure:
+   - **Use Proxy**: ✅ (enabled)
+   - **Proxy Type**: `HTTP(S)`
+   - **Hostname**: `192.168.0.200`
+   - **Port**: `8888`
+   - **Bypass Proxy for Local Addresses**: ✅ (recommended)
+4. Click **Save Changes**
+
+**Verify Proxy is Working:**
+- Test an indexer that's blocked in your region (e.g., 1337x)
+- Check Gluetun logs for requests: `docker logs gluetun 2>&1 | grep -i proxy`
+
+### Step 6: Enable Sync to Applications
 
 1. Go to **Settings** → **Apps**
 2. Click **Add Application** → **Radarr**
@@ -517,6 +535,19 @@ This ensures Jellyfin and other services can read the files.
    - **Interval**: `6 hours` (default)
    - **Upgrade Subtitles**: ✅ (optional - finds better quality subs)
 3. Click **Save**
+
+### Step 8: Configure HTTP Proxy (Iceland VPN)
+
+Bazarr uses Gluetun's HTTP proxy to route subtitle searches through Iceland VPN, bypassing geo-blocks on OpenSubtitles and other providers:
+
+1. Go to **Settings** → **General**
+2. Scroll to **Proxy** section
+3. Configure:
+   - **Use Proxy**: ✅ (enabled)
+   - **Proxy URL**: `http://192.168.0.200:8888`
+4. Click **Save**
+
+**Note:** This ensures subtitle searches bypass any regional blocks that might affect providers like OpenSubtitles.
 
 ### Bazarr Verification
 

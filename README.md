@@ -7,11 +7,11 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | Service | Port | VPN | Status | Notes |
 |---------|------|-----|--------|-------|
 | **Jellyfin** | 8096 | - | Working | Media streaming, Intel Quick Sync HW transcoding |
-| **Prowlarr** | 9696 | Iceland | Working | Indexer management, searches via Iceland VPN |
+| **Prowlarr** | 9696 | Gluetun Proxy | Working | Indexer management, searches via Gluetun HTTP proxy |
 | **FlareSolverr** | 8191 | - | Working | Cloudflare bypass for Prowlarr |
 | **Radarr** | 7878 | - | Working | Movie automation |
 | **Sonarr** | 8989 | - | Working | TV show automation |
-| **Bazarr** | 6767 | Iceland | Working | Subtitle automation via Iceland VPN |
+| **Bazarr** | 6767 | Gluetun Proxy | Working | Subtitle automation via Gluetun HTTP proxy |
 | **Jellyseerr** | 5055 | - | Working | Media request interface |
 | **Deluge** | 8112 | Singapore | Working | Torrent client (Singapore VPN for speed) |
 | **aria2** | 6800/6880 | - | Working | HTTP/FTP download manager with AriaNg web UI |
@@ -25,7 +25,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
 | **Vaultwarden** | 8222 | Working | Self-hosted password manager (Bitwarden-compatible) |
 | **Homepage** | 80 | Working | Service dashboard with system metrics (via Caddy) |
-| **Tailscale** | - | Working | VPN for remote access (exit node enabled) |
+| **Tailscale** | - | Working | VPN for remote access (exit node + subnet routing 192.168.0.0/24) |
 | **Cloudflare Tunnel** | - | Working | External access without port forwarding |
 
 ## Hardware
@@ -81,37 +81,30 @@ External Access (Cloudflare Tunnel):
   - sync.somesh.dev     → Syncthing (TCP protocol)
 ```
 
-### VPN Architecture (Dual VPN Setup)
+### VPN Architecture (Hybrid VPN + HTTP Proxy)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           NETWORK NAMESPACES                                │
+│                           NETWORK ARCHITECTURE                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
 │  ┌────────────────────────────────────────────────────────────────────┐    │
 │  │ DEFAULT NAMESPACE (Host: 192.168.0.200)                            │    │
 │  │                                                                    │    │
-│  │  Services: Jellyfin, Radarr, Sonarr, Immich, etc.                 │    │
-│  │  - WebUIs accessible on local network                             │    │
-│  │  - Inter-service communication                                    │    │
+│  │  Services: Jellyfin, Radarr, Sonarr, Prowlarr, Bazarr, Immich,    │    │
+│  │            Calibre-Web, Shelfmark, Audiobookshelf, etc.           │    │
+│  │  - Prowlarr/Bazarr/Shelfmark use Gluetun HTTP proxy for searches  │    │
 │  └────────────────────────────────────────────────────────────────────┘    │
 │                         │                           │                       │
-│                   veth pair (10.200.1.x)     veth pair (10.200.2.x)        │
-│                         │                           │                       │
 │  ┌──────────────────────▼───────────┐   ┌───────────▼──────────────────┐   │
-│  │ VPN NAMESPACE: vpn (Singapore)   │   │ VPN NAMESPACE: vpn-iceland   │   │
+│  │ VPN NAMESPACE: vpn (Singapore)   │   │ GLUETUN CONTAINER (Docker)   │   │
 │  │                                  │   │                              │   │
-│  │  wg-surfshark → Singapore       │   │  wg-iceland → Iceland        │   │
-│  │                                  │   │                              │   │
-│  │  Services:                       │   │  Services:                   │   │
-│  │  - Deluge (torrents)             │   │  - Prowlarr (indexers)       │   │
-│  │                                  │   │  - Bazarr (subtitles)        │   │
-│  │  Use: Speed-optimized            │   │  - Shelfmark (book sources)  │   │
-│  │       torrent downloads          │   │                              │   │
-│  │                                  │   │  Use: Access-optimized       │   │
-│  │  Kill Switch: Enabled            │   │       bypass geo-blocks      │   │
-│  │                                  │   │                              │   │
-│  │                                  │   │  Kill Switch: Enabled        │   │
+│  │  wg-surfshark → Singapore       │   │  WireGuard → Iceland          │   │
+│  │                                  │   │  HTTP Proxy: :8888            │   │
+│  │  Services:                       │   │                              │   │
+│  │  - Deluge (torrents)             │   │  Used by (via proxy config): │   │
+│  │                                  │   │  - Prowlarr (indexers)       │   │
+│  │  Kill Switch: Enabled            │   │  - Bazarr (subtitles)        │   │
+│  │                                  │   │  - Shelfmark (book sources)  │   │
 │  └──────────────────────────────────┘   └──────────────────────────────┘   │
 │           │                                       │                         │
 │           ▼                                       ▼                         │
@@ -124,10 +117,15 @@ External Access (Cloudflare Tunnel):
 ```
 
 **Traffic Flow:**
-- **Singapore VPN (Speed):** Torrent downloads via Deluge
-- **Iceland VPN (Access):** Indexer/subtitle/book searches (bypasses India/Singapore blocks)
+- **Singapore VPN (Speed):** Torrent downloads via Deluge (network namespace isolation)
+- **Gluetun HTTP Proxy (Access):** Indexer/subtitle/book searches via Iceland VPN
 - **Local Network:** All WebUIs, inter-service communication, media streaming
-- **Port Forwarding:** socat forwards ports from namespaces to host for WebUI access
+
+**Gluetun HTTP Proxy Setup:**
+Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
+- **Prowlarr:** Settings → General → Proxy → `http://192.168.0.200:8888`
+- **Bazarr:** Settings → General → Proxy URL → `http://192.168.0.200:8888`
+- **Shelfmark:** Settings → Proxy → `http://192.168.0.200:8888`
 
 **Why Iceland?**
 - 1337x, OpenSubtitles blocked in India/Singapore → Iceland unrestricted
@@ -153,7 +151,7 @@ External Access (Cloudflare Tunnel):
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │              USB HDD ZFS Pool (20TB) - storagepool                          │
-│              Total Allocated: ~10.25TB | Unallocated: ~7.75TB               │
+│              Total Allocated: ~13.3TB | Unallocated: ~6.7TB                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  MEDIA (5.6TB total):                                                       │
@@ -165,8 +163,8 @@ External Access (Cloudflare Tunnel):
 │  ├── storagepool/media/ebooks       /data/media/ebooks (100GB)              │
 │  └── storagepool/media/audiobooks   /data/media/audiobooks (1TB)            │
 │                                                                             │
-│  IMMICH (2TB total):                                                        │
-│  ├── storagepool/immich/photos      /data/immich/photos (2TB quota)         │
+│  IMMICH (4TB total):                                                        │
+│  ├── storagepool/immich/photos      /data/immich/photos (4TB quota)         │
 │  └── storagepool/immich/upload      /data/immich/upload (50GB)              │
 │                                                                             │
 │  CLOUD & BACKUP (2.5TB total):                                              │
@@ -437,7 +435,8 @@ karmalab/
 ├── disko-config.nix              # NVMe disk partitioning
 ├── modules/
 │   ├── storage.nix               # ZFS pool and dataset management
-│   ├── wireguard-vpn.nix         # VPN namespace for torrents
+│   ├── wireguard-vpn.nix         # VPN namespace for Deluge torrents
+│   ├── gluetun.nix               # Gluetun Docker container (Iceland VPN + HTTP proxy)
 │   └── services/
 │       ├── aria2.nix             # HTTP/FTP download manager
 │       ├── audiobookshelf.nix    # Audiobook & ebook server

@@ -368,19 +368,23 @@ networking.firewall = {
   logRefusedConnections = true;
   
   # Rate limit SSH
-  extraCommands = ''
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP
-  '';
+```nix
+# Note: SSH rate limiting removed - was causing connection timeouts
+# Security is handled by:
+# - SSH key-only authentication (PasswordAuthentication = false)
+# - Tailscale for remote access (not exposed to internet)
+# - fail2ban for brute force protection
 };
 ```
 
 **Firewall Strategy:**
-- ✅ SSH open but rate-limited + fail2ban protected
+- ✅ SSH open with key-only authentication + fail2ban protected
 - ✅ Tailscale interface fully trusted
 - ✅ Services bind to `0.0.0.0` but protected by firewall
 - ✅ Cloudflare Tunnel connects outbound (no ports needed)
 - ❌ No other ports exposed to internet
+
+> **Note:** SSH rate limiting via iptables was removed because it caused connection timeouts when rules accumulated. Key-only authentication + fail2ban provides sufficient protection.
 
 ---
 
@@ -1095,12 +1099,8 @@ networking.firewall = {
   # Log refused connections
   logRefusedConnections = true;
   
-  # Rate limit SSH
-  extraCommands = ''
-    # SSH rate limiting
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH
-    iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP
-  '';
+  # Note: SSH rate limiting removed - was causing connection timeouts
+  # Security is handled by key-only auth + fail2ban
 };
 
 # fail2ban for additional protection
@@ -1673,11 +1673,8 @@ graph TD
     allowPing = true;
     logRefusedConnections = true;
     
-    extraCommands = ''
-      # SSH rate limiting
-      iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH
-      iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP
-    '';
+    # Note: SSH rate limiting removed - was causing connection timeouts
+    # Security is handled by key-only auth + fail2ban
   };
 
   # fail2ban

@@ -143,7 +143,7 @@ Some indexers (The Pirate Bay, TorrentGalaxy) require Flaresolverr to bypass Clo
 1. **YTS** - High quality movies, small files
 2. **EZTV** - TV shows, daily updates
 3. **TorrentGalaxy** - Backup for both movies and TV
-4. **1337x** (via Iceland VPN once fixed) - Comprehensive coverage
+4. **1337x** (via Gluetun HTTP proxy) - Comprehensive coverage
 
 **For Quick Setup (No Flaresolverr needed):**
 1. **YTS** - Movies
@@ -186,12 +186,20 @@ Common issues:
 
 ## Privacy & VPN Considerations
 
-Currently configured VPN routing:
-- **Iceland VPN:** Prowlarr indexer searches (bypasses 1337x blocks in India)
-- **Singapore VPN:** Deluge torrent downloads (fast speeds)
-- **Host network:** Radarr, Sonarr (use Prowlarr for searches)
+Currently configured VPN/proxy routing:
+- **Gluetun HTTP Proxy (Iceland):** Prowlarr indexer searches, Bazarr subtitles (bypasses India/Singapore blocks)
+- **Singapore VPN Namespace:** Deluge torrent downloads (fast speeds, network isolation)
+- **Host network:** Radarr, Sonarr, Jellyfin (use Prowlarr for searches)
 
-All indexer searches go through Iceland VPN automatically once the routing is fixed.
+**Configuring HTTP Proxy in Prowlarr:**
+1. Go to **Settings** → **General** → **Proxy**
+2. Enable proxy and configure:
+   - **Proxy Type:** HTTP(S)
+   - **Hostname:** `192.168.0.200`
+   - **Port:** `8888`
+   - **Bypass for local addresses:** ✓
+
+All indexer searches go through Iceland VPN via Gluetun HTTP proxy.
 
 ---
 
