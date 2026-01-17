@@ -13,7 +13,7 @@
 # - postgres: Database with pgvector extension
 #
 # Storage Layout:
-# - /data/immich/photos/      - Photo library (ZFS, 1TB quota)
+# - /data/immich/photos/      - Photo library (ZFS, 4TB quota)
 # - /data/immich/upload/      - Temporary uploads (ZFS, 50GB)
 # - /var/lib/immich/postgres/ - Database (NVMe SSD for speed)
 # - /var/lib/immich/model-cache/ - ML models (NVMe SSD)

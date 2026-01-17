@@ -164,11 +164,11 @@
       allowPing = true;
       logRefusedConnections = true;
       
-      # SSH rate limiting
-      extraCommands = ''
-        iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH
-        iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 --name SSH -j DROP
-      '';
+      # Note: SSH rate limiting removed - was causing connection timeouts
+      # Security is already handled by:
+      # - SSH key-only authentication (PasswordAuthentication = false)
+      # - Tailscale for remote access (not exposed to internet)
+      # - Local network only exposure
     };
   };
 

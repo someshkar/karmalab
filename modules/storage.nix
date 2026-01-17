@@ -28,8 +28,8 @@
 # │     storagepool/media/ebooks/       - Ebooks (100GB quota)         │
 # │     storagepool/media/audiobooks/   - Audiobooks (1TB quota)       │
 # │                                                                     │
-# │   IMMICH (2TB total):                                              │
-# │     storagepool/immich/photos/      - Photo library (2TB quota)    │
+# │   IMMICH (4TB total):                                              │
+# │     storagepool/immich/photos/      - Photo library (4TB quota)    │
 # │     storagepool/immich/upload/      - Temp uploads (50GB)          │
 # │                                                                     │
 # │   CLOUD & BACKUP (2.5TB total):                                    │
@@ -39,7 +39,7 @@
 # │   SERVICES (~150GB):                                               │
 # │     storagepool/services/           - Service configs              │
 # │                                                                     │
-# │   UNALLOCATED: ~7.75TB for future expansion                        │
+# │   UNALLOCATED: ~6.7TB for future expansion                         │
 # └─────────────────────────────────────────────────────────────────────┘
 #
 # ============================================================================
@@ -269,9 +269,9 @@ in
       echo "--- Creating Immich datasets ---"
       create_dataset "$POOL/immich" -o mountpoint=none -o compression=lz4
       
-      # Photo library (2TB quota, 1M recordsize for large files)
+      # Photo library (4TB quota, 1M recordsize for large files)
       create_dataset "$POOL/immich/photos" -o mountpoint=legacy
-      set_property "$POOL/immich/photos" "quota" "2T"
+      set_property "$POOL/immich/photos" "quota" "4T"
       set_property "$POOL/immich/photos" "recordsize" "1M"
       set_property "$POOL/immich/photos" "atime" "off"
       
