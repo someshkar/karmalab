@@ -228,6 +228,14 @@ in
               siteMonitor = "http://${serverIP}:6880";
             };
           }
+          {
+            "JDownloader" = {
+              icon = "jdownloader.svg";
+              description = "Download offloader";
+              href = "http://${serverIP}:5800";
+              siteMonitor = "http://${serverIP}:5800";
+            };
+          }
         ];
       }
 
