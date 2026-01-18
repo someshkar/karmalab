@@ -21,7 +21,7 @@
 # INFRASTRUCTURE:
 # - Deluge: Torrent client with VPN isolation (Surfshark WireGuard)
 # - aria2: HTTP/FTP download manager with AriaNg web UI
-# - JDownloader: Download offloader with browser extension (MyJDownloader)
+# - Firefox Browser: Web-accessible browser for authenticated downloads
 # - Uptime Kuma: Service monitoring and status pages
 # - Time Machine: macOS backup server (Samba with vfs_fruit)
 # - Homepage: Service dashboard with system metrics (Glances)
@@ -75,7 +75,7 @@
     ./modules/services/audiobookshelf.nix  # Audiobook server
     ./modules/services/calibre-web.nix  # Ebook library web interface
     ./modules/services/shelfmark.nix    # Book & audiobook downloader
-    ./modules/services/jdownloader.nix  # Download offloader with browser extension
+    ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
   ];
 
   # ============================================================================

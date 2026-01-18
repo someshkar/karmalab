@@ -229,11 +229,11 @@ in
             };
           }
           {
-            "JDownloader" = {
-              icon = "jdownloader.svg";
-              description = "Download offloader";
-              href = "http://${serverIP}:5800";
-              siteMonitor = "http://${serverIP}:5800";
+            "Firefox Browser" = {
+              icon = "firefox.svg";
+              description = "Authenticated downloads";
+              href = "https://${serverIP}:3011";
+              siteMonitor = "http://${serverIP}:3010";
             };
           }
         ];
