@@ -168,7 +168,7 @@ Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
 │  └── storagepool/immich/upload      /data/immich/upload (50GB)              │
 │                                                                             │
 │  CLOUD & BACKUP (2.5TB total):                                              │
-│  ├── storagepool/opencloud          /data/opencloud (1TB quota)             │
+│  ├── storagepool/nextcloud          /data/nextcloud (1TB quota)             │
 │  └── storagepool/timemachine        /data/timemachine (1.5TB quota)         │
 │                                                                             │
 │  SERVICES (~150GB):                                                         │

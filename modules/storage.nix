@@ -16,7 +16,7 @@
 # │   /var/lib/immich/postgres/    - Immich database                   │
 # │   /var/lib/immich/model-cache/ - ML models (~20GB)                 │
 # │   /var/lib/uptime-kuma/        - Monitoring config                 │
-# │   /var/lib/opencloud/          - OpenCloud database/config         │
+# │   /var/lib/nextcloud/          - Nextcloud database/config         │
 # └─────────────────────────────────────────────────────────────────────┘
 # ┌─────────────────────────────────────────────────────────────────────┐
 # │ USB HDD ZFS Pool (20TB) - Large storage for media, photos, backups │
@@ -33,7 +33,7 @@
 # │     storagepool/immich/upload/      - Temp uploads (50GB)          │
 # │                                                                     │
 # │   CLOUD & BACKUP (2.5TB total):                                    │
-# │     storagepool/opencloud/          - OpenCloud files (1TB quota)  │
+# │     storagepool/nextcloud/          - Nextcloud files (1TB quota)  │
 # │     storagepool/timemachine/        - Mac backups (1.5TB quota)    │
 # │                                                                     │
 # │   SERVICES (~150GB):                                               │
@@ -332,17 +332,15 @@ in
       # Ensure new files/dirs inherit group ownership
       chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads /data/media/downloads/complete /data/media/downloads/incomplete /data/media/ebooks /data/media/audiobooks
       
-      # ===== OPENCLOUD DATASET =====
-      # Note: If upgrading from nextcloud, rename the dataset first:
-      #   sudo zfs rename storagepool/nextcloud storagepool/opencloud
-      echo "--- Creating OpenCloud dataset ---"
-      create_dataset "$POOL/opencloud" -o mountpoint=/data/opencloud -o compression=lz4 -o atime=off
-      set_property "$POOL/opencloud" "quota" "1T"
-      set_property "$POOL/opencloud" "recordsize" "128K"
+      # ===== NEXTCLOUD DATASET =====
+      echo "--- Creating Nextcloud dataset ---"
+      create_dataset "$POOL/nextcloud" -o mountpoint=/data/nextcloud -o compression=lz4 -o atime=off
+      set_property "$POOL/nextcloud" "quota" "1T"
+      set_property "$POOL/nextcloud" "recordsize" "128K"
       
-      # Set OpenCloud directory permissions (will be owned by opencloud user)
-      chown -R root:root /data/opencloud
-      chmod -R 750 /data/opencloud
+      # Set Nextcloud directory permissions (will be owned by nextcloud user)
+      chown -R root:root /data/nextcloud
+      chmod -R 750 /data/nextcloud
       
       # ===== TIME MACHINE DATASET =====
       echo "--- Creating Time Machine dataset ---"
