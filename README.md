@@ -151,15 +151,15 @@ Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │              USB HDD ZFS Pool (20TB) - storagepool                          │
-│              Total Allocated: ~13.3TB | Unallocated: ~6.7TB                 │
+│              Total Allocated: ~13.8TB | Unallocated: ~6.2TB                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  MEDIA (5.6TB total):                                                       │
+│  MEDIA (7.1TB total):                                                       │
 │  ├── storagepool/media/movies       /data/media/movies (2TB quota)          │
 │  ├── storagepool/media/tv           /data/media/tv (2TB quota)              │
-│  ├── storagepool/media/downloads    /data/media/downloads (500GB)           │
-│  │   ├── complete                   (400GB)                                 │
-│  │   └── incomplete                 (200GB, no snapshots)                   │
+│  ├── storagepool/media/downloads    /data/media/downloads (1TB)             │
+│  │   ├── complete                   (800GB)                                 │
+│  │   └── incomplete                 (400GB, no snapshots)                   │
 │  ├── storagepool/media/ebooks       /data/media/ebooks (100GB)              │
 │  └── storagepool/media/audiobooks   /data/media/audiobooks (1TB)            │
 │                                                                             │
@@ -168,7 +168,7 @@ Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
 │  └── storagepool/immich/upload      /data/immich/upload (50GB)              │
 │                                                                             │
 │  CLOUD & BACKUP (2.5TB total):                                              │
-│  ├── storagepool/nextcloud          /data/nextcloud (1TB quota)             │
+│  ├── storagepool/opencloud          /data/opencloud (1TB quota)             │
 │  └── storagepool/timemachine        /data/timemachine (1.5TB quota)         │
 │                                                                             │
 │  SERVICES (~150GB):                                                         │
@@ -437,6 +437,7 @@ karmalab/
 │   ├── storage.nix               # ZFS pool and dataset management
 │   ├── wireguard-vpn.nix         # VPN namespace for Deluge torrents
 │   ├── gluetun.nix               # Gluetun Docker container (Iceland VPN + HTTP proxy)
+│   ├── immich-go.nix             # immich-go tool for Google Photos Takeout migration
 │   └── services/
 │       ├── aria2.nix             # HTTP/FTP download manager
 │       ├── audiobookshelf.nix    # Audiobook & ebook server

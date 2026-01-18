@@ -16,7 +16,7 @@
 # │   /var/lib/immich/postgres/    - Immich database                   │
 # │   /var/lib/immich/model-cache/ - ML models (~20GB)                 │
 # │   /var/lib/uptime-kuma/        - Monitoring config                 │
-# │   /var/lib/nextcloud/          - Nextcloud database/config         │
+# │   /var/lib/opencloud/          - OpenCloud database/config         │
 # └─────────────────────────────────────────────────────────────────────┘
 # ┌─────────────────────────────────────────────────────────────────────┐
 # │ USB HDD ZFS Pool (20TB) - Large storage for media, photos, backups │
@@ -24,7 +24,7 @@
 # │   MEDIA (6.5TB total):                                             │
 # │     storagepool/media/movies/       - Movies (2TB quota)           │
 # │     storagepool/media/tv/           - TV Shows (2TB quota)         │
-# │     storagepool/media/downloads/    - Temp downloads (500GB)       │
+# │     storagepool/media/downloads/    - Temp downloads (1TB)         │
 # │     storagepool/media/ebooks/       - Ebooks (100GB quota)         │
 # │     storagepool/media/audiobooks/   - Audiobooks (1TB quota)       │
 # │                                                                     │
@@ -33,13 +33,13 @@
 # │     storagepool/immich/upload/      - Temp uploads (50GB)          │
 # │                                                                     │
 # │   CLOUD & BACKUP (2.5TB total):                                    │
-# │     storagepool/nextcloud/          - Nextcloud files (1TB quota)  │
+# │     storagepool/opencloud/          - OpenCloud files (1TB quota)  │
 # │     storagepool/timemachine/        - Mac backups (1.5TB quota)    │
 # │                                                                     │
 # │   SERVICES (~150GB):                                               │
 # │     storagepool/services/           - Service configs              │
 # │                                                                     │
-# │   UNALLOCATED: ~6.7TB for future expansion                         │
+# │   UNALLOCATED: ~6.2TB for future expansion                         │
 # └─────────────────────────────────────────────────────────────────────┘
 #
 # ============================================================================
@@ -302,15 +302,15 @@ in
       set_property "$POOL/media/tv" "quota" "2T"
       set_property "$POOL/media/tv" "recordsize" "1M"
       
-      # Downloads (500GB total)
+      # Downloads (1TB total)
       create_dataset "$POOL/media/downloads"
-      set_property "$POOL/media/downloads" "quota" "500G"
+      set_property "$POOL/media/downloads" "quota" "1T"
       
       create_dataset "$POOL/media/downloads/complete"
-      set_property "$POOL/media/downloads/complete" "quota" "400G"
+      set_property "$POOL/media/downloads/complete" "quota" "800G"
       
       create_dataset "$POOL/media/downloads/incomplete"
-      set_property "$POOL/media/downloads/incomplete" "quota" "200G"
+      set_property "$POOL/media/downloads/incomplete" "quota" "400G"
       set_property "$POOL/media/downloads/incomplete" "com.sun:auto-snapshot" "false"
       
       # Ebooks (100GB quota - text files are tiny)
@@ -332,15 +332,17 @@ in
       # Ensure new files/dirs inherit group ownership
       chmod g+s /data/media /data/media/movies /data/media/tv /data/media/downloads /data/media/downloads/complete /data/media/downloads/incomplete /data/media/ebooks /data/media/audiobooks
       
-      # ===== NEXTCLOUD DATASET =====
-      echo "--- Creating Nextcloud dataset ---"
-      create_dataset "$POOL/nextcloud" -o mountpoint=/data/nextcloud -o compression=lz4 -o atime=off
-      set_property "$POOL/nextcloud" "quota" "1T"
-      set_property "$POOL/nextcloud" "recordsize" "128K"
+      # ===== OPENCLOUD DATASET =====
+      # Note: If upgrading from nextcloud, rename the dataset first:
+      #   sudo zfs rename storagepool/nextcloud storagepool/opencloud
+      echo "--- Creating OpenCloud dataset ---"
+      create_dataset "$POOL/opencloud" -o mountpoint=/data/opencloud -o compression=lz4 -o atime=off
+      set_property "$POOL/opencloud" "quota" "1T"
+      set_property "$POOL/opencloud" "recordsize" "128K"
       
-      # Set Nextcloud directory permissions (will be owned by nextcloud user)
-      chown -R root:root /data/nextcloud
-      chmod -R 750 /data/nextcloud
+      # Set OpenCloud directory permissions (will be owned by opencloud user)
+      chown -R root:root /data/opencloud
+      chmod -R 750 /data/opencloud
       
       # ===== TIME MACHINE DATASET =====
       echo "--- Creating Time Machine dataset ---"

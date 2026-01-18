@@ -57,6 +57,7 @@
     ./modules/wireguard-vpn.nix     # VPN namespace for Surfshark (Singapore - torrents)
     # wireguard-vpn-iceland.nix removed - replaced by Gluetun HTTP proxy
     ./modules/gluetun.nix           # Gluetun HTTP proxy for Iceland VPN (Shelfmark/Prowlarr/Bazarr)
+    ./modules/immich-go.nix          # immich-go tool for Google Photos Takeout migration
     ./modules/services/deluge.nix   # Native Deluge in VPN namespace
     ./modules/services/immich.nix   # Immich photo management (Docker)
     ./modules/services/uptime-kuma.nix # Service monitoring
@@ -406,6 +407,9 @@
     
     # File management
     tree rsync
+    
+    # Cloud sync (for Google Photos Takeout migration)
+    rclone
     
     # Development
     git vim
