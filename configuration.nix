@@ -419,6 +419,7 @@
     
     # System utilities
     lm_sensors
+    tmux              # Terminal multiplexer for long-running tasks
   ];
 
   # ============================================================================
