@@ -17,7 +17,8 @@
 #
 # Downloads:
 # - Firefox downloads go to: /downloads (in-container)
-# - Mapped to: /data/media/downloads/complete (on host)
+# - Mapped to: /data/media/downloads (on host)
+# - For Google Takeout: Set Firefox to save to /downloads/google-takeout/{account}/
 #
 # Usage for Google Takeout:
 # 1. Open https://192.168.0.200:3011
@@ -37,7 +38,7 @@ let
   
   # Paths
   configDir = "/var/lib/firefox-browser";
-  downloadDir = "/data/media/downloads/complete";
+  downloadDir = "/data/media/downloads";
   
   # Docker image
   image = "lscr.io/linuxserver/firefox:latest";
