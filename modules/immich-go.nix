@@ -30,7 +30,7 @@ let
     
     src = pkgs.fetchurl {
       url = "https://github.com/simulot/immich-go/releases/download/v${version}/immich-go_Linux_x86_64.tar.gz";
-      sha256 = "sha256-ZoNuZNt+5SGbvFWYr+CQ2JlbAj8O/gBJjukrsFOL5hA=";
+      sha256 = "sha256-ZoNuZNt+5SFbvFXUmPbVCKmVvj8L+AQZjuksN+c7thA=";
     };
     
     # No build required - just extract the binary
