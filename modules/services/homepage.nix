@@ -79,6 +79,10 @@ in
           style = "column";
           icon = "mdi-image";
         };
+        Storage = {
+          style = "column";
+          icon = "mdi-folder-sync";
+        };
         Infrastructure = {
           style = "column";
           icon = "mdi-server";
@@ -253,6 +257,35 @@ in
         ];
       }
 
+      # Storage
+      {
+        "Storage" = [
+          {
+            "OpenCloud" = {
+              icon = "owncloud.svg";
+              description = "File sync & share";
+              href = "http://${serverIP}:9200";
+              siteMonitor = "http://${serverIP}:9200";
+            };
+          }
+          {
+            "Syncthing" = {
+              icon = "syncthing.svg";
+              description = "File synchronization";
+              href = "http://${serverIP}:8384";
+              siteMonitor = "http://${serverIP}:8384";
+            };
+          }
+          {
+            "Time Machine" = {
+              icon = "mdi-apple-finder";
+              description = "macOS backup server";
+              href = "smb://${serverIP}/timemachine";
+            };
+          }
+        ];
+      }
+
       # Infrastructure
       {
         "Infrastructure" = [
@@ -265,26 +298,11 @@ in
             };
           }
           {
-            "Syncthing" = {
-              icon = "syncthing.svg";
-              description = "File synchronization";
-              href = "http://${serverIP}:8384";
-              siteMonitor = "http://${serverIP}:8384";
-            };
-          }
-          {
             "Forgejo" = {
               icon = "forgejo.svg";
               description = "Git server";
               href = "http://${serverIP}:3030";
               siteMonitor = "http://${serverIP}:3030";
-            };
-          }
-          {
-            "Time Machine" = {
-              icon = "mdi-apple-finder";
-              description = "macOS backup server";
-              href = "smb://${serverIP}/timemachine";
             };
           }
         ];
@@ -372,6 +390,14 @@ in
               {
                 icon = "immich.svg";
                 href = "https://immich.somesh.dev";
+              }
+            ];
+          }
+          {
+            "OpenCloud (External)" = [
+              {
+                icon = "owncloud.svg";
+                href = "https://cloud.somesh.dev";
               }
             ];
           }

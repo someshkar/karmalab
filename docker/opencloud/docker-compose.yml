@@ -1,0 +1,94 @@
+# OpenCloud Docker Compose Configuration
+# ============================================================================
+# OpenCloud is a modern file sync & share platform (ownCloud Infinite Scale fork)
+# 
+# This file is copied to /var/lib/opencloud/docker-compose.yml on deployment
+# ============================================================================
+
+name: opencloud
+
+services:
+  # ==========================================================================
+  # OPENCLOUD SERVER
+  # ==========================================================================
+  # Main OpenCloud server - handles web UI, WebDAV, and all file operations
+  # No external database required - uses embedded storage
+  opencloud:
+    container_name: opencloud
+    image: opencloudeu/opencloud-rolling:${OC_VERSION:-latest}
+    
+    # Run as UID/GID 1000 (matches NixOS tmpfiles rules)
+    user: "${OC_UID:-1000}:${OC_GID:-1000}"
+    
+    ports:
+      - "${OC_PORT:-9200}:9200"
+    
+    # Initialize config on first run, then start server
+    entrypoint:
+      - /bin/sh
+    command: ["-c", "opencloud init || true; opencloud server"]
+    
+    environment:
+      # Server URL (used for generating share links, etc.)
+      OC_URL: https://${OC_DOMAIN:-cloud.somesh.dev}
+      
+      # Logging
+      OC_LOG_LEVEL: ${OC_LOG_LEVEL:-info}
+      OC_LOG_COLOR: "false"
+      OC_LOG_PRETTY: "false"
+      
+      # TLS - disabled since Cloudflare Tunnel handles HTTPS
+      PROXY_TLS: "false"
+      OC_INSECURE: "false"
+      
+      # Admin password (set in .env)
+      IDM_ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      
+      # Disable demo users
+      IDM_CREATE_DEMO_USERS: "false"
+      
+      # Enable basic auth for WebDAV clients that don't support OIDC
+      PROXY_ENABLE_BASIC_AUTH: "true"
+      
+      # Max archive size for download as zip (10GB)
+      FRONTEND_ARCHIVER_MAX_SIZE: "10000000000"
+      
+      # Disable update checks (we manage versions ourselves)
+      FRONTEND_CHECK_FOR_UPDATES: "false"
+      
+      # Password policy
+      OC_SHARING_PUBLIC_SHARE_MUST_HAVE_PASSWORD: "false"
+      OC_PASSWORD_POLICY_DISABLED: "false"
+      OC_PASSWORD_POLICY_MIN_CHARACTERS: "8"
+    
+    volumes:
+      # OpenCloud configuration (on NVMe SSD)
+      - ${OC_CONFIG_DIR:-/var/lib/opencloud/config}:/etc/opencloud
+      
+      # OpenCloud internal data/metadata (on NVMe SSD)
+      - ${OC_DATA_DIR:-/var/lib/opencloud/data}:/var/lib/opencloud
+      
+      # User files (on ZFS HDD - 1TB quota)
+      - /data/opencloud:/data/opencloud
+      
+      # Timezone
+      - /etc/localtime:/etc/localtime:ro
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: opencloud-net

@@ -76,6 +76,7 @@
     ./modules/services/calibre-web.nix  # Ebook library web interface
     ./modules/services/shelfmark.nix    # Book & audiobook downloader
     ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
+    ./modules/services/opencloud.nix  # OpenCloud file sync & share (cloud.somesh.dev)
   ];
 
   # ============================================================================

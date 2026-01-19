@@ -9,6 +9,7 @@
 # Exposed Services (configured in Cloudflare Zero Trust dashboard):
 # - git.somesh.dev      → Forgejo (port 3030)
 # - immich.somesh.dev   → Immich (port 2283)
+# - cloud.somesh.dev    → OpenCloud (port 9200)
 # - jellyfin.somesh.dev → Jellyfin (port 8096)
 # - jellyseer.somesh.dev → Jellyseerr (port 5055)
 # - sync.somesh.dev     → Syncthing protocol (port 22000, TCP)
