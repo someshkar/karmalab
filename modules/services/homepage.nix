@@ -262,7 +262,7 @@ in
         "Storage" = [
           {
             "OpenCloud" = {
-              icon = "owncloud.svg";
+              icon = "https://github.com/opencloud-eu.png";
               description = "File sync & share";
               href = "http://${serverIP}:9200";
               siteMonitor = "http://${serverIP}:9200";
@@ -396,7 +396,7 @@ in
           {
             "OpenCloud (External)" = [
               {
-                icon = "owncloud.svg";
+                icon = "https://github.com/opencloud-eu.png";
                 href = "https://cloud.somesh.dev";
               }
             ];
