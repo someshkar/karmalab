@@ -17,19 +17,22 @@
 #   * Universal: Search metadata providers (Hardcover, Open Library) for
 #                richer discovery with multi-source downloads
 #
-# Integration:
-# - Ebooks download to /tmp/shelfmark-downloads (temporary, manual transfer to Mac)
-# - Audiobooks download to audiobooks directory → Audiobookshelf serves
-# - Shelfmark is a search UI only - user manually organizes ebooks with Calibre Desktop on Mac
+# Workflow:
+# 1. Search for books/audiobooks in Shelfmark web interface
+# 2. Download directly to Mac browser (via "Download to Browser" setting)
+# 3. Import ebooks into Calibre Desktop on Mac
+# 4. Calibre library syncs between Mac ↔ Calibre-Web on karmalab (via Syncthing)
+# 5. Upload to Kindle from Mac Calibre Desktop (seamless, jailbreak-friendly)
 #
 # Storage:
 # - Config/database: /var/lib/shelfmark (on NVMe SSD, 10GB quota)
-# - Ebook downloads: /tmp/shelfmark-downloads (temporary, manually transfer to Mac)
+# - Ebook downloads: /tmp/shelfmark-downloads (server-side, unused with browser download)
 # - Audiobook downloads: /data/media/audiobooks (auto-imported by Audiobookshelf)
 #
 # Network:
-# - Runs on host network (not tunneled through VPN)
-# - Book sources (Anna's Archive, Z-Library) accessible from India without VPN
+# - Runs on host network
+# - Routes through Gluetun Iceland VPN HTTP proxy (port 8888)
+# - Book sources (Anna's Archive, Z-Library, Libgen) are geo-blocked in India
 # - WebUI directly accessible on local network
 #
 # Access:
@@ -48,18 +51,15 @@
 #    - Enable "Require Authentication"
 #    - Create admin account: username "somesh", STRONG password
 #    - Save and test login
-# 3. Configure download paths in Settings:
-#    - Ebooks: /books/downloads (temporary storage)
-#    - Audiobooks: /books/audiobooks
-# 4. Use Shelfmark web UI to download books directly to your Mac browser
-# 5. Or use scp to transfer from /tmp/shelfmark-downloads to Mac
-# 6. Organize with Calibre Desktop on Mac, sync via Syncthing to NUC
-# 7. Optional: Configure metadata providers (Hardcover API key)
-# 8. Optional: Add IRC/Prowlarr sources
+# 3. **Enable "Download to Browser" (Settings → Downloads)**
+#    - This sends completed downloads directly to your Mac browser
+#    - No need to manually transfer files from server
+# 4. Optional: Configure metadata providers (Hardcover API key) for Universal search mode
+# 5. Optional: Add IRC/Prowlarr sources for additional book/audiobook sources
 #
 # File Processing:
-# - Customizable download paths and file renaming
-# - Template-based renaming with metadata
+# - "Download to Browser" setting sends files directly to browser (recommended)
+# - Server-side: Customizable download paths and template-based file renaming
 # - Atomic writes (via .crdownload files) to prevent partial imports
 #
 # Sources:
