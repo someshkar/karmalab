@@ -122,7 +122,7 @@ in
     script = ''
       ${pkgs.docker}/bin/docker run \
         --name=shelfmark \
-        -p ${toString httpPort}:8084 \
+        --network=host \
         --rm \
         -v ${configDir}:/config \
         -v ${ebooksDir}:/books/downloads \
@@ -154,7 +154,7 @@ in
   
   # Ensure config directory exists with correct permissions
   systemd.tmpfiles.rules = [
-    "d ${configDir} 0755 root root -"
+    "d ${configDir} 0755 2000 2000 -"
     "d ${ebooksDir} 1777 root root -"  # World-writable temp directory
     # Note: audiobook directory already exists from other services
   ];
