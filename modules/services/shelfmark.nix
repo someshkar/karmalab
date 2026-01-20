@@ -135,6 +135,8 @@ in
         -e INGEST_DIR=/books/downloads \
         -e SEARCH_MODE=direct \
         -e LOG_LEVEL=INFO \
+        -e HTTP_PROXY=http://127.0.0.1:8888 \
+        -e HTTPS_PROXY=http://127.0.0.1:8888 \
         ${image}
     '';
     
