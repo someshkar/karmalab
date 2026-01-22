@@ -114,12 +114,6 @@ in
         
         # Enable repository statistics
         ENABLE_PUSH_CREATE_USER = true;  # Allow creating repos via push
-        
-        # Repository upload settings
-        UPLOAD = {
-          ENABLED = true;
-          FILE_MAX_SIZE = 1073741824;  # 1GB for web uploads
-        };
       };
       
       # LFS (Large File Storage) configuration
