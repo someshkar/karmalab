@@ -12,12 +12,14 @@
 # - Issue tracking
 # - Pull requests
 # - SSH and HTTPS access
+# - Git LFS (Large File Storage) support - up to 5GB per file
 # - Optional CI/CD (Actions, disabled by default)
 #
 # Storage:
 # - Data directory: /var/lib/forgejo (on NVMe SSD)
 # - Database: SQLite (simple, sufficient for personal use)
 # - Repositories stored in /var/lib/forgejo/repositories/
+# - LFS objects stored in /var/lib/forgejo/data/lfs/
 #
 # Access:
 # - Web UI: http://192.168.0.200:3030
@@ -48,6 +50,15 @@ let
 in
 {
   # ============================================================================
+  # SYSTEM PACKAGES
+  # ============================================================================
+  
+  # Add git-lfs to system packages (required for LFS support)
+  environment.systemPackages = with pkgs; [
+    git-lfs
+  ];
+  
+  # ============================================================================
   # FORGEJO SERVICE
   # ============================================================================
   
@@ -77,6 +88,10 @@ in
         
         # Landing page
         LANDING_PAGE = "login";
+        
+        # LFS (Large File Storage) settings
+        LFS_START_SERVER = true;
+        LFS_HTTP_AUTH_EXPIRY = "30m";  # 30 minutes for large file uploads
       };
       
       # Service settings
@@ -99,6 +114,22 @@ in
         
         # Enable repository statistics
         ENABLE_PUSH_CREATE_USER = true;  # Allow creating repos via push
+        
+        # Repository upload settings
+        UPLOAD = {
+          ENABLED = true;
+          FILE_MAX_SIZE = 1073741824;  # 1GB for web uploads
+        };
+      };
+      
+      # LFS (Large File Storage) configuration
+      lfs = {
+        # Storage path for LFS objects
+        PATH = "/var/lib/forgejo/data/lfs";
+        
+        # Maximum file size: 5GB = 5368709120 bytes
+        # Supports ML models, game assets, large videos
+        MAX_FILE_SIZE = 5368709120;
       };
       
       # Session settings
