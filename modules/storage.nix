@@ -178,15 +178,8 @@ in
       options = zfsMountOpts;
     };
     
-    # LazyLibrarian
-    "/var/lib/lazylibrarian" = {
-      device = "${poolName}/services/lazylibrarian";
-      fsType = "zfs";
-      options = zfsMountOpts;
-    };
-    
-    # Note: jellyseerr and prowlarr use NixOS defaults on NVMe SSD
-    # They use DynamicUser=true which conflicts with ZFS mounts
+    # Note: jellyseerr, prowlarr, and lazylibrarian use NixOS defaults on NVMe SSD
+    # They use DynamicUser=true which conflicts with ZFS mounts (or small databases)
     # Their data is small (config + SQLite) so NVMe is fine
     
     # Note: uptime-kuma uses NixOS default at /var/lib/uptime-kuma/
@@ -194,6 +187,10 @@ in
     
     # Note: filebrowser uses NVMe default at /var/lib/filebrowser/
     # Database is small (~10MB), no ZFS needed
+    
+    # Note: lazylibrarian uses NVMe default at /var/lib/lazylibrarian/
+    # Database is small (~50MB), only stores metadata and config
+    # Actual ebooks/audiobooks stored on ZFS at /data/media/ebooks and /data/media/audiobooks
   };
   
   # ============================================================================
@@ -415,10 +412,8 @@ in
       set_property "$POOL/services/uptime-kuma" "quota" "1G"
       set_property "$POOL/services/uptime-kuma" "recordsize" "8K"
       
-      # LazyLibrarian
-      create_dataset "$POOL/services/lazylibrarian" -o mountpoint=legacy
-      set_property "$POOL/services/lazylibrarian" "quota" "5G"
-      set_property "$POOL/services/lazylibrarian" "recordsize" "8K"
+      # Note: LazyLibrarian, Jellyseerr, Prowlarr, and FileBrowser use NVMe defaults
+      # Their data is small (config + SQLite databases) so no ZFS datasets needed
       
       echo "=========================================="
       echo "ZFS dataset creation completed!"

@@ -29,10 +29,6 @@ git fetch origin
 git checkout feature/media-automation
 git pull origin feature/media-automation
 
-# Create ZFS dataset for LazyLibrarian
-sudo zfs create -o mountpoint=legacy storagepool/services/lazylibrarian
-sudo zfs set quota=5G storagepool/services/lazylibrarian
-
 # Deploy configuration
 sudo nixos-rebuild switch
 
@@ -281,9 +277,6 @@ sudo systemctl status lazylibrarian
 
 # View logs
 journalctl -u lazylibrarian -n 100
-
-# Check if ZFS dataset mounted
-zfs list | grep lazylibrarian
 
 # Check permissions
 ls -lh /var/lib/lazylibrarian
