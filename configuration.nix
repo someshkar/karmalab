@@ -75,6 +75,8 @@
     ./modules/services/audiobookshelf.nix  # Audiobook server
     ./modules/services/calibre-web.nix  # Ebook library web interface
     ./modules/services/shelfmark.nix    # Book & audiobook downloader
+    ./modules/services/lazylibrarian.nix  # Ebook & audiobook automation
+    ./modules/services/filebrowser.nix  # Web-based file manager
     ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
     ./modules/services/opencloud.nix  # OpenCloud file sync & share (cloud.somesh.dev)
   ];
@@ -142,6 +144,8 @@
         8112    # Deluge Web UI
         2283    # Immich
         3001    # Uptime Kuma
+        5299    # LazyLibrarian
+        8085    # FileBrowser
       ];
       
       # Trusted interfaces

@@ -18,7 +18,12 @@
 # - books.somesh.dev    → Calibre-Web (port 8083)
 # - shelfmark.somesh.dev → Shelfmark (port 8084)
 # - home.somesh.dev     → Homepage Dashboard (port 8082)
+# - files.somesh.dev    → FileBrowser (port 8085) [local/Tailscale only - no public DNS]
 # - status.somesh.dev   → Uptime Kuma (port 3001) [optional]
+#
+# Note: files.somesh.dev has tunnel config but NO public DNS record.
+# This allows local/Tailscale access via cloudflared tunnel without exposing publicly.
+# To enable external access later, just add the DNS CNAME in Cloudflare dashboard.
 #
 # Setup:
 # 1. Create tunnel in Cloudflare Zero Trust dashboard
