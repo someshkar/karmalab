@@ -178,12 +178,22 @@ in
       options = zfsMountOpts;
     };
     
+    # LazyLibrarian
+    "/var/lib/lazylibrarian" = {
+      device = "${poolName}/services/lazylibrarian";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
     # Note: jellyseerr and prowlarr use NixOS defaults on NVMe SSD
     # They use DynamicUser=true which conflicts with ZFS mounts
     # Their data is small (config + SQLite) so NVMe is fine
     
     # Note: uptime-kuma uses NixOS default at /var/lib/uptime-kuma/
     # No ZFS mount needed - NixOS 25.11 manages this automatically
+    
+    # Note: filebrowser uses NVMe default at /var/lib/filebrowser/
+    # Database is small (~10MB), no ZFS needed
   };
   
   # ============================================================================
@@ -404,6 +414,11 @@ in
       create_dataset "$POOL/services/uptime-kuma" -o mountpoint=legacy
       set_property "$POOL/services/uptime-kuma" "quota" "1G"
       set_property "$POOL/services/uptime-kuma" "recordsize" "8K"
+      
+      # LazyLibrarian
+      create_dataset "$POOL/services/lazylibrarian" -o mountpoint=legacy
+      set_property "$POOL/services/lazylibrarian" "quota" "5G"
+      set_property "$POOL/services/lazylibrarian" "recordsize" "8K"
       
       echo "=========================================="
       echo "ZFS dataset creation completed!"
