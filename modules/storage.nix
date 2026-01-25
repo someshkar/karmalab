@@ -434,6 +434,9 @@ in
     "d /var/lib/immich 0755 root root -"
     "d /var/lib/immich/postgres 0700 999 999 -"
     "d /var/lib/immich/model-cache 0755 999 999 -"
+    
+    # LazyLibrarian download subdirectory
+    "d /data/media/downloads/complete/lazylibrarian 0775 root media - -"
   ];
   
   # ============================================================================
