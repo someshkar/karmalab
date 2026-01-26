@@ -10,8 +10,8 @@ in
     enable = mkEnableOption "MAM dynamic seedbox IP updater";
 
     secretsFile = mkOption {
-      type = types.path;
-      default = /etc/nixos/secrets/mam-id;
+      type = types.str;
+      default = "/etc/nixos/secrets/mam-id";
       description = "Path to file containing mam_id cookie";
     };
 
@@ -93,9 +93,8 @@ in
         # Security hardening
         PrivateTmp = true;
         NoNewPrivileges = true;
-        ProtectSystem = "strict";
+        ProtectSystem = "full";  # Allow reading /etc
         ProtectHome = true;
-        ReadOnlyPaths = [ cfg.secretsFile ];
       };
     };
 
