@@ -157,19 +157,27 @@ in
             };
           }
           {
-            "Shelfmark" = {
-              icon = "https://raw.githubusercontent.com/calibrain/shelfmark/main/src/frontend/public/logo.png";
-              description = "Book & audiobook downloader";
-              href = "http://${serverIP}:8084";
-              siteMonitor = "http://${serverIP}:8084";
-            };
-          }
-          {
             "Audiobookshelf" = {
               icon = "audiobookshelf.svg";
               description = "Audiobook server";
               href = "http://${serverIP}:13378";
               siteMonitor = "http://${serverIP}:13378";
+            };
+          }
+          {
+            "LazyLibrarian" = {
+              icon = "lazylibrarian.svg";
+              description = "Ebook & audiobook automation";
+              href = "http://${serverIP}:5299";
+              siteMonitor = "http://${serverIP}:5299";
+            };
+          }
+          {
+            "Shelfmark" = {
+              icon = "https://raw.githubusercontent.com/calibrain/shelfmark/main/src/frontend/public/logo.png";
+              description = "Book & audiobook downloader";
+              href = "http://${serverIP}:8084";
+              siteMonitor = "http://${serverIP}:8084";
             };
           }
         ];
@@ -446,6 +454,14 @@ in
               {
                 icon = "https://raw.githubusercontent.com/calibrain/shelfmark/main/src/frontend/public/logo.png";
                 href = "https://shelfmark.somesh.dev";
+              }
+            ];
+          }
+          {
+            "LazyLibrarian (External)" = [
+              {
+                icon = "lazylibrarian.svg";
+                href = "https://lib.somesh.dev";
               }
             ];
           }

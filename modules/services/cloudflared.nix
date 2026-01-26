@@ -16,6 +16,7 @@
 # - vault.somesh.dev    → Vaultwarden (port 8222)
 # - abs.somesh.dev      → Audiobookshelf (port 13378)
 # - books.somesh.dev    → Calibre-Web (port 8083)
+# - lib.somesh.dev      → LazyLibrarian (port 5299)
 # - shelfmark.somesh.dev → Shelfmark (port 8084)
 # - home.somesh.dev     → Homepage Dashboard (port 8082)
 # - files.somesh.dev    → FileBrowser (port 8085) [local/Tailscale only - no public DNS]
