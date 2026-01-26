@@ -80,7 +80,7 @@ in
         # Security hardening
         PrivateTmp = true;
         NoNewPrivileges = true;
-        ProtectSystem = "full";  # Allow reading /etc
+        ProtectSystem = false;  # Need access to /etc/nixos/secrets
         ProtectHome = true;
       };
     };
