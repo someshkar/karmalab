@@ -23,15 +23,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Create dedicated user for security
-    users.users.mam-updater = {
-      isSystemUser = true;
-      group = "mam-updater";
-      description = "MAM dynamic seedbox IP updater";
-    };
-
-    users.groups.mam-updater = {};
-
     # Systemd service to update MAM IP
     systemd.services.mam-dynamic-seedbox = {
       description = "Update MAM dynamic seedbox IP";
@@ -46,10 +37,6 @@ in
         
         # CRITICAL: Run in VPN namespace (same as Deluge)
         NetworkNamespacePath = "/var/run/netns/vpn";
-        
-        # Security: run as dedicated non-root user
-        User = "mam-updater";
-        Group = "mam-updater";
         
         # Script to call MAM API
         ExecStart = pkgs.writeShellScript "mam-update" ''
