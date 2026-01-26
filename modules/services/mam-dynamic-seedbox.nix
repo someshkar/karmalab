@@ -81,7 +81,6 @@ in
         PrivateTmp = true;
         NoNewPrivileges = true;
         ProtectSystem = false;  # Need access to /etc/nixos/secrets
-        ProtectHome = true;
       };
     };
 
