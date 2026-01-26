@@ -166,7 +166,7 @@ in
           }
           {
             "LazyLibrarian" = {
-              icon = "lazylibrarian.svg";
+              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/lazylibrarian.png";
               description = "Ebook & audiobook automation";
               href = "http://${serverIP}:5299";
               siteMonitor = "http://${serverIP}:5299";
@@ -460,7 +460,7 @@ in
           {
             "LazyLibrarian (External)" = [
               {
-                icon = "lazylibrarian.svg";
+                icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/lazylibrarian.png";
                 href = "https://lib.somesh.dev";
               }
             ];
