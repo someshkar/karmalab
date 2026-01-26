@@ -79,6 +79,7 @@
     ./modules/services/filebrowser.nix  # Web-based file manager
     ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
     ./modules/services/opencloud.nix  # OpenCloud file sync & share (cloud.somesh.dev)
+    ./modules/services/mam-dynamic-seedbox.nix  # MAM dynamic seedbox IP updater
   ];
 
   # ============================================================================
@@ -398,6 +399,16 @@
   systemd.services.jellyseerr = {
     after = [ "storage-online.target" ];
     wants = [ "storage-online.target" ];
+  };
+
+  # ============================================================================
+  # MAM DYNAMIC SEEDBOX IP UPDATER
+  # ============================================================================
+
+  services.mam-dynamic-seedbox = {
+    enable = true;
+    # secretsFile defaults to /etc/nixos/secrets/mam-id
+    # interval defaults to "1h"
   };
 
   # ============================================================================
