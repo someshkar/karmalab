@@ -30,6 +30,12 @@
 # Data storage: /var/lib/beszel (NVMe SSD, minimal space usage)
 # Data retention: 1 month (3 days detailed, 30 days daily summaries)
 #
+# Security: Credentials stored in /etc/beszel/ (outside git repository)
+# - /etc/beszel/key: SSH public key for agent authentication
+# - /etc/beszel/token: Token for hub-agent communication
+#
+# Connection: Network-based (localhost:45876) - hub connects to agent via TCP
+#
 # ============================================================================
 
 { config, lib, pkgs, ... }:
@@ -37,17 +43,59 @@
 let
   # Port configuration
   hubPort = 8090;
+  agentPort = 45876;
   
   # Paths
   hubDataDir = "/var/lib/beszel";
   agentDataDir = "/var/lib/beszel-agent";
-  socketDir = "/var/lib/beszel-socket";
+  
+  # Credential files (outside git repository)
+  keyFile = "/etc/beszel/key";
+  tokenFile = "/etc/beszel/token";
   
   # Docker images
   hubImage = "henrygd/beszel:latest";
   agentImage = "henrygd/beszel-agent:latest";
 in
 {
+  # ============================================================================
+  # FILE VALIDATION AND SECURITY CHECKS
+  # ============================================================================
+  
+  # Ensure credential files exist and have correct format before building
+  assertions = [
+    {
+      assertion = builtins.pathExists keyFile;
+      message = ''
+        Beszel key file missing: ${keyFile}
+        Run: echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee ${keyFile}
+      '';
+    }
+    {
+      assertion = builtins.pathExists tokenFile;  
+      message = ''
+        Beszel token file missing: ${tokenFile}
+        Run: echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee ${tokenFile}
+      '';
+    }
+    {
+      assertion = lib.hasPrefix "ssh-ed25519" (lib.removeSuffix "\n" (builtins.readFile keyFile));
+      message = ''
+        Invalid Beszel key format in ${keyFile}
+        Expected format: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...
+        Current content: ${builtins.readFile keyFile}
+      '';
+    }
+    {
+      assertion = lib.hasPrefix "bfd-" (lib.removeSuffix "\n" (builtins.readFile tokenFile));
+      message = ''
+        Invalid Beszel token format in ${tokenFile}
+        Expected format: bfd-a40957f8778-1f39-ae53606608
+        Current content: ${builtins.readFile tokenFile}
+      '';
+    }
+  ];
+  
   # ============================================================================
   # DOCKER CONTAINERS
   # ============================================================================
@@ -63,10 +111,9 @@ in
         # Port mapping
         ports = [ "${toString hubPort}:8090" ];
         
-        # Data storage
+        # Data storage (no socket volume needed for network connection)
         volumes = [
           "${hubDataDir}:/beszel_data"
-          "${socketDir}:/beszel_socket"
         ];
         
         # Configuration
@@ -90,20 +137,24 @@ in
           # NixOS oci-containers handles restart policy automatically
         ];
         
-        # Volumes for Docker monitoring and communication
+        # Volumes for Docker monitoring (no socket volume needed)
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
           "${agentDataDir}:/var/lib/beszel-agent"
-          "${socketDir}:/beszel_socket"
         ];
         
-        # Agent configuration
+        # Agent configuration - Network-based connection
         environment = {
-          # Use Unix socket for hub communication (no network overhead)
-          LISTEN = "/beszel_socket/beszel.sock";
+          # Network connection configuration
+          PORT = toString agentPort;  # Agent listens on localhost:45876
           HUB_URL = "http://localhost:${toString hubPort}";
+          
+          # Authentication credentials (read from secure files)
+          KEY = lib.removeSuffix "\n" (builtins.readFile keyFile);
+          TOKEN = lib.removeSuffix "\n" (builtins.readFile tokenFile);
+          
+          # System configuration
           TZ = "Asia/Kolkata";
-          # KEY and TOKEN will be generated automatically on first connection
         };
       };
     };
@@ -117,7 +168,6 @@ in
   systemd.tmpfiles.rules = [
     "d ${hubDataDir} 0755 root root -"
     "d ${agentDataDir} 0755 root root -"
-    "d ${socketDir} 0755 root root -"
   ];
   
   # ============================================================================
@@ -130,6 +180,9 @@ in
     
     # Also allow on Tailscale interface
     interfaces."tailscale0".allowedTCPPorts = [ hubPort ];
+    
+    # Agent port only needs localhost access (automatically allowed)
+    # No need to open agentPort (45876) to external networks
   };
   
   # ============================================================================
