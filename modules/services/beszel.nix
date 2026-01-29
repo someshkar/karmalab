@@ -30,9 +30,16 @@
 # Data storage: /var/lib/beszel (NVMe SSD, minimal space usage)
 # Data retention: 1 month (3 days detailed, 30 days daily summaries)
 #
-# Security: Credentials stored in /etc/beszel/ (outside git repository)
-# - /etc/beszel/key: SSH public key for agent authentication
-# - /etc/beszel/token: Token for hub-agent communication
+# Security: Credentials stored in /etc/nixos/secrets/ (outside git repository)
+# - /etc/nixos/secrets/beszel-key: SSH public key for agent authentication
+# - /etc/nixos/secrets/beszel-token: Token for hub-agent communication
+#
+# Setup:
+# 1. Create credentials files:
+#    echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee /etc/nixos/secrets/beszel-key
+#    echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee /etc/nixos/secrets/beszel-token
+# 2. Deploy with nixos-rebuild switch
+# 3. Add system in dashboard with Host/IP: localhost, Port: 45876
 #
 # Connection: Network-based (localhost:45876) - hub connects to agent via TCP
 #
@@ -49,53 +56,15 @@ let
   hubDataDir = "/var/lib/beszel";
   agentDataDir = "/var/lib/beszel-agent";
   
-  # Credential files (outside git repository)
-  keyFile = "/etc/beszel/key";
-  tokenFile = "/etc/beszel/token";
+  # Credential files (following existing pattern: /etc/nixos/secrets/)
+  keyFile = "/etc/nixos/secrets/beszel-key";
+  tokenFile = "/etc/nixos/secrets/beszel-token";
   
   # Docker images
   hubImage = "henrygd/beszel:latest";
   agentImage = "henrygd/beszel-agent:latest";
 in
 {
-  # ============================================================================
-  # FILE VALIDATION AND SECURITY CHECKS
-  # ============================================================================
-  
-  # Ensure credential files exist and have correct format before building
-  assertions = [
-    {
-      assertion = builtins.pathExists keyFile;
-      message = ''
-        Beszel key file missing: ${keyFile}
-        Run: echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee ${keyFile}
-      '';
-    }
-    {
-      assertion = builtins.pathExists tokenFile;  
-      message = ''
-        Beszel token file missing: ${tokenFile}
-        Run: echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee ${tokenFile}
-      '';
-    }
-    {
-      assertion = lib.hasPrefix "ssh-ed25519" (lib.removeSuffix "\n" (builtins.readFile keyFile));
-      message = ''
-        Invalid Beszel key format in ${keyFile}
-        Expected format: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...
-        Current content: ${builtins.readFile keyFile}
-      '';
-    }
-    {
-      assertion = lib.hasPrefix "bfd-" (lib.removeSuffix "\n" (builtins.readFile tokenFile));
-      message = ''
-        Invalid Beszel token format in ${tokenFile}
-        Expected format: bfd-a40957f8778-1f39-ae53606608
-        Current content: ${builtins.readFile tokenFile}
-      '';
-    }
-  ];
-  
   # ============================================================================
   # DOCKER CONTAINERS
   # ============================================================================
@@ -111,7 +80,7 @@ in
         # Port mapping
         ports = [ "${toString hubPort}:8090" ];
         
-        # Data storage (no socket volume needed for network connection)
+        # Data storage
         volumes = [
           "${hubDataDir}:/beszel_data"
         ];
@@ -126,7 +95,7 @@ in
         };
       };
       
-      # Beszel Agent - System metrics collector
+      # Beszel Agent - System metrics collector  
       beszel-agent = {
         image = agentImage;
         autoStart = true;
@@ -137,7 +106,7 @@ in
           # NixOS oci-containers handles restart policy automatically
         ];
         
-        # Volumes for Docker monitoring (no socket volume needed)
+        # Volumes for Docker monitoring
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
           "${agentDataDir}:/var/lib/beszel-agent"
@@ -149,14 +118,54 @@ in
           PORT = toString agentPort;  # Agent listens on localhost:45876
           HUB_URL = "http://localhost:${toString hubPort}";
           
-          # Authentication credentials (read from secure files)
-          KEY = lib.removeSuffix "\n" (builtins.readFile keyFile);
-          TOKEN = lib.removeSuffix "\n" (builtins.readFile tokenFile);
-          
           # System configuration
           TZ = "Asia/Kolkata";
+          
+          # Authentication credentials will be injected at runtime by systemd
+          # (see systemd.services.docker-beszel-agent configuration below)
         };
       };
+    };
+  };
+  
+  # ============================================================================
+  # SYSTEMD SERVICE CONFIGURATION (Runtime Secret Injection)
+  # ============================================================================
+  
+  # Override the systemd service to inject secrets at runtime
+  systemd.services.docker-beszel-agent = {
+    # Add secret file dependencies
+    after = [ "docker.service" "docker-beszel-hub.service" ];
+    wants = [ "docker-beszel-hub.service" ];
+    
+    serviceConfig = {
+      # Environment file with secrets (created by preStart)
+      EnvironmentFile = "/tmp/beszel-agent.env";
+      
+      # Pre-start script to prepare environment file with secrets
+      ExecStartPre = let
+        preStartScript = pkgs.writeShellScript "beszel-agent-prestart" ''
+          # Check if secret files exist
+          if [ ! -f "${keyFile}" ]; then
+            echo "ERROR: Beszel key file not found: ${keyFile}"
+            echo "Run: echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee ${keyFile}"
+            exit 1
+          fi
+          
+          if [ ! -f "${tokenFile}" ]; then
+            echo "ERROR: Beszel token file not found: ${tokenFile}"
+            echo "Run: echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee ${tokenFile}"
+            exit 1
+          fi
+          
+          # Read secrets and create environment file
+          echo "KEY=$(cat ${keyFile})" > /tmp/beszel-agent.env
+          echo "TOKEN=$(cat ${tokenFile})" >> /tmp/beszel-agent.env
+          
+          # Secure the environment file
+          chmod 600 /tmp/beszel-agent.env
+        '';
+      in "+${preStartScript}";  # "+" runs as root despite User= setting
     };
   };
   
@@ -168,6 +177,8 @@ in
   systemd.tmpfiles.rules = [
     "d ${hubDataDir} 0755 root root -"
     "d ${agentDataDir} 0755 root root -"
+    # Ensure secrets directory exists (following existing pattern)
+    "d /etc/nixos/secrets 0700 root root -"
   ];
   
   # ============================================================================
@@ -183,22 +194,5 @@ in
     
     # Agent port only needs localhost access (automatically allowed)
     # No need to open agentPort (45876) to external networks
-  };
-  
-  # ============================================================================
-  # SERVICE DEPENDENCIES
-  # ============================================================================
-  
-  # Ensure containers start after Docker and storage are ready
-  systemd.services = {
-    docker-beszel-hub = {
-      after = [ "docker.service" "storage-online.target" ];
-      wants = [ "storage-online.target" ];
-    };
-    
-    docker-beszel-agent = {
-      after = [ "docker.service" "docker-beszel-hub.service" ];
-      wants = [ "docker-beszel-hub.service" ];
-    };
   };
 }
