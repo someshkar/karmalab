@@ -100,22 +100,21 @@ in
         image = agentImage;
         autoStart = true;
         
-        # Use wrapper script for secret injection
-        cmd = [ "/etc/beszel/start-agent.sh" ];
-        
         # Host network mode for system metrics + Docker socket access
         extraOptions = [
           "--network=host"
           # NixOS oci-containers handles restart policy automatically
         ];
         
-        # Volumes for Docker monitoring + wrapper script
+        # Volumes for Docker monitoring
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
           "${agentDataDir}:/var/lib/beszel-agent"
-          "/etc/beszel/start-agent.sh:/etc/beszel/start-agent.sh:ro"
-          "${keyFile}:${keyFile}:ro"
-          "${tokenFile}:${tokenFile}:ro"
+        ];
+        
+        # Load secrets from environment file (created by systemd prestart)
+        environmentFiles = [
+          "/tmp/beszel-agent.env"
         ];
         
         # Agent configuration - Network-based connection
@@ -127,43 +126,48 @@ in
           # System configuration
           TZ = "Asia/Kolkata";
           
-          # Authentication credentials are injected by wrapper script
+          # Authentication credentials loaded from environmentFiles
         };
       };
     };
   };
   
   # ============================================================================
-  # WRAPPER SCRIPT FOR SECRET INJECTION
+  # SYSTEMD SERVICE CONFIGURATION (Environment File Secret Injection)
   # ============================================================================
   
-  # Create wrapper script that reads secrets and starts the agent
-  environment.etc."beszel/start-agent.sh" = {
-    text = ''
-      #!/bin/bash
-      set -euo pipefail
-      
-      # Check if secret files exist
-      if [ ! -f "${keyFile}" ]; then
-        echo "ERROR: Beszel key file not found: ${keyFile}"
-        echo "Run: echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee ${keyFile}"
-        exit 1
-      fi
-      
-      if [ ! -f "${tokenFile}" ]; then
-        echo "ERROR: Beszel token file not found: ${tokenFile}"
-        echo "Run: echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee ${tokenFile}"
-        exit 1
-      fi
-      
-      # Read secrets and export as environment variables
-      export KEY="$(cat ${keyFile})"
-      export TOKEN="$(cat ${tokenFile})"
-      
-      # Start the agent with secrets injected
-      exec /app/beszel-agent
-    '';
-    mode = "0755";  # Make executable
+  # Override the systemd service to inject secrets via environment file
+  systemd.services.docker-beszel-agent = {
+    # Add service dependencies
+    after = [ "docker.service" "docker-beszel-hub.service" ];
+    wants = [ "docker-beszel-hub.service" ];
+    
+    serviceConfig = {
+      # Pre-start script to create environment file with secrets
+      ExecStartPre = let
+        preStartScript = pkgs.writeShellScript "beszel-agent-prestart" ''
+          # Check if secret files exist
+          if [ ! -f "${keyFile}" ]; then
+            echo "ERROR: Beszel key file not found: ${keyFile}"
+            echo "Run: echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHXaSnmtNUWd4ATzK5b6agpX+G9a4GcDyOA0Clj8mQ+m' | sudo tee ${keyFile}"
+            exit 1
+          fi
+          
+          if [ ! -f "${tokenFile}" ]; then
+            echo "ERROR: Beszel token file not found: ${tokenFile}"
+            echo "Run: echo 'bfd-a40957f8778-1f39-ae53606608' | sudo tee ${tokenFile}"
+            exit 1
+          fi
+          
+          # Read secrets and create environment file
+          echo "KEY=$(cat ${keyFile})" > /tmp/beszel-agent.env
+          echo "TOKEN=$(cat ${tokenFile})" >> /tmp/beszel-agent.env
+          
+          # Secure the environment file
+          chmod 600 /tmp/beszel-agent.env
+        '';
+      in "+${preStartScript}";  # "+" runs as root despite User= setting
+    };
   };
   
   # ============================================================================
