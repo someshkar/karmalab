@@ -72,9 +72,7 @@ in
         ];
         
         # Restart policy
-        extraOptions = [
-          "--restart=unless-stopped"
-        ];
+        extraOptions = "--restart=unless-stopped";
         
         # Environment variables (optional, can add later)
         environment = {
@@ -111,11 +109,10 @@ in
         };
         
         # Restart policy
-        extraOptions = [
-          "--restart=unless-stopped"
-        ];
-      };
-    };
+          extraOptions = "--restart=unless-stopped";
+       };
+     };
+   };
   };
   
   # ============================================================================
