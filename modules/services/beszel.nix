@@ -37,13 +37,9 @@
 let
   # Port configuration
   hubPort = 8090;
-  agentPort = 45876;  # Default Beszel agent port
   
   # Paths
   hubDataDir = "/var/lib/beszel";
-  hubDataVolume = "beszel_data";
-  agentDataVolume = "beszel_agent_data";
-  socketVolume = "beszel_socket";
   
   # Docker images
   hubImage = "henrygd/beszel:latest";
@@ -51,204 +47,84 @@ let
 in
 {
   # ============================================================================
-  # DOCKER CONTAINERS WITH OCI CONTAINERS BACKEND
+  # DOCKER CONTAINERS
   # ============================================================================
   
   virtualisation.oci-containers = {
     backend = "docker";
     containers = {
+      # Beszel Hub - Web dashboard
       beszel-hub = {
         image = hubImage;
-        container_name = "beszel";
         autoStart = true;
         
         # Port mapping
         ports = [ "${toString hubPort}:8090" ];
         
-        # Volumes for data storage
+        # Data storage
         volumes = [
-          "${hubDataVolume}:${hubDataDir}"
-          "${socketVolume}:/beszel_socket"
+          "${hubDataDir}:/beszel_data"
+          "beszel_socket:/beszel_socket"
         ];
         
-        # Restart policy
-        extraOptions = "--restart=unless-stopped";
+        # Configuration
+        extraOptions = [
+          "--restart=unless-stopped"
+          "--name=beszel"
+        ];
         
-        # Environment variables (optional, can add later)
         environment = {
           TZ = "Asia/Kolkata";
         };
       };
       
+      # Beszel Agent - System metrics collector
       beszel-agent = {
         image = agentImage;
-        container_name = "beszel-agent";
         autoStart = true;
         
-        # Host network mode for system metrics access
+        # Host network mode for system metrics + Docker socket access
         extraOptions = [
           "--network=host"
+          "--restart=unless-stopped"
+          "--name=beszel-agent"
         ];
         
-        # Volumes for Docker socket, data, and socket communication
+        # Volumes for Docker monitoring and communication
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
-          "${agentDataVolume}:/var/lib/beszel-agent"
-          "${socketVolume}:/beszel_socket"
+          "beszel_agent_data:/var/lib/beszel-agent"
+          "beszel_socket:/beszel_socket"
         ];
         
-        # Environment variables for connection
+        # Agent configuration
         environment = {
+          # Use Unix socket for hub communication (no network overhead)
           LISTEN = "/beszel_socket/beszel.sock";
           HUB_URL = "http://localhost:${toString hubPort}";
           TZ = "Asia/Kolkata";
           # KEY and TOKEN will be generated automatically on first connection
-          # These can be set manually for automation:
-          # KEY = "";
-          # TOKEN = "";
         };
-        
-        # Restart policy
-          extraOptions = "--restart=unless-stopped";
-       };
-     };
-   };
-  };
-  
-  # ============================================================================
-  # SYSTEMD SERVICE CONFIGURATION
-  # ============================================================================
-  
-  systemd = {
-    # Beszel Hub Service (Docker container management)
-    services.docker-beszel = {
-      description = "Beszel Hub - Lightweight server monitoring dashboard";
-      serviceConfig = {
-        Type = "simple";
-        
-        # Wait for Docker daemon and network
-        After = [ "docker.service" "network-online.target" "storage-online.target" ];
-        Wants = [ "docker.service" "network-online.target" ];
-        RequiredBy = [ "multi-user.target" ];
-        
-        # Use Docker Compose approach (equivalent to docker compose up -d)
-        ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${pkgs.writeText "docker-compose.yml" ''
-          version: '3.8'
-          
-          services:
-            beszel:
-              image: ${hubImage}
-              container_name: beszel
-              restart: unless-stopped
-              ports:
-                - "${toString hubPort}:8090"
-              volumes:
-                - ${hubDataVolume}:${hubDataDir}
-                - ${socketVolume}:/beszel_socket
-              environment:
-                TZ: Asia/Kolkata
-        ''} -p /var/lib/beszel up -d";
-        
-        ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${pkgs.writeText "docker-compose.yml" ''
-          version: '3.8'
-          
-          services:
-            beszel:
-              image: ${hubImage}
-              container_name: beszel
-              restart: unless-stopped
-              ports:
-                - "${toString hubPort}:8090"
-              volumes:
-                - ${hubDataVolume}:${hubDataDir}
-                - ${socketVolume}:/beszel_socket
-              environment:
-                TZ: Asia/Kolkata
-        ''} -p /var/lib/beszel down";
-        
-        Restart = "always";
-        RestartSec = "10s";
-      };
-    };
-    
-    # Beszel Agent Service (Docker container management)
-    services.docker-beszel-agent = {
-      description = "Beszel Agent - System metrics collector";
-      serviceConfig = {
-        Type = "simple";
-        
-        # Wait for Docker daemon, network, and hub
-        After = [ "docker.service" "network-online.target" "docker-beszel.service" ];
-        Wants = [ "docker.service" "network-online.target" ];
-        RequiredBy = [ "multi-user.target" ];
-        
-        # Use Docker Compose approach
-        ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f ${pkgs.writeText "docker-compose-agent.yml" ''
-          version: '3.8'
-          
-          services:
-            beszel-agent:
-              image: ${agentImage}
-              container_name: beszel-agent
-              restart: unless-stopped
-              network_mode: host
-              volumes:
-                - /var/run/docker.sock:/var/run/docker.sock:ro
-                - ${agentDataVolume}:/var/lib/beszel-agent
-                - ${socketVolume}:/beszel_socket
-              environment:
-                LISTEN: /beszel_socket/beszel.sock
-                HUB_URL: http://localhost:${toString hubPort}
-                TZ: Asia/Kolkata
-        ''} -p /var/lib/beszel-agent up -d";
-        
-        ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f ${pkgs.writeText "docker-compose-agent.yml" ''
-          version: '3.8'
-          
-          services:
-            beszel-agent:
-              image: ${agentImage}
-              container_name: beszel-agent
-              restart: unless-stopped
-              network_mode: host
-              volumes:
-                - /var/run/docker.sock:/var/run/docker.sock:ro
-                - ${agentDataVolume}:/var/lib/beszel-agent
-                - ${socketVolume}:/beszel_socket
-              environment:
-                LISTEN: /beszel_socket/beszel.sock
-                HUB_URL: http://localhost:${toString hubPort}
-                TZ: Asia/Kolkata
-        ''} -p /var/lib/beszel-agent down";
-        
-        Restart = "always";
-        RestartSec = "10s";
       };
     };
   };
   
   # ============================================================================
-  # DIRECTORY SETUP
+  # STORAGE SETUP
   # ============================================================================
   
   # Create data directories with correct permissions
   systemd.tmpfiles.rules = [
-    # Hub data directory (owned by root, but readable by containers)
     "d ${hubDataDir} 0755 root root -"
-    
-    # Hub socket directory for agent communication
-    "d /var/lib/beszel/${socketVolume} 0755 root root -"
-    
-    # Agent data directory
     "d /var/lib/beszel-agent 0755 root root -"
   ];
   
   # ============================================================================
-  # FIREWALL CONFIGURATION
+  # NETWORKING
   # ============================================================================
   
   networking.firewall = {
-    # Allow Beszel hub port access from LAN and Tailscale
+    # Allow Beszel hub port access from LAN
     allowedTCPPorts = [ hubPort ];
     
     # Also allow on Tailscale interface
@@ -256,23 +132,19 @@ in
   };
   
   # ============================================================================
-  # PACKAGE REQUIREMENTS
+  # SERVICE DEPENDENCIES
   # ============================================================================
   
-  # Docker Compose for container management
-  environment.systemPackages = with pkgs; [
-    docker
-    docker-compose
-  ];
-  
-  # ============================================================================
-  # STORAGE DEPENDENCIES
-  # ============================================================================
-  
-  # Ensure Beszel services start after storage is available
-  systemd.services.beszel-hub.after = [ "storage-online.target" ];
-  systemd.services.beszel-hub.wants = [ "storage-online.target" ];
-  
-  systemd.services.beszel-agent.after = [ "storage-online.target" ];
-  systemd.services.beszel-agent.wants = [ "storage-online.target" ];
+  # Ensure containers start after Docker and storage are ready
+  systemd.services = {
+    docker-beszel-hub = {
+      after = [ "docker.service" "storage-online.target" ];
+      wants = [ "storage-online.target" ];
+    };
+    
+    docker-beszel-agent = {
+      after = [ "docker.service" "docker-beszel-hub.service" ];
+      wants = [ "docker-beszel-hub.service" ];
+    };
+  };
 }
