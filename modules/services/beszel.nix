@@ -128,9 +128,8 @@ in
           # System configuration
           TZ = "Asia/Kolkata";
           
-          # ZFS and filesystem monitoring configuration
+          # Host filesystem monitoring configuration
           FILESYSTEM_ROOT = "/host";
-          EXTRA_FILESYSTEMS = "zfs";
           
           # Filter out system/virtual filesystems to reduce dashboard noise
           DISK_EXCLUDE = "/host/dev/*,/host/proc/*,/host/sys/*,/host/run/*,/host/var/lib/docker/*,/host/boot/*,/host/tmp/*,/host/var/tmp/*,/host/nix/store*";
