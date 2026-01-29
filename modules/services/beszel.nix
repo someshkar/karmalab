@@ -40,6 +40,8 @@ let
   
   # Paths
   hubDataDir = "/var/lib/beszel";
+  agentDataDir = "/var/lib/beszel-agent";
+  socketDir = "/var/lib/beszel-socket";
   
   # Docker images
   hubImage = "henrygd/beszel:latest";
@@ -64,13 +66,12 @@ in
         # Data storage
         volumes = [
           "${hubDataDir}:/beszel_data"
-          "beszel_socket:/beszel_socket"
+          "${socketDir}:/beszel_socket"
         ];
         
         # Configuration
         extraOptions = [
           "--restart=unless-stopped"
-          "--name=beszel"
         ];
         
         environment = {
@@ -87,14 +88,13 @@ in
         extraOptions = [
           "--network=host"
           "--restart=unless-stopped"
-          "--name=beszel-agent"
         ];
         
         # Volumes for Docker monitoring and communication
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
-          "beszel_agent_data:/var/lib/beszel-agent"
-          "beszel_socket:/beszel_socket"
+          "${agentDataDir}:/var/lib/beszel-agent"
+          "${socketDir}:/beszel_socket"
         ];
         
         # Agent configuration
@@ -116,7 +116,8 @@ in
   # Create data directories with correct permissions
   systemd.tmpfiles.rules = [
     "d ${hubDataDir} 0755 root root -"
-    "d /var/lib/beszel-agent 0755 root root -"
+    "d ${agentDataDir} 0755 root root -"
+    "d ${socketDir} 0755 root root -"
   ];
   
   # ============================================================================
