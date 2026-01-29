@@ -106,10 +106,12 @@ in
           # NixOS oci-containers handles restart policy automatically
         ];
         
-        # Volumes for Docker monitoring
+        # Volumes for Docker monitoring + ZFS filesystem access
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
           "${agentDataDir}:/var/lib/beszel-agent"
+          # Host filesystem access for ZFS pool and dataset monitoring
+          "/:/host:ro,rslave"
         ];
         
         # Load secrets from environment file (created by systemd prestart)
@@ -117,7 +119,7 @@ in
           "/tmp/beszel-agent.env"
         ];
         
-        # Agent configuration - Network-based connection
+        # Agent configuration - Network-based connection + ZFS monitoring
         environment = {
           # Network connection configuration
           PORT = toString agentPort;  # Agent listens on localhost:45876
@@ -125,6 +127,13 @@ in
           
           # System configuration
           TZ = "Asia/Kolkata";
+          
+          # ZFS and filesystem monitoring configuration
+          FILESYSTEM_ROOT = "/host";
+          EXTRA_FILESYSTEMS = "zfs";
+          
+          # Filter out system/virtual filesystems to reduce dashboard noise
+          DISK_EXCLUDE = "/host/dev/*,/host/proc/*,/host/sys/*,/host/run/*,/host/var/lib/docker/*,/host/boot/*,/host/tmp/*,/host/var/tmp/*,/host/nix/store*";
           
           # Authentication credentials loaded from environmentFiles
         };
