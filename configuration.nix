@@ -61,7 +61,7 @@
     ./modules/immich-go.nix          # immich-go tool for Google Photos Takeout migration
     ./modules/services/deluge.nix   # Native Deluge in VPN namespace
     ./modules/services/immich.nix   # Immich photo management (Docker)
-    ./modules/services/uptime-kuma.nix # Service monitoring
+    ./modules/services/beszel.nix         # Server monitoring hub + agent
     ./modules/services/flaresolverr.nix # Cloudflare bypass for Prowlarr
     ./modules/services/timemachine.nix  # Time Machine backup server (Samba)
     ./modules/services/syncthing.nix    # File synchronization (Obsidian + Calibre)
@@ -133,21 +133,21 @@
     firewall = {
       enable = true;
       
-      # Ports open on all interfaces (local network access)
-      allowedTCPPorts = [ 
-        22      # SSH
-        8096    # Jellyfin
-        7878    # Radarr
-        8989    # Sonarr
-        6767    # Bazarr
-        9696    # Prowlarr
-        5055    # Jellyseerr
-        8112    # Deluge Web UI
-        2283    # Immich
-        3001    # Uptime Kuma
-        5299    # LazyLibrarian
-        8085    # FileBrowser
-      ];
+        # Ports open on all interfaces (local network access)
+        allowedTCPPorts = [ 
+          22      # SSH
+          8096    # Jellyfin
+          7878    # Radarr
+          8989    # Sonarr
+          6767    # Bazarr
+          9696    # Prowlarr
+          5055    # Jellyseerr
+          8112    # Deluge Web UI
+          2283    # Immich
+          8090    # Beszel Hub
+          5299    # LazyLibrarian
+          8085    # FileBrowser
+        ];
       
       # Trusted interfaces
       trustedInterfaces = [
@@ -156,9 +156,6 @@
       ];
       
       # Service ports accessible via Tailscale only
-      # Note: Additional ports are defined in service modules:
-      # - Immich (2283) in modules/services/immich.nix
-      # - Uptime Kuma (3001) in modules/services/uptime-kuma.nix
       interfaces."tailscale0".allowedTCPPorts = [
         8096    # Jellyfin
         7878    # Radarr
@@ -167,6 +164,7 @@
         9696    # Prowlarr
         5055    # Jellyseerr
         # Deluge ports configured in modules/services/deluge.nix
+        8090    # Beszel Hub
       ];
       
       # Allow ping
