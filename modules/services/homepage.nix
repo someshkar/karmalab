@@ -297,14 +297,14 @@ in
       # Infrastructure
       {
         "Infrastructure" = [
-          {
-            "Uptime Kuma" = {
-              icon = "uptime-kuma.svg";
-              description = "Service monitoring";
-              href = "http://${serverIP}:3001";
-              siteMonitor = "http://${serverIP}:3001";
-            };
-          }
+           {
+             "Beszel" = {
+               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg";
+               description = "System monitoring";
+               href = "http://${serverIP}:8090";
+               siteMonitor = "http://${serverIP}:8090";
+             };
+           }
           {
             "Forgejo" = {
               icon = "forgejo.svg";
@@ -465,14 +465,14 @@ in
               }
             ];
           }
-          {
-            "Uptime Kuma (External)" = [
-              {
-                icon = "uptime-kuma.svg";
-                href = "https://status.somesh.dev";
-              }
-            ];
-          }
+           {
+             "Beszel (External)" = [
+               {
+                 icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/beszel.svg";
+                 href = "https://status.somesh.dev";
+               }
+             ];
+           }
         ];
       }
       {
