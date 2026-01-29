@@ -71,7 +71,7 @@ in
         
         # Configuration
         extraOptions = [
-          "--restart=unless-stopped"
+          # NixOS oci-containers handles restart policy automatically
         ];
         
         environment = {
@@ -87,7 +87,7 @@ in
         # Host network mode for system metrics + Docker socket access
         extraOptions = [
           "--network=host"
-          "--restart=unless-stopped"
+          # NixOS oci-containers handles restart policy automatically
         ];
         
         # Volumes for Docker monitoring and communication
