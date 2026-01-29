@@ -131,8 +131,8 @@ in
           # Host filesystem monitoring configuration
           FILESYSTEM_ROOT = "/host";
           
-          # Filter out system/virtual filesystems to reduce dashboard noise
-          DISK_EXCLUDE = "/host/dev/*,/host/proc/*,/host/sys/*,/host/run/*,/host/var/lib/docker/*,/host/boot/*,/host/tmp/*,/host/var/tmp/*,/host/nix/store*";
+          # Refined filter - exclude system/virtual mounts but allow ZFS datasets
+          DISK_EXCLUDE = "/host/dev/*,/host/proc/*,/host/sys/*,/host/run/*,/host/boot/*,/host/tmp/*,/host/var/tmp/*,/host/nix/store*,/host/var/lib/docker/containers/*,/host/var/lib/docker/overlay2/*,/host/var/lib/docker/volumes/*";
           
           # Authentication credentials loaded from environmentFiles
         };
