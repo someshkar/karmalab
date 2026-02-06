@@ -420,6 +420,7 @@
     # Network tools
     curl wget dig mtr netcat
     pciutils usbutils ethtool iproute2
+    speedtest-cli
     
     # File management
     tree rsync
