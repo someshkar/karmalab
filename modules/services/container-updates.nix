@@ -4,18 +4,22 @@
 # ============================================================================
 #
 # Checks GitHub releases for version-pinned containers and reports updates
-# via Beszel custom metrics for dashboard visibility.
+# via Beszel custom metrics and Homepage dashboard widget.
 #
 # Tracked Services:
 # - Immich (ghcr.io/immich-app/immich-server)
 # - immich-go (GitHub releases)
+# - OpenCloud (Docker image, version-pinned)
 #
 # Integration:
 # - Writes Prometheus-compatible metrics to Beszel agent custom metrics dir
-# - Beszel dashboard displays "Update Available" badges
+# - Writes JSON for Homepage widget at /var/lib/beszel-agent/custom-metrics/updates.json
+# - Serves via Caddy at /updates.json
 # - Runs daily at 6:00 AM via systemd timer
 #
-# Metrics Location: /var/lib/beszel-agent/custom-metrics/update-status.prom
+# Output Locations:
+# - Prometheus: /var/lib/beszel-agent/custom-metrics/update-status.prom
+# - JSON: /var/lib/beszel-agent/custom-metrics/updates.json
 #
 # ============================================================================
 
@@ -33,7 +37,13 @@ let
     
     # Configuration
     METRICS_FILE="${metricsDir}/update-status.prom"
+    JSON_FILE="${metricsDir}/updates.json"
     TEMP_FILE="$(mktemp)"
+    JSON_TEMP="$(mktemp)"
+    
+    # Initialize JSON array
+    echo '{"last_check":"'$(date -Iseconds)'","services":[' > "$JSON_TEMP"
+    FIRST_SERVICE=true
     
     # GitHub API helper function
     get_github_latest_release() {
@@ -66,12 +76,22 @@ let
       fi
     }
     
+    # Parse current OpenCloud version from .env file
+    get_current_opencloud_version() {
+      local env_file="/var/lib/opencloud/.env"
+      if [[ -f "$env_file" ]]; then
+        grep -oP '^OC_VERSION=\K[^\s]+' "$env_file" 2>/dev/null | head -1 || echo "latest"
+      else
+        echo "latest"
+      fi
+    }
+    
     # Normalize version string (remove 'v' prefix if present)
     normalize_version() {
       echo "$1" | sed 's/^v//'
     }
     
-    # Write metric to temp file
+    # Write metric to temp file and JSON
     write_metric() {
       local service="$1"
       local current="$2"
@@ -83,16 +103,24 @@ let
       local latest_norm=$(normalize_version "$latest")
       
       # Compare normalized versions
-      if [[ "$current_norm" != "$latest_norm" && "$latest" != "unknown" && "$current" != "unknown" ]]; then
+      if [[ "$current_norm" != "$latest_norm" && "$latest" != "unknown" && "$current" != "unknown" && "$latest" != "" ]]; then
         update_available=1
       fi
       
+      # Write Prometheus metric
       echo "# HELP update_available Whether an update is available for $service" >> "$TEMP_FILE"
       echo "# TYPE update_available gauge" >> "$TEMP_FILE"
       echo "update_available{service=\"$service\",current=\"$current\",latest=\"$latest\"} $update_available" >> "$TEMP_FILE"
+      
+      # Write JSON entry
+      if [[ "$FIRST_SERVICE" == "false" ]]; then
+        echo "," >> "$JSON_TEMP"
+      fi
+      FIRST_SERVICE=false
+      echo "{\"name\":\"$service\",\"current\":\"$current\",\"latest\":\"$latest\",\"update_available\":$update_available}" >> "$JSON_TEMP"
     }
     
-    # Write header
+    # Write Prometheus header
     echo "# Container Update Check - $(date -Iseconds)" > "$TEMP_FILE"
     echo "" >> "$TEMP_FILE"
     
@@ -108,14 +136,23 @@ let
     IMMICH_GO_LATEST=$(get_github_latest_release "simulot/immich-go")
     write_metric "immich-go" "$IMMICH_GO_CURRENT" "$IMMICH_GO_LATEST"
     
-    # Move temp file to final location (atomic operation)
+    # Check OpenCloud
+    echo "Checking OpenCloud..." >&2
+    OPENCLOUD_CURRENT=$(get_current_opencloud_version)
+    OPENCLOUD_LATEST=$(get_github_latest_release "opencloud-eu/opencloud")
+    write_metric "opencloud" "$OPENCLOUD_CURRENT" "$OPENCLOUD_LATEST"
+    
+    # Close JSON and write files
+    echo ']}' >> "$JSON_TEMP"
     mv "$TEMP_FILE" "$METRICS_FILE"
-    chmod 644 "$METRICS_FILE"
+    mv "$JSON_TEMP" "$JSON_FILE"
+    chmod 644 "$METRICS_FILE" "$JSON_FILE"
     
     # Log results
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Update check complete:" >&2
     echo "  Immich: $IMMICH_CURRENT (current) -> $IMMICH_LATEST (latest)" >&2
     echo "  immich-go: $IMMICH_GO_CURRENT (current) -> $IMMICH_GO_LATEST (latest)" >&2
+    echo "  OpenCloud: $OPENCLOUD_CURRENT (current) -> $OPENCLOUD_LATEST (latest)" >&2
   '';
 in
 {

@@ -330,7 +330,7 @@ in
         ];
       }
 
-      # System metrics via Glances
+      # System metrics via Glances + Update Checker
       {
         "System" = [
           {
@@ -374,6 +374,21 @@ in
                 metric = "network:enp1s0";
                 chart = false;
                 version = 4;
+              };
+            };
+          }
+          {
+            "Updates" = {
+              widget = {
+                type = "customapi";
+                url = "http://localhost/updates.json";
+                mappings = [
+                  {
+                    field = "services";
+                    label = "Updates";
+                    format = "list";
+                  }
+                ];
               };
             };
           }

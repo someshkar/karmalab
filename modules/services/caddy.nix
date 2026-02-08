@@ -46,6 +46,13 @@ in
       # Default site - Homepage dashboard
       "http://:80" = {
         extraConfig = ''
+          # Serve update status JSON for Homepage widget
+          handle /updates.json {
+            root * /var/lib/beszel-agent/custom-metrics
+            file_server
+            header Content-Type application/json
+          }
+          
           # Root path goes to Homepage
           reverse_proxy localhost:${toString homepagePort}
         '';
