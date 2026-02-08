@@ -371,11 +371,19 @@ in
               widget = {
                 type = "customapi";
                 url = "http://localhost/updates.json";
-                field = {
-                  text = "message";
-                  subtext = "last_checked_formatted";
-                };
-                display = "text";
+                display = "list";
+                mappings = [
+                  {
+                    field = "message";
+                    label = "Status";
+                    format = "text";
+                  }
+                  {
+                    field = "last_checked_formatted";
+                    label = "Last Checked";
+                    format = "text";
+                  }
+                ];
               };
             };
           }
