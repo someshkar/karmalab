@@ -198,7 +198,7 @@ in
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectSystem = "strict";
-      ProtectHome = true;
+      ProtectHome = false;  # Needed to access /home/somesh/karmalab
       ReadWritePaths = [ metricsDir ];
       ReadOnlyPaths = [ configDir "/var/lib/opencloud" ];
       
