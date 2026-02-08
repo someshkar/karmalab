@@ -55,7 +55,7 @@ let
       
       while [[ $retry_count -lt $max_retries ]]; do
         # Fetch latest release (anonymous API - 60 req/hour limit)
-        result=$(curl -sL --max-time 10 "$api_url" 2>/dev/null | ${pkgs.jq}/bin/jq -r '.tag_name // empty' 2>/dev/null || echo "")
+        result=$(${pkgs.curl}/bin/curl -sL --max-time 10 "$api_url" 2>/dev/null | ${pkgs.jq}/bin/jq -r '.tag_name // empty' 2>/dev/null || echo "")
         
         if [[ -n "$result" ]]; then
           echo "$result"
