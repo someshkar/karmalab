@@ -117,12 +117,10 @@ let
       echo "$1" | sed 's/^v//'
     }
     
-    # Write metric to temp file and JSON
-    write_metric() {
-      local service="$1"
-      local current="$2"
-      local latest="$3"
-      local update_available=0
+    # Check if update is available
+    check_update_available() {
+      local current="$1"
+      local latest="$2"
       
       # Normalize versions for comparison (remove 'v' prefix)
       local current_norm=$(normalize_version "$current")
@@ -130,20 +128,36 @@ let
       
       # Compare normalized versions
       if [[ "$current_norm" != "$latest_norm" && "$latest" != "unknown" && "$current" != "unknown" && "$latest" != "" ]]; then
+        return 0  # Update available
+      else
+        return 1  # No update
+      fi
+    }
+    
+    # Write metric to temp file and JSON
+    write_metric() {
+      local service="$1"
+      local current="$2"
+      local latest="$3"
+      local update_available=0
+      
+      if check_update_available "$current" "$latest"; then
         update_available=1
       fi
       
-      # Write Prometheus metric
+      # Write Prometheus metric (always write all services)
       echo "# HELP update_available Whether an update is available for $service" >> "$TEMP_FILE"
       echo "# TYPE update_available gauge" >> "$TEMP_FILE"
       echo "update_available{service=\"$service\",current=\"$current\",latest=\"$latest\"} $update_available" >> "$TEMP_FILE"
       
-      # Write JSON entry
-      if [[ "$FIRST_SERVICE" == "false" ]]; then
-        echo "," >> "$JSON_TEMP"
+      # Write JSON entry only if update is available
+      if [[ $update_available -eq 1 ]]; then
+        if [[ "$FIRST_SERVICE" == "false" ]]; then
+          echo "," >> "$JSON_TEMP"
+        fi
+        FIRST_SERVICE=false
+        echo "{\"name\":\"$service\",\"current\":\"$current\",\"latest\":\"$latest\",\"display\":\"$current → $latest\"}" >> "$JSON_TEMP"
       fi
-      FIRST_SERVICE=false
-      echo "{\"name\":\"$service\",\"current\":\"$current\",\"latest\":\"$latest\",\"update_available\":$update_available,\"display\":\"$current → $latest\"}" >> "$JSON_TEMP"
     }
     
     # Write Prometheus header
