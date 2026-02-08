@@ -45,10 +45,12 @@ let
     }
     
     # Parse current Immich version from docker-compose.yml
+    # Version is in comment on line 3: "# Version: v2.5.2"
     get_current_immich_version() {
       local compose_file="${configDir}/docker/immich/docker-compose.yml"
       if [[ -f "$compose_file" ]]; then
-        grep -oP 'immich-server:\K[^\s]+' "$compose_file" 2>/dev/null | head -1 || echo "unknown"
+        # Extract version from comment line
+        grep -oP '^# Version: \K[^\s]+' "$compose_file" 2>/dev/null | head -1 || echo "unknown"
       else
         echo "unknown"
       fi
@@ -64,6 +66,11 @@ let
       fi
     }
     
+    # Normalize version string (remove 'v' prefix if present)
+    normalize_version() {
+      echo "$1" | sed 's/^v//'
+    }
+    
     # Write metric to temp file
     write_metric() {
       local service="$1"
@@ -71,8 +78,12 @@ let
       local latest="$3"
       local update_available=0
       
-      # Compare versions (simple string comparison for now)
-      if [[ "$current" != "$latest" && "$latest" != "unknown" && "$current" != "unknown" ]]; then
+      # Normalize versions for comparison (remove 'v' prefix)
+      local current_norm=$(normalize_version "$current")
+      local latest_norm=$(normalize_version "$latest")
+      
+      # Compare normalized versions
+      if [[ "$current_norm" != "$latest_norm" && "$latest" != "unknown" && "$current" != "unknown" ]]; then
         update_available=1
       fi
       
