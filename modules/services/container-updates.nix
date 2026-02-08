@@ -1,0 +1,173 @@
+# modules/services/container-updates.nix
+# ============================================================================
+# CONTAINER UPDATE CHECKER - Automated version monitoring
+# ============================================================================
+#
+# Checks GitHub releases for version-pinned containers and reports updates
+# via Beszel custom metrics for dashboard visibility.
+#
+# Tracked Services:
+# - Immich (ghcr.io/immich-app/immich-server)
+# - immich-go (GitHub releases)
+#
+# Integration:
+# - Writes Prometheus-compatible metrics to Beszel agent custom metrics dir
+# - Beszel dashboard displays "Update Available" badges
+# - Runs daily at 6:00 AM via systemd timer
+#
+# Metrics Location: /var/lib/beszel-agent/custom-metrics/update-status.prom
+#
+# ============================================================================
+
+{ config, lib, pkgs, ... }:
+
+let
+  # Paths
+  metricsDir = "/var/lib/beszel-agent/custom-metrics";
+  configDir = "/etc/nixos";
+  
+  # Update checker script
+  updateCheckerScript = pkgs.writeShellScriptBin "container-update-checker" ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Configuration
+    METRICS_FILE="${metricsDir}/update-status.prom"
+    TEMP_FILE="$(mktemp)"
+    
+    # GitHub API helper function
+    get_github_latest_release() {
+      local repo="$1"
+      local api_url="https://api.github.com/repos/$repo/releases/latest"
+      
+      # Fetch latest release (anonymous API - 60 req/hour limit)
+      curl -sL "$api_url" 2>/dev/null | ${pkgs.jq}/bin/jq -r '.tag_name // empty' 2>/dev/null || echo ""
+    }
+    
+    # Parse current Immich version from docker-compose.yml
+    get_current_immich_version() {
+      local compose_file="${configDir}/docker/immich/docker-compose.yml"
+      if [[ -f "$compose_file" ]]; then
+        grep -oP 'immich-server:\K[^\s]+' "$compose_file" 2>/dev/null | head -1 || echo "unknown"
+      else
+        echo "unknown"
+      fi
+    }
+    
+    # Parse current immich-go version from immich-go.nix
+    get_current_immich_go_version() {
+      local nix_file="${configDir}/modules/immich-go.nix"
+      if [[ -f "$nix_file" ]]; then
+        grep -oP 'version = "\K[^"]+' "$nix_file" 2>/dev/null | head -1 || echo "unknown"
+      else
+        echo "unknown"
+      fi
+    }
+    
+    # Write metric to temp file
+    write_metric() {
+      local service="$1"
+      local current="$2"
+      local latest="$3"
+      local update_available=0
+      
+      # Compare versions (simple string comparison for now)
+      if [[ "$current" != "$latest" && "$latest" != "unknown" && "$current" != "unknown" ]]; then
+        update_available=1
+      fi
+      
+      echo "# HELP update_available Whether an update is available for $service" >> "$TEMP_FILE"
+      echo "# TYPE update_available gauge" >> "$TEMP_FILE"
+      echo "update_available{service=\"$service\",current=\"$current\",latest=\"$latest\"} $update_available" >> "$TEMP_FILE"
+    }
+    
+    # Write header
+    echo "# Container Update Check - $(date -Iseconds)" > "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+    
+    # Check Immich
+    echo "Checking Immich..." >&2
+    IMMICH_CURRENT=$(get_current_immich_version)
+    IMMICH_LATEST=$(get_github_latest_release "immich-app/immich")
+    write_metric "immich" "$IMMICH_CURRENT" "$IMMICH_LATEST"
+    
+    # Check immich-go
+    echo "Checking immich-go..." >&2
+    IMMICH_GO_CURRENT=$(get_current_immich_go_version)
+    IMMICH_GO_LATEST=$(get_github_latest_release "simulot/immich-go")
+    write_metric "immich-go" "$IMMICH_GO_CURRENT" "$IMMICH_GO_LATEST"
+    
+    # Move temp file to final location (atomic operation)
+    mv "$TEMP_FILE" "$METRICS_FILE"
+    chmod 644 "$METRICS_FILE"
+    
+    # Log results
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Update check complete:" >&2
+    echo "  Immich: $IMMICH_CURRENT (current) -> $IMMICH_LATEST (latest)" >&2
+    echo "  immich-go: $IMMICH_GO_CURRENT (current) -> $IMMICH_GO_LATEST (latest)" >&2
+  '';
+in
+{
+  # ============================================================================
+  # SYSTEMD SERVICE - Update Checker
+  # ============================================================================
+  
+  systemd.services.container-update-checker = {
+    description = "Container Update Checker";
+    
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${updateCheckerScript}/bin/container-update-checker";
+      User = "root";
+      
+      # Security hardening
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      ReadWritePaths = [ metricsDir ];
+      ReadOnlyPaths = [ configDir ];
+      
+      # Network access needed for GitHub API
+      PrivateNetwork = false;
+    };
+    
+    # Run after Beszel agent to ensure metrics dir exists
+    after = [ "docker-beszel-agent.service" ];
+    wants = [ "docker-beszel-agent.service" ];
+  };
+  
+  # ============================================================================
+  # SYSTEMD TIMER - Daily at 6:00 AM
+  # ============================================================================
+  
+  systemd.timers.container-update-checker = {
+    description = "Run container update checker daily";
+    wantedBy = [ "timers.target" ];
+    
+    timerConfig = {
+      OnCalendar = "06:00:00";
+      Persistent = true;  # Run immediately if missed (e.g., system was off)
+      RandomizedDelaySec = 300;  # Random delay up to 5 minutes to avoid thundering herd
+    };
+  };
+  
+  # ============================================================================
+  # DIRECTORY SETUP
+  # ============================================================================
+  
+  systemd.tmpfiles.rules = [
+    # Ensure Beszel agent custom metrics directory exists
+    "d ${metricsDir} 0755 root root -"
+  ];
+  
+  # ============================================================================
+  # PACKAGES
+  # ============================================================================
+  
+  environment.systemPackages = with pkgs; [
+    curl
+    jq
+    updateCheckerScript  # Make script available for manual runs
+  ];
+}

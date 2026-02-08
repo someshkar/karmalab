@@ -106,12 +106,14 @@ in
           # NixOS oci-containers handles restart policy automatically
         ];
         
-        # Volumes for Docker monitoring + ZFS filesystem access
+        # Volumes for Docker monitoring + ZFS filesystem access + Custom metrics
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock:ro"
           "${agentDataDir}:/var/lib/beszel-agent"
           # Host filesystem access for ZFS pool and dataset monitoring
           "/:/host:ro,rslave"
+          # Custom metrics directory for container update checker
+          "${agentDataDir}/custom-metrics:/custom-metrics:ro"
         ];
         
         # Load secrets from environment file (created by systemd prestart)

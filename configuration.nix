@@ -80,6 +80,7 @@
     ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
     ./modules/services/opencloud.nix  # OpenCloud file sync & share (cloud.somesh.dev)
     ./modules/services/mam-dynamic-seedbox.nix  # MAM dynamic seedbox IP updater
+    ./modules/services/container-updates.nix  # Automated container update checking
   ];
 
   # ============================================================================
