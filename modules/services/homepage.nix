@@ -345,17 +345,6 @@ in
             };
           }
           {
-            "CPU" = {
-              widget = {
-                type = "glances";
-                url = "http://localhost:61208";
-                metric = "cpu";
-                chart = false;
-                version = 4;
-              };
-            };
-          }
-          {
             "Memory" = {
               widget = {
                 type = "glances";
@@ -382,13 +371,12 @@ in
               widget = {
                 type = "customapi";
                 url = "http://localhost/updates.json";
-                mappings = [
-                  {
-                    field = "services";
-                    label = "Updates";
-                    format = "list";
-                  }
-                ];
+                display = "dynamic-list";
+                mappings = {
+                  items = "services";
+                  name = "name";
+                  label = "display";
+                };
               };
             };
           }

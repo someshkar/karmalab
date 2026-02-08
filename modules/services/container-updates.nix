@@ -117,7 +117,7 @@ let
         echo "," >> "$JSON_TEMP"
       fi
       FIRST_SERVICE=false
-      echo "{\"name\":\"$service\",\"current\":\"$current\",\"latest\":\"$latest\",\"update_available\":$update_available}" >> "$JSON_TEMP"
+      echo "{\"name\":\"$service\",\"current\":\"$current\",\"latest\":\"$latest\",\"update_available\":$update_available,\"display\":\"$current → $latest\"}" >> "$JSON_TEMP"
     }
     
     # Write Prometheus header
