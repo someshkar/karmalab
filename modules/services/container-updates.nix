@@ -28,7 +28,7 @@
 let
   # Paths
   metricsDir = "/var/lib/beszel-agent/custom-metrics";
-  configDir = "/etc/nixos";
+  configDir = "/home/somesh/karmalab";
   
   # Update checker script
   updateCheckerScript = pkgs.writeShellScriptBin "container-update-checker" ''
@@ -45,22 +45,41 @@ let
     echo '{"last_check":"'$(date -Iseconds)'","services":[' > "$JSON_TEMP"
     FIRST_SERVICE=true
     
-    # GitHub API helper function
+    # GitHub API helper function with retry
     get_github_latest_release() {
       local repo="$1"
       local api_url="https://api.github.com/repos/$repo/releases/latest"
+      local max_retries=3
+      local retry_count=0
+      local result=""
       
-      # Fetch latest release (anonymous API - 60 req/hour limit)
-      curl -sL "$api_url" 2>/dev/null | ${pkgs.jq}/bin/jq -r '.tag_name // empty' 2>/dev/null || echo ""
+      while [[ $retry_count -lt $max_retries ]]; do
+        # Fetch latest release (anonymous API - 60 req/hour limit)
+        result=$(curl -sL --max-time 10 "$api_url" 2>/dev/null | ${pkgs.jq}/bin/jq -r '.tag_name // empty' 2>/dev/null || echo "")
+        
+        if [[ -n "$result" ]]; then
+          echo "$result"
+          return 0
+        fi
+        
+        retry_count=$((retry_count + 1))
+        if [[ $retry_count -lt $max_retries ]]; then
+          echo "[DEBUG] GitHub API call failed for $repo, retrying ($retry_count/$max_retries)..." >&2
+          sleep 2
+        fi
+      done
+      
+      echo "[DEBUG] Failed to fetch version for $repo after $max_retries attempts" >&2
+      echo ""
     }
     
     # Parse current Immich version from docker-compose.yml
-    # Version is in comment on line 3: "# Version: v2.5.2"
+    # Version is in comment: "# Version: v2.5.2 (pinned for stability)"
     get_current_immich_version() {
       local compose_file="${configDir}/docker/immich/docker-compose.yml"
       if [[ -f "$compose_file" ]]; then
-        # Extract version from comment line
-        grep -oP '^# Version: \K[^\s]+' "$compose_file" 2>/dev/null | head -1 || echo "unknown"
+        # Extract version from comment line (handles "v2.5.2" or "v2.5.2 (pinned for stability)")
+        grep -oP '^# Version:\s*\K[^\s]+' "$compose_file" 2>/dev/null | head -1 || echo "unknown"
       else
         echo "unknown"
       fi
@@ -76,13 +95,20 @@ let
       fi
     }
     
-    # Parse current OpenCloud version from .env file
+    # Parse current OpenCloud version from running container
     get_current_opencloud_version() {
-      local env_file="/var/lib/opencloud/.env"
-      if [[ -f "$env_file" ]]; then
-        grep -oP '^OC_VERSION=\K[^\s]+' "$env_file" 2>/dev/null | head -1 || echo "latest"
+      # Get version from running opencloud container
+      local version=$(docker exec opencloud opencloud --version 2>/dev/null | grep -oP '\K[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "")
+      if [[ -n "$version" ]]; then
+        echo "$version"
       else
-        echo "latest"
+        # Fallback to .env file if container not running
+        local env_file="/var/lib/opencloud/.env"
+        if [[ -f "$env_file" ]]; then
+          grep -oP '^OC_VERSION=\K[^\s]+' "$env_file" 2>/dev/null | head -1 || echo "latest"
+        else
+          echo "latest"
+        fi
       fi
     }
     
@@ -174,15 +200,18 @@ in
       ProtectSystem = "strict";
       ProtectHome = true;
       ReadWritePaths = [ metricsDir ];
-      ReadOnlyPaths = [ configDir ];
+      ReadOnlyPaths = [ configDir "/var/lib/opencloud" ];
       
       # Network access needed for GitHub API
       PrivateNetwork = false;
+      
+      # Docker access needed to read OpenCloud version
+      ExecStartPre = "${pkgs.docker}/bin/docker ps";
     };
     
     # Run after Beszel agent to ensure metrics dir exists
-    after = [ "docker-beszel-agent.service" ];
-    wants = [ "docker-beszel-agent.service" ];
+    after = [ "docker-beszel-agent.service" "docker.service" ];
+    wants = [ "docker-beszel-agent.service" "docker.service" ];
   };
   
   # ============================================================================
@@ -216,6 +245,7 @@ in
   environment.systemPackages = with pkgs; [
     curl
     jq
+    docker
     updateCheckerScript  # Make script available for manual runs
   ];
 }
