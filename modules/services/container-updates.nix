@@ -204,12 +204,10 @@ let
     else
       # Updates available - close the array we were building
       echo ']}' >> "$JSON_TEMP"
-      # Read the partial JSON and build complete response
-      JSON_CONTENT=$(${pkgs.jq}/bin/jq -n \
-        --arg last_check "$LAST_CHECK_ISO" \
-        --arg last_checked_formatted "$LAST_CHECK" \
-        --argjson services "$(cat "$JSON_TEMP" | ${pkgs.jq}/bin/jq -s '.[0].services // []' 2>/dev/null || echo '[]')" \
-        '{status: "updates_available", last_check: $last_check, last_checked_formatted: $last_checked_formatted, message: "Updates available", services: $services}')
+      # Read the partial JSON and extract services array
+      SERVICES_JSON=$(${pkgs.jq}/bin/jq -r '.services // []' "$JSON_TEMP" 2>/dev/null || echo '[]')
+      # Build complete response
+      JSON_CONTENT="{\"status\":\"updates_available\",\"last_check\":\"$LAST_CHECK_ISO\",\"last_checked_formatted\":\"$LAST_CHECK\",\"message\":\"Updates available\",\"services\":$SERVICES_JSON}"
     fi
     
     # Write files
