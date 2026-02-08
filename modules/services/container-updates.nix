@@ -164,35 +164,68 @@ let
     echo "# Container Update Check - $(date -Iseconds)" > "$TEMP_FILE"
     echo "" >> "$TEMP_FILE"
     
+    # Track updates count
+    UPDATES_COUNT=0
+    
     # Check Immich
     echo "Checking Immich..." >&2
     IMMICH_CURRENT=$(get_current_immich_version)
     IMMICH_LATEST=$(get_github_latest_release "immich-app/immich")
     write_metric "immich" "$IMMICH_CURRENT" "$IMMICH_LATEST"
+    if check_update_available "$IMMICH_CURRENT" "$IMMICH_LATEST"; then
+      UPDATES_COUNT=$((UPDATES_COUNT + 1))
+    fi
     
     # Check immich-go
     echo "Checking immich-go..." >&2
     IMMICH_GO_CURRENT=$(get_current_immich_go_version)
     IMMICH_GO_LATEST=$(get_github_latest_release "simulot/immich-go")
     write_metric "immich-go" "$IMMICH_GO_CURRENT" "$IMMICH_GO_LATEST"
+    if check_update_available "$IMMICH_GO_CURRENT" "$IMMICH_GO_LATEST"; then
+      UPDATES_COUNT=$((UPDATES_COUNT + 1))
+    fi
     
     # Check OpenCloud
     echo "Checking OpenCloud..." >&2
     OPENCLOUD_CURRENT=$(get_current_opencloud_version)
     OPENCLOUD_LATEST=$(get_github_latest_release "opencloud-eu/opencloud")
     write_metric "opencloud" "$OPENCLOUD_CURRENT" "$OPENCLOUD_LATEST"
+    if check_update_available "$OPENCLOUD_CURRENT" "$OPENCLOUD_LATEST"; then
+      UPDATES_COUNT=$((UPDATES_COUNT + 1))
+    fi
     
-    # Close JSON and write files
-    echo ']}' >> "$JSON_TEMP"
+    # Build final JSON with status message
+    LAST_CHECK=$(date '+%b %d, %I:%M %p')
+    LAST_CHECK_ISO=$(date -Iseconds)
+    
+    if [[ $UPDATES_COUNT -eq 0 ]]; then
+      # No updates available
+      JSON_CONTENT="{\"status\":\"ok\",\"last_check\":\"$LAST_CHECK_ISO\",\"message\":\"No updates available\",\"last_checked_formatted\":\"$LAST_CHECK\",\"services\":[]}"
+    else
+      # Updates available - close the array we were building
+      echo ']}' >> "$JSON_TEMP"
+      # Read the partial JSON and build complete response
+      JSON_CONTENT=$(${pkgs.jq}/bin/jq -n \
+        --arg last_check "$LAST_CHECK_ISO" \
+        --arg last_checked_formatted "$LAST_CHECK" \
+        --argjson services "$(cat "$JSON_TEMP" | ${pkgs.jq}/bin/jq -s '.[0].services // []' 2>/dev/null || echo '[]')" \
+        '{status: "updates_available", last_check: $last_check, last_checked_formatted: $last_checked_formatted, message: "Updates available", services: $services}')
+    fi
+    
+    # Write files
     mv "$TEMP_FILE" "$METRICS_FILE"
-    mv "$JSON_TEMP" "$JSON_FILE"
+    echo "$JSON_CONTENT" > "$JSON_FILE"
     chmod 644 "$METRICS_FILE" "$JSON_FILE"
+    
+    # Cleanup temp file
+    rm -f "$JSON_TEMP"
     
     # Log results
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Update check complete:" >&2
     echo "  Immich: $IMMICH_CURRENT (current) -> $IMMICH_LATEST (latest)" >&2
     echo "  immich-go: $IMMICH_GO_CURRENT (current) -> $IMMICH_GO_LATEST (latest)" >&2
     echo "  OpenCloud: $OPENCLOUD_CURRENT (current) -> $OPENCLOUD_LATEST (latest)" >&2
+    echo "  Status: $([ $UPDATES_COUNT -eq 0 ] && echo 'No updates' || echo "$UPDATES_COUNT update(s) available')" >&2
   '';
 in
 {

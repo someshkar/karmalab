@@ -371,12 +371,11 @@ in
               widget = {
                 type = "customapi";
                 url = "http://localhost/updates.json";
-                display = "dynamic-list";
                 mappings = {
-                  items = "services";
-                  name = "name";
-                  label = "display";
+                  text = "message";
+                  subtext = "last_checked_formatted";
                 };
+                display = "text";
               };
             };
           }
