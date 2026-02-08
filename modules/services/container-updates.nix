@@ -223,7 +223,11 @@ let
     echo "  Immich: $IMMICH_CURRENT (current) -> $IMMICH_LATEST (latest)" >&2
     echo "  immich-go: $IMMICH_GO_CURRENT (current) -> $IMMICH_GO_LATEST (latest)" >&2
     echo "  OpenCloud: $OPENCLOUD_CURRENT (current) -> $OPENCLOUD_LATEST (latest)" >&2
-    echo "  Status: $([ $UPDATES_COUNT -eq 0 ] && echo 'No updates' || echo "$UPDATES_COUNT update(s) available')" >&2
+    if [[ $UPDATES_COUNT -eq 0 ]]; then
+      echo "  Status: No updates" >&2
+    else
+      echo "  Status: $UPDATES_COUNT update(s) available" >&2
+    fi
   '';
 in
 {
