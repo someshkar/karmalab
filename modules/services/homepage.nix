@@ -371,7 +371,7 @@ in
               widget = {
                 type = "customapi";
                 url = "http://localhost/updates.json";
-                mappings = {
+                field = {
                   text = "message";
                   subtext = "last_checked_formatted";
                 };
