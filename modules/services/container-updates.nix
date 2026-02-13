@@ -199,8 +199,8 @@ let
     LAST_CHECK_ISO=$(date -Iseconds)
     
     if [[ $UPDATES_COUNT -eq 0 ]]; then
-      # No updates available
-      JSON_CONTENT="{\"status\":\"ok\",\"last_check\":\"$LAST_CHECK_ISO\",\"message\":\"No updates available\",\"last_checked_formatted\":\"$LAST_CHECK\",\"services\":[]}"
+      # No updates available - add a placeholder entry
+      JSON_CONTENT="{\"status\":\"ok\",\"last_check\":\"$LAST_CHECK_ISO\",\"message\":\"No updates available\",\"last_checked_formatted\":\"$LAST_CHECK\",\"services\":[{\"name\":\"All up to date\",\"current\":\"\",\"latest\":\"\",\"display\":\"✓ All services up to date\"}]}"
     else
       # Updates available - close the array we were building
       echo ']}' >> "$JSON_TEMP"
