@@ -33,7 +33,7 @@
 
 let
   # Immich version - pinned for stability
-  immichVersion = "v2.5.5";
+  immichVersion = "v2.5.6";
   
   # Paths
   composeDir = "/var/lib/immich";

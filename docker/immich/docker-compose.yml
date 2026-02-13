@@ -1,6 +1,6 @@
 # Immich Docker Compose Configuration
 # ============================================================================
-# Version: v2.5.5 (pinned for stability)
+# Version: v2.5.6 (pinned for stability)
 # Hardware: Intel N150 with Quick Sync (VAAPI) transcoding
 # 
 # This file is copied to /var/lib/immich/docker-compose.yml on deployment
@@ -15,7 +15,7 @@ services:
   # Main API server - handles all web requests and background jobs
   immich-server:
     container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.5.5}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.5.6}
     
     # Intel Quick Sync hardware transcoding (VAAPI)
     devices:
@@ -60,7 +60,7 @@ services:
   # Runs on CPU (N150 doesn't have dedicated GPU)
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.5.5}
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.5.6}
     
     volumes:
       # Model cache on NVMe SSD for fast loading
