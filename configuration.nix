@@ -295,6 +295,12 @@
     after = [ "storage-online.target" ];
     wants = [ "storage-online.target" ];
     # Note: NOT using "requires" - allows Jellyfin to start even if storage unavailable
+    
+    serviceConfig = {
+      # Grant access to GPU devices for Intel Quick Sync (QSV) hardware transcoding
+      DeviceAllow = [ "/dev/dri/renderD128 rw" "/dev/dri/card0 rw" ];
+      SupplementaryGroups = [ "video" "render" ];
+    };
   };
 
   # ============================================================================
