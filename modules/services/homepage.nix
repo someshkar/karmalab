@@ -135,8 +135,8 @@ in
             };
           }
           {
-            "Jellyseerr" = {
-              icon = "jellyseerr.svg";
+            "Seerr" = {
+              icon = "seerr.svg";
               description = "Media request manager";
               href = "http://${serverIP}:5055";
               siteMonitor = "http://${serverIP}:5055";
@@ -421,10 +421,10 @@ in
             ];
           }
           {
-            "Jellyseerr (External)" = [
+            "Seerr (External)" = [
               {
-                icon = "jellyseerr.svg";
-                href = "https://jellyseer.somesh.dev";
+                icon = "seerr.svg";
+                href = "https://seer.somesh.dev";
               }
             ];
           }

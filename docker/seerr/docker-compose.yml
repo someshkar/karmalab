@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    init: true  # Required for Seerr
+    restart: unless-stopped
+    
+    environment:
+      - LOG_LEVEL=info
+      - TZ=Asia/Kolkata
+      - PORT=5055
+    
+    ports:
+      - "5055:5055"
+    
+    volumes:
+      # Mount ZFS dataset directly into container
+      - /var/lib/jellyseerr:/app/config
+    
+    networks:
+      - seerr-net
+    
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5055/api/v1/status"]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+
+networks:
+  seerr-net:
+    driver: bridge

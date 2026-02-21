@@ -385,26 +385,49 @@
   };
 
   # ============================================================================
-  # JELLYSEERR - Media Request Interface
+  # SEERR - Media Request Interface (Docker)
   # ============================================================================
-
-  services.jellyseerr = {
-    enable = true;
-    openFirewall = false;
-    port = 5055;
+  # Seerr is the merged project of Jellyseerr + Overseerr
+  # Migrated from native NixOS service to Docker container
+  # Migration date: 2026-02-21
+  
+  # Ensure Docker is enabled
+  virtualisation.docker.enable = true;
+  
+  # Seerr container managed via Docker Compose
+  systemd.services.seerr = {
+    description = "Seerr - Unified Media Request Manager";
+    after = [ "docker.service" "network-online.target" "storage-online.target" ];
+    requires = [ "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+    
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      WorkingDirectory = "/etc/nixos/docker/seerr";
+      ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d";
+      ExecStop = "${pkgs.docker-compose}/bin/docker-compose down";
+      User = "root";
+      
+      # Security hardening
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+    };
+    
+    # Ensure data directory has correct permissions before starting
+    # Seerr Docker runs as node user (UID 1000)
+    preStart = ''
+      if [ -d /var/lib/jellyseerr ]; then
+        ${pkgs.coreutils}/bin/chown -R 1000:1000 /var/lib/jellyseerr
+        ${pkgs.coreutils}/bin/chmod -R 755 /var/lib/jellyseerr
+      fi
+    '';
   };
-
-  users.users.jellyseerr = {
-    isSystemUser = true;
-    group = "jellyseerr";
-    extraGroups = [ "media" ];
-  };
-  users.groups.jellyseerr = {};
-
-  systemd.services.jellyseerr = {
-    after = [ "storage-online.target" ];
-    wants = [ "storage-online.target" ];
-  };
+  
+  # Open firewall for Seerr (port 5055)
+  # Note: Access is controlled via Tailscale, not public internet
+  networking.firewall.allowedTCPPorts = [ 5055 ];
 
   # ============================================================================
   # MAM DYNAMIC SEEDBOX IP UPDATER
