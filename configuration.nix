@@ -424,10 +424,6 @@
       fi
     '';
   };
-  
-  # Open firewall for Seerr (port 5055)
-  # Note: Access is controlled via Tailscale, not public internet
-  networking.firewall.allowedTCPPorts = [ 5055 ];
 
   # ============================================================================
   # MAM DYNAMIC SEEDBOX IP UPDATER
