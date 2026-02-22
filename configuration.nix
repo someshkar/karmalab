@@ -394,33 +394,46 @@
   # Ensure Docker is enabled
   virtualisation.docker.enable = true;
   
-  # Seerr container managed via Docker Compose
-  systemd.services.seerr = {
-    description = "Seerr - Unified Media Request Manager";
-    after = [ "docker.service" "network-online.target" "storage-online.target" ];
-    requires = [ "docker.service" ];
-    wantedBy = [ "multi-user.target" ];
+  # Seerr container managed via NixOS native OCI containers
+  virtualisation.oci-containers.containers.seerr = {
+    image = "ghcr.io/seerr-team/seerr:latest";
+    autoStart = true;
     
+    ports = [ "5055:5055" ];
+    
+    volumes = [
+      "/var/lib/jellyseerr:/app/config"
+    ];
+    
+    environment = {
+      LOG_LEVEL = "info";
+      TZ = "Asia/Kolkata";
+      PORT = "5055";
+    };
+    
+    # Container runs as node user (UID 1000)
+    # Data directory permissions handled below
+  };
+  
+  # Ensure data directory has correct permissions for Docker container
+  # Seerr runs as node user (UID 1000)
+  systemd.tmpfiles.rules = [
+    "d /var/lib/jellyseerr 0755 1000 1000 -"
+  ];
+  
+  # Fix permissions on boot
+  systemd.services.seerr-permissions = {
+    description = "Fix Seerr data permissions";
+    before = [ "podman-seerr.service" "docker-seerr.service" ];
+    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      WorkingDirectory = "/etc/nixos/docker/seerr";
-      ExecStart = "${pkgs.docker-compose}/bin/docker-compose up -d";
-      ExecStop = "${pkgs.docker-compose}/bin/docker-compose down";
-      User = "root";
-      
-      # Security hardening
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      PrivateTmp = true;
     };
-    
-    # Ensure data directory has correct permissions before starting
-    # Seerr Docker runs as node user (UID 1000)
-    preStart = ''
+    script = ''
       if [ -d /var/lib/jellyseerr ]; then
-        ${pkgs.coreutils}/bin/chown -R 1000:1000 /var/lib/jellyseerr
-        ${pkgs.coreutils}/bin/chmod -R 755 /var/lib/jellyseerr
+        chown -R 1000:1000 /var/lib/jellyseerr
+        chmod -R 755 /var/lib/jellyseerr
       fi
     '';
   };
