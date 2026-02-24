@@ -13,6 +13,7 @@
 # - Pull requests
 # - SSH and HTTPS access
 # - Git LFS (Large File Storage) support - up to 5GB per file
+# - Container Registry (OCI/Docker images) - images at git.somesh.dev/<user>/<image>
 # - Optional CI/CD (Actions, disabled by default)
 #
 # Storage:
@@ -25,6 +26,14 @@
 # - Web UI: http://192.168.0.200:3030
 # - SSH: ssh://git@192.168.0.200:2222/user/repo.git
 # - HTTPS clone: http://192.168.0.200:3030/user/repo.git
+# - Container Registry: https://git.somesh.dev/<owner>/<image>:<tag>
+#
+# Container Registry Usage:
+# 1. Login: docker login git.somesh.dev
+# 2. Build: docker build -t git.somesh.dev/<user>/<image>:<tag> .
+# 3. Push: docker push git.somesh.dev/<user>/<image>:<tag>
+# 4. Pull: docker pull git.somesh.dev/<user>/<image>:<tag>
+# 5. Browse: git.somesh.dev/<user>/-/packages
 #
 # Post-deployment setup:
 # 1. Access http://192.168.0.200:3030
@@ -166,6 +175,16 @@ in
         # Use Gravatar for avatars
         ENABLE_FEDERATED_AVATAR = true;
         DISABLE_GRAVATAR = false;
+      };
+      
+      # Package Registry (includes Container Registry for Docker/OCI images)
+      package = {
+        # Enable package registry
+        ENABLED = true;
+        
+        # Container registry settings
+        # Images accessible at: git.somesh.dev/<owner>/<image>:<tag>
+        # Web UI: git.somesh.dev/<owner>/-/packages/container/<image>
       };
       
       # Logging

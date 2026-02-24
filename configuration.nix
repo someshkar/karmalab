@@ -476,6 +476,13 @@
     # System utilities
     lm_sensors
     tmux              # Terminal multiplexer for long-running tasks
+    
+    # Media tools for subtitle management
+    ffmpeg            # For ffprobe (check embedded subtitles) + media analysis
+    uv                # Python package manager for one-liner scripts
+    
+    # System info display
+    fastfetch         # Modern system information tool (neofetch alternative)
   ];
 
   # ============================================================================
