@@ -480,6 +480,7 @@
     # Media tools for subtitle management
     ffmpeg            # For ffprobe (check embedded subtitles) + media analysis
     uv                # Python package manager for one-liner scripts
+    python312Packages.subliminal  # Subtitle downloader for shows without embedded subs
     
     # System info display
     fastfetch         # Modern system information tool (neofetch alternative)
