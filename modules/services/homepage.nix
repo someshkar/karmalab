@@ -13,8 +13,8 @@
 # - Click-through to all services
 #
 # Access:
-# - http://192.168.0.200 (via Caddy reverse proxy)
-# - http://192.168.0.200:8082 (direct)
+# - http://192.168.68.59 (via Caddy reverse proxy)
+# - http://192.168.68.59:8082 (direct)
 #
 # ============================================================================
 
@@ -22,7 +22,7 @@
 
 let
   # Service URLs for homepage
-  serverIP = "192.168.0.200";
+  serverIP = "192.168.68.59";
 in
 {
   # ============================================================================
@@ -46,7 +46,7 @@ in
 
     # Allow access via various hostnames/IPs (required since NixOS 25.05)
     # This is a comma-separated string, not a list
-    allowedHosts = "192.168.0.200,karmalab,karmalab.local,karmalab.tail*,home.somesh.dev,localhost,127.0.0.1";
+    allowedHosts = "192.168.68.59,karmalab,karmalab.local,karmalab.tail*,home.somesh.dev,localhost,127.0.0.1";
 
     # Dashboard settings
     settings = {
