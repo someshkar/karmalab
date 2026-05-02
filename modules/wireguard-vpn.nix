@@ -154,7 +154,7 @@ in
       ${pkgs.iproute2}/bin/ip netns exec ${vpnNamespace} ${pkgs.iproute2}/bin/ip route add default dev ${wgInterface}
       
       # Allow traffic to host via veth (for local service access)
-      ${pkgs.iproute2}/bin/ip netns exec ${vpnNamespace} ${pkgs.iproute2}/bin/ip route add ${hostIp}/32 via ${vpnIp} dev ${vethVpn}
+      ${pkgs.iproute2}/bin/ip netns exec ${vpnNamespace} ${pkgs.iproute2}/bin/ip route replace ${hostIp}/32 via ${vpnIp} dev ${vethVpn}
     '';
     
     preStop = ''

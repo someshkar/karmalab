@@ -29,7 +29,7 @@
       SHADOWSOCKS = "off";  # Not used - requires Shadowsocks clients
       
       # Firewall configuration
-      FIREWALL_OUTBOUND_SUBNETS = "192.168.0.0/24";  # Allow LAN access
+      FIREWALL_OUTBOUND_SUBNETS = "192.168.68.0/24";  # Allow LAN access
       
       # Timezone
       TZ = "Asia/Kolkata";
