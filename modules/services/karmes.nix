@@ -305,6 +305,7 @@ in
       ExecStart = "${hermesVenv}/bin/hermes gateway run --accept-hooks";
       Restart = "always";
       RestartSec = "10s";
+      TimeoutStopSec = "240s";
     };
   };
 }
