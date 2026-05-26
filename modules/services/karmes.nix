@@ -198,7 +198,6 @@ in
   systemd.services.karmes-hermes-setup = {
     description = "Prepare Hermes source and venv for Karmes";
     before = [ "karmes-dashboard.service" "karmes-gateway.service" ];
-    wantedBy = [ "multi-user.target" ];
 
     path = with pkgs; [
       bash
@@ -253,7 +252,6 @@ in
     after = [ "network-online.target" "karmes-hermes-setup.service" ];
     wants = [ "network-online.target" ];
     requires = [ "karmes-hermes-setup.service" ];
-    wantedBy = [ "multi-user.target" ];
 
     path = with pkgs; [ bash coreutils git uv python3 nodejs_22 docker ];
 
@@ -282,7 +280,6 @@ in
     after = [ "network-online.target" "docker.service" "karmes-hermes-setup.service" "karmes-camoufox.service" ];
     wants = [ "network-online.target" ];
     requires = [ "karmes-hermes-setup.service" "karmes-camoufox.service" ];
-    wantedBy = [ "multi-user.target" ];
 
     path = with pkgs; [ bash coreutils git uv python3 nodejs_22 docker ];
 
