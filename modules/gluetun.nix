@@ -62,19 +62,19 @@
         echo "Checking Gluetun VPN connection..."
         
         # Check if container is running
-        if ! ${pkgs.docker}/bin/docker ps | grep -q gluetun; then
+        if ! ${pkgs.docker_29}/bin/docker ps | grep -q gluetun; then
           echo "ERROR: Gluetun container not running"
           exit 1
         fi
         
         # Check VPN connection
-        if ! ${pkgs.docker}/bin/docker logs gluetun 2>&1 | tail -50 | grep -q "ip address\|Public IP"; then
+        if ! ${pkgs.docker_29}/bin/docker logs gluetun 2>&1 | tail -50 | grep -q "ip address\|Public IP"; then
           echo "WARNING: VPN may not be connected yet"
           exit 0
         fi
         
         # Check public IP (should be Iceland)
-        IP=$(${pkgs.docker}/bin/docker exec gluetun wget -qO- https://api.ipify.org || echo "unknown")
+        IP=$(${pkgs.docker_29}/bin/docker exec gluetun wget -qO- https://api.ipify.org || echo "unknown")
         echo "Gluetun public IP: $IP"
         
         # Check HTTP proxy

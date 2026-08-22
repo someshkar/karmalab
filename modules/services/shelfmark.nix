@@ -114,13 +114,13 @@ in
     
     # Pre-start: Pull image and cleanup old container
     preStart = ''
-      ${pkgs.docker}/bin/docker pull ${image}
-      ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
+      ${pkgs.docker_29}/bin/docker pull ${image}
+      ${pkgs.docker_29}/bin/docker rm -f shelfmark 2>/dev/null || true
     '';
     
     # Start: Run container on host network
     script = ''
-      ${pkgs.docker}/bin/docker run \
+      ${pkgs.docker_29}/bin/docker run \
         --name=shelfmark \
         --network=host \
         --rm \
@@ -142,11 +142,11 @@ in
     
     # Stop: Graceful container stop
     preStop = ''
-      ${pkgs.docker}/bin/docker stop shelfmark 2>/dev/null || true
+      ${pkgs.docker_29}/bin/docker stop shelfmark 2>/dev/null || true
     '';
     
     postStop = ''
-      ${pkgs.docker}/bin/docker rm -f shelfmark 2>/dev/null || true
+      ${pkgs.docker_29}/bin/docker rm -f shelfmark 2>/dev/null || true
     '';
   };
   

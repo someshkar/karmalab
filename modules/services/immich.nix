@@ -52,6 +52,7 @@ in
   
   virtualisation.docker = {
     enable = true;
+    package = pkgs.docker_29;
     
     # Automatic cleanup of unused images/containers
     autoPrune = {

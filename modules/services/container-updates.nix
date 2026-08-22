@@ -255,7 +255,7 @@ in
       PrivateNetwork = false;
       
       # Docker access needed to read OpenCloud version
-      ExecStartPre = "${pkgs.docker}/bin/docker ps";
+      ExecStartPre = "${pkgs.docker_29}/bin/docker ps";
     };
     
     # Run after Beszel agent to ensure metrics dir exists

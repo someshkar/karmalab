@@ -84,6 +84,12 @@
     ./modules/services/container-updates.nix  # Automated container update checking
   ];
 
+  # Keep the Docker CLI used by service scripts aligned with the daemon. The
+  # default docker_28 package is EOL and rejected by current nixpkgs.
+  nixpkgs.overlays = [
+    (_final: prev: { docker = prev.docker_29; })
+  ];
+
   # ============================================================================
   # BOOT CONFIGURATION
   # ============================================================================
