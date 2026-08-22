@@ -5,12 +5,12 @@
 #
 # Tailscale provides secure remote access to the homelab from anywhere.
 # This configuration sets up the NUC as an exit node and subnet router,
-# allowing remote access to the entire home network (192.168.0.0/24).
+# allowing remote access to the entire home network (192.168.68.0/22).
 #
 # Features:
 # - Secure mesh VPN (WireGuard-based)
 # - Exit node capability for routing internet traffic through home network
-# - Subnet routing for accessing ALL home network devices (192.168.0.0/24)
+# - Subnet routing for accessing ALL home network devices (192.168.68.0/22)
 # - MagicDNS for easy device discovery
 # - No port forwarding required
 #
@@ -22,7 +22,7 @@
 # 3. After deployment, approve exit node AND subnet route in Tailscale admin console
 #    - Go to https://login.tailscale.com/admin/machines
 #    - Find "karmalab" device
-#    - Approve subnet route: 192.168.0.0/24
+#    - Approve subnet route: 192.168.68.0/22
 #
 # Usage:
 # - Access karmalab services via Tailscale IP or MagicDNS name
@@ -36,6 +36,15 @@
 let
   # Path to the auth key file (not stored in git)
   authKeyFile = "/etc/nixos/secrets/tailscale-auth-key";
+
+  # Apply these both during initial authentication and on every boot. extraUpFlags
+  # alone are skipped when the node is already logged in.
+  routingFlags = [
+    "--advertise-exit-node"
+    "--advertise-routes=192.168.68.0/22"
+    "--accept-routes"
+    "--accept-dns=false"
+  ];
 in
 {
   # ============================================================================
@@ -48,13 +57,10 @@ in
     # Use the auth key file for automatic authentication
     authKeyFile = authKeyFile;
     
-    # Advertise as exit node and subnet router
-    extraUpFlags = [
-      "--advertise-exit-node"
-      "--advertise-routes=192.168.0.0/24"  # Advertise home network subnet
-      "--accept-routes"
-      "--accept-dns=false"  # Don't override local DNS
-    ];
+    # Advertise as an exit node and subnet router during initial login and
+    # re-apply the preferences on every boot/rebuild.
+    extraUpFlags = routingFlags;
+    extraSetFlags = routingFlags;
     
     # Open firewall for Tailscale
     openFirewall = true;

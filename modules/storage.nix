@@ -24,7 +24,7 @@
 # │   MEDIA (6.5TB total):                                             │
 # │     storagepool/media/movies/       - Movies (2TB quota)           │
 # │     storagepool/media/tv/           - TV Shows (2TB quota)         │
-# │     storagepool/media/downloads/    - Temp downloads (1TB)         │
+# │     storagepool/media/downloads/    - Temp downloads (2TB)         │
 # │     storagepool/media/ebooks/       - Ebooks (100GB quota)         │
 # │     storagepool/media/audiobooks/   - Audiobooks (1TB quota)       │
 # │                                                                     │
@@ -309,9 +309,9 @@ in
       set_property "$POOL/media/tv" "quota" "2T"
       set_property "$POOL/media/tv" "recordsize" "1M"
       
-      # Downloads (1TB total)
+      # Downloads (2TB total)
       create_dataset "$POOL/media/downloads"
-      set_property "$POOL/media/downloads" "quota" "1T"
+      set_property "$POOL/media/downloads" "quota" "2T"
       
       create_dataset "$POOL/media/downloads/complete"
       set_property "$POOL/media/downloads/complete" "quota" "800G"
