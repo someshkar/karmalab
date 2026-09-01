@@ -6,6 +6,11 @@
     # Note: Intel N150 Quick Sync works on stable with linuxPackages_latest
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
+    # Vaultwarden tracks Bitwarden's client API closely. Keep only this service
+    # on the newer stable package set so client compatibility fixes do not
+    # require a full NixOS release upgrade.
+    nixpkgs-vaultwarden.url = "github:NixOS/nixpkgs/nixos-26.05";
+
     # Declarative disk partitioning (for NVMe boot disk only)
     disko = {
       url = "github:nix-community/disko";

@@ -14,7 +14,7 @@
 # - Secure notes, cards, identities
 #
 # Storage:
-# - Data directory: /var/lib/vaultwarden (on NVMe SSD)
+# - Data directory: /var/lib/bitwarden_rs (managed by the NixOS module)
 # - SQLite database (simple, sufficient for personal use)
 #
 # Access:
@@ -35,7 +35,7 @@
 #
 # ============================================================================
 
-{ config, lib, pkgs, ... }:
+{ config, inputs, lib, pkgs, ... }:
 
 let
   # Port configuration
@@ -51,6 +51,11 @@ in
   
   services.vaultwarden = {
     enable = true;
+
+    # Bitwarden clients 2026.8.0+ require Vaultwarden 1.37.2 or newer.
+    # NixOS 25.11 currently ships 1.36.0, so use the package from the newer
+    # stable package set without upgrading the rest of the operating system.
+    package = inputs.nixpkgs-vaultwarden.legacyPackages.${pkgs.stdenv.hostPlatform.system}.vaultwarden;
     
     # Environment configuration
     config = {
