@@ -1,9 +1,19 @@
 # Immich Docker Compose Configuration
 # ============================================================================
-# Version: v2.7.5 (pinned for stability)
+# Version: v3.2.2 (pinned for stability)
 # Hardware: Intel N150 with Quick Sync (VAAPI) transcoding
-# 
+#
 # This file is copied to /var/lib/immich/docker-compose.yml on deployment
+#
+# IMPORTANT — media location:
+#   Immich v3 defaults IMMICH_MEDIA_LOCATION to /data, but this instance's
+#   database was migrated from v2, where it stored absolute paths under
+#   /usr/src/app/upload. We therefore keep the v2 media location and set
+#   IMMICH_MEDIA_LOCATION=/usr/src/app/upload in /var/lib/immich/.env.
+#   Changing the mount/IMMICH_MEDIA_LOCATION requires letting Immich migrate
+#   the DB paths (it does this automatically when the location changes) —
+#   do NOT change one without the other or you will get an
+#   "Inconsistent Media Location" error.
 # ============================================================================
 
 name: immich
@@ -15,7 +25,7 @@ services:
   # Main API server - handles all web requests and background jobs
   immich-server:
     container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v2.7.5}
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3.2.2}
     
     # Intel Quick Sync hardware transcoding (VAAPI)
     devices:
@@ -26,6 +36,7 @@ services:
     
     volumes:
       # Photo library - ZFS dataset on USB HDD
+      # (kept at /usr/src/app/upload to match migrated DB paths — see header)
       - ${UPLOAD_LOCATION:-/data/immich/photos}:/usr/src/app/upload
       
       # Temporary upload location - ZFS dataset
@@ -60,7 +71,7 @@ services:
   # Runs on CPU (N150 doesn't have dedicated GPU)
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v2.7.5}
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3.2.2}
     
     volumes:
       # Model cache on NVMe SSD for fast loading
