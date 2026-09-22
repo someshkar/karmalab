@@ -11,6 +11,11 @@
     # require a full NixOS release upgrade.
     nixpkgs-vaultwarden.url = "github:NixOS/nixpkgs/nixos-26.05";
 
+    # Unstable is used only for services that need a newer package than the
+    # 25.11 stable release provides (currently Jellyfin 12.x). Do not use it as
+    # the system-wide nixpkgs — see services.jellyfin.package in configuration.nix.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     # Declarative disk partitioning (for NVMe boot disk only)
     disko = {
       url = "github:nix-community/disko";

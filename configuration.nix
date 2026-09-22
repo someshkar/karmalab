@@ -291,6 +291,10 @@
     openFirewall = false;  # Managed via Tailscale interface
     user = "jellyfin";
     group = "media";
+    # Jellyfin 12.x is not in nixos-25.11; take the package from nixos-unstable.
+    # The option surface used here (dataDir/configDir/cacheDir/logDir) is
+    # unchanged between the 25.11 and unstable NixOS modules.
+    package = inputs.nixpkgs-unstable.legacyPackages.${pkgs.stdenv.hostPlatform.system}.jellyfin;
   };
 
   users.users.jellyfin = {
