@@ -48,7 +48,7 @@ docker logs lazylibrarian
 
 ## Service Configuration
 
-### LazyLibrarian (http://192.168.0.200:5299) - Docker Container
+### LazyLibrarian (http://192.168.68.59:5299) - Docker Container
 
 **Docker image**: LinuxServer.io `lazylibrarian:latest` with Calibre Docker Mod  
 **HTTP Proxy**: Routes public sources through Gluetun Iceland VPN (privacy)  
@@ -58,7 +58,7 @@ docker logs lazylibrarian
 
 #### Initial Setup Wizard
 
-1. Access http://192.168.0.200:5299
+1. Access http://192.168.68.59:5299
 2. Complete setup wizard (no authentication required initially)
 3. **IMPORTANT: Set admin password immediately**:
    - Settings → Security → Admin Password
@@ -88,7 +88,7 @@ docker logs lazylibrarian
 - Calls `calibredb import --library-path=/books /downloads/book.epub`
 - Calibre adds book with metadata (title, author, cover, ISBN, etc.)
 - Original file stays in `/downloads/` for seeding torrents
-- Book appears in Calibre-Web immediately at http://192.168.0.200:8083
+- Book appears in Calibre-Web immediately at http://192.168.68.59:8083
 
 ---
 
@@ -96,7 +96,7 @@ docker logs lazylibrarian
 
 **Purpose**: Search MAM + TorrentLeech with freeleech filtering (ratio protection)
 
-##### In Prowlarr (http://192.168.0.200:9696)
+##### In Prowlarr (http://192.168.68.59:9696)
 
 **1. Add MyAnonaMouse (MAM) indexer**:
 - Settings → Indexers → Add Indexer → Search "MyAnonaMouse"
@@ -139,7 +139,7 @@ docker logs lazylibrarian
 - Save
 - **Click "Sync All" button** → Pushes MAM + TorrentLeech to LazyLibrarian
 
-##### In LazyLibrarian (http://192.168.0.200:5299)
+##### In LazyLibrarian (http://192.168.68.59:5299)
 
 - Settings → Indexers
 - Should see MAM + TorrentLeech appear automatically after Prowlarr sync
@@ -164,7 +164,7 @@ docker logs lazylibrarian
    - Port: `58846`
    - Username: `admin` (default, or check Deluge settings)
    - Password: Get from Deluge web UI:
-     - Open http://192.168.0.200:8112
+     - Open http://192.168.68.59:8112
      - Preferences → Interface → Password
 3. **Label**: `lazylibrarian` (auto-applied to all LazyLibrarian torrents)
 4. **Download directory**: `/downloads` (container mount point)
@@ -313,7 +313,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
 
 ---
 
-### FileBrowser (http://192.168.0.200:8085)
+### FileBrowser (http://192.168.68.59:8085)
 
 **Initial setup**:
 1. Login with default: `admin/admin`
@@ -334,7 +334,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
 
 **Add custom command - Refresh Jellyfin**:
 1. Get Jellyfin API key:
-   - Login to Jellyfin: http://192.168.0.200:8096
+   - Login to Jellyfin: http://192.168.68.59:8096
    - Dashboard → API Keys → Add API Key
    - Name: `FileBrowser`
    - Copy the generated key
@@ -344,7 +344,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
    - Name: `Refresh Jellyfin Library`
    - Command:
      ```bash
-     curl -X POST "http://192.168.0.200:8096/Library/Refresh" -H "X-MediaBrowser-Token: YOUR_API_KEY_HERE"
+     curl -X POST "http://192.168.68.59:8096/Library/Refresh" -H "X-MediaBrowser-Token: YOUR_API_KEY_HERE"
      ```
    - Replace `YOUR_API_KEY_HERE` with the key from step 1
    - Save
@@ -360,7 +360,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
 **Purpose**: Verify direct downloads work through Gluetun proxy for privacy
 
 **Steps**:
-1. Open LazyLibrarian: http://192.168.0.200:5299
+1. Open LazyLibrarian: http://192.168.68.59:5299
 2. Search for popular book: `Project Hail Mary`
 3. Click "Add Book" (automatically marked as "Wanted")
 4. Navigate to Status page → Should show search progress
@@ -377,7 +377,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
    # Should see new author folder with book
    ```
 9. **Verify in Calibre-Web**:
-   - Open http://192.168.0.200:8083
+   - Open http://192.168.68.59:8083
    - Search for "Project Hail Mary"
    - Book should appear with cover, metadata
 10. **Verify HTTP proxy usage**:
@@ -397,7 +397,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
 **Prerequisites**: MAM freeleech audiobook exists (check MAM site first)
 
 **Steps**:
-1. Open LazyLibrarian: http://192.168.0.200:5299
+1. Open LazyLibrarian: http://192.168.68.59:5299
 2. Search for audiobook: `The Martian` (usually has freeleech)
 3. Click "Add Audiobook"
 4. Mark as "Wanted"
@@ -407,7 +407,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
    - If no results, try different audiobook
 7. Download queues via Deluge
 8. **Check Deluge**:
-   - Open http://192.168.0.200:8112
+   - Open http://192.168.68.59:8112
    - Should see torrent with label `lazylibrarian`
    - Status: Downloading (or Seeding if complete)
    - Ratio: 0.0/2.0, Time: 0h/168h
@@ -421,7 +421,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
     - Status: Seeding
     - Will remain until ratio ≥2.0 AND time ≥168 hours (7 days)
 12. **Verify in Audiobookshelf**:
-    - Open http://192.168.0.200:13378
+    - Open http://192.168.68.59:13378
     - Trigger library scan: Settings → Libraries → Scan
     - Audiobook should appear
 
@@ -435,7 +435,7 @@ docker exec gluetun wget -qO- https://api.ipify.org
 **Purpose**: Verify author monitoring requires manual approval (no automatic downloads)
 
 **Steps**:
-1. Open LazyLibrarian: http://192.168.0.200:5299
+1. Open LazyLibrarian: http://192.168.68.59:5299
 2. Search for prolific author: `Brandon Sanderson`
 3. Click author name → View author page
 4. Click "Add Author"
@@ -466,16 +466,16 @@ docker exec gluetun wget -qO- https://api.ipify.org
 
 **Steps**:
 1. Find movie magnet link on 1337x or similar site
-2. Open Deluge: http://192.168.0.200:8112
+2. Open Deluge: http://192.168.68.59:8112
 3. Add magnet link → Downloads to `/data/media/downloads/complete`
 4. Wait for download to complete
-5. Open FileBrowser: http://192.168.0.200:8085
+5. Open FileBrowser: http://192.168.68.59:8085
 6. Navigate to `downloads/complete/`
 7. Find movie file → Right-click → Cut
 8. Navigate to `movies/`
 9. Right-click → Paste
 10. Right-click anywhere → "Refresh Jellyfin Library"
-11. Open Jellyfin: http://192.168.0.200:8096
+11. Open Jellyfin: http://192.168.68.59:8096
 12. Movie should appear within 30 seconds
 
 **Expected result**: Manual torrent workflow works, FileBrowser simplifies file management  
@@ -668,11 +668,11 @@ After deployment and testing:
    # Check LazyLibrarian logs every 12 hours for "Checking authors"
    ```
 
-2. **Add Uptime Kuma monitoring**:
-   - LazyLibrarian: http://192.168.0.200:5299
-   - FileBrowser: http://192.168.0.200:8085
-   - Check interval: 5 minutes
-   - Alert on failure
+2. **Add monitoring in Beszel** (http://192.168.68.59:8090):
+   - LazyLibrarian: http://192.168.68.59:5299
+   - FileBrowser: http://192.168.68.59:8085
+   - Configure alerts on failure
+   - (Uptime Kuma was replaced by Beszel)
 
 3. **Document any issues** for future refinement
 
@@ -682,15 +682,15 @@ After deployment and testing:
 
 | Service | Local URL | External URL | Purpose |
 |---------|-----------|--------------|---------|
-| LazyLibrarian | http://192.168.0.200:5299 | N/A (local only) | Ebook/audiobook automation |
-| FileBrowser | http://192.168.0.200:8085 | https://files.somesh.dev (local only) | Web file manager |
-| Prowlarr | http://192.168.0.200:9696 | N/A | Indexer management |
-| Radarr | http://192.168.0.200:7878 | N/A | Movie automation |
-| Sonarr | http://192.168.0.200:8989 | N/A | TV automation |
-| Deluge | http://192.168.0.200:8112 | N/A | Torrent client |
-| Calibre-Web | http://192.168.0.200:8083 | https://books.somesh.dev | Ebook library |
-| Audiobookshelf | http://192.168.0.200:13378 | https://audiobooks.somesh.dev | Audiobook library |
-| Jellyfin | http://192.168.0.200:8096 | https://jellyfin.somesh.dev | Movie/TV streaming |
+| LazyLibrarian | http://192.168.68.59:5299 | N/A (local only) | Ebook/audiobook automation |
+| FileBrowser | http://192.168.68.59:8085 | https://files.somesh.dev (local only) | Web file manager |
+| Prowlarr | http://192.168.68.59:9696 | N/A | Indexer management |
+| Radarr | http://192.168.68.59:7878 | N/A | Movie automation |
+| Sonarr | http://192.168.68.59:8989 | N/A | TV automation |
+| Deluge | http://192.168.68.59:8112 | N/A | Torrent client |
+| Calibre-Web | http://192.168.68.59:8083 | https://books.somesh.dev | Ebook library |
+| Audiobookshelf | http://192.168.68.59:13378 | https://audiobooks.somesh.dev | Audiobook library |
+| Jellyfin | http://192.168.68.59:8096 | https://jellyfin.somesh.dev | Movie/TV streaming |
 
 ---
 

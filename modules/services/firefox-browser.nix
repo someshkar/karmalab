@@ -12,8 +12,8 @@
 # - Browser-based downloads that can't be offloaded to aria2
 #
 # Access:
-# - HTTPS: https://192.168.0.200:3011 (recommended - required for modern features)
-# - HTTP: http://192.168.0.200:3010
+# - HTTPS: https://192.168.68.59:3011 (recommended - required for modern features)
+# - HTTP: http://192.168.68.59:3010
 #
 # Downloads:
 # - Firefox downloads go to: /downloads (in-container)
@@ -21,7 +21,7 @@
 # - For Google Takeout: Set Firefox to save to /downloads/google-takeout/{account}/
 #
 # Usage for Google Takeout:
-# 1. Open https://192.168.0.200:3011
+# 1. Open https://192.168.68.59:3011
 # 2. Navigate to takeout.google.com
 # 3. Log into your Google account
 # 4. Click download - files save directly to NUC storage

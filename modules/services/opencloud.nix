@@ -23,7 +23,7 @@
 # - /var/lib/opencloud/data/   - Internal data/metadata (NVMe SSD)
 #
 # Access:
-# - Local: http://192.168.0.200:9200
+# - Local: http://192.168.68.59:9200
 # - External: https://cloud.somesh.dev (via Cloudflare Tunnel)
 #
 # Post-deployment setup:

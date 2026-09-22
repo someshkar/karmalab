@@ -42,11 +42,11 @@
 # - Torrents downloaded via Deluge in VPN namespace
 #
 # Access:
-# - Local: http://192.168.0.200:5299
+# - Local: http://192.168.68.59:5299
 # - Tailscale: http://karmalab:5299
 #
 # Post-deployment setup (see DEPLOYMENT.md for detailed instructions):
-# 1. Access http://192.168.0.200:5299 and set admin password
+# 1. Access http://192.168.68.59:5299 and set admin password
 # 2. Configure Calibre integration (calibredb path: /usr/bin/calibredb)
 # 3. Configure Prowlarr integration (add MAM + TorrentLeech with freeleech filter)
 # 4. Configure Deluge (host: 127.0.0.1:58846, seed ratio: 2.0, seed time: 168h)

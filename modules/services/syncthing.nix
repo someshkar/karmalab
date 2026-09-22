@@ -25,13 +25,13 @@
 #   * Calibre: /data/media/ebooks/calibre-library (bidirectional)
 #
 # Access:
-# - Web UI: http://192.168.0.200:8384 (requires authentication)
+# - Web UI: http://192.168.68.59:8384 (requires authentication)
 # - Sync Protocol: Port 22000 (TCP only - for Cloudflare Tunnel compatibility)
 # - Local Discovery: Port 21027 (UDP)
 # - External: sync.somesh.dev (via Cloudflare Tunnel)
 #
 # Post-deployment setup:
-# 1. Access Web UI at http://192.168.0.200:8384
+# 1. Access Web UI at http://192.168.68.59:8384
 # 2. Set up GUI username/password in Settings -> GUI
 # 3. Note the Device ID for pairing
 # 4. Add remote devices (MacBook, iPhone)

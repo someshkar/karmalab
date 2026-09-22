@@ -1,6 +1,24 @@
 
 # NixOS Comprehensive Homelab Architecture
 
+> ⚠️ **HISTORICAL / ASPIRATIONAL — NOT THE CURRENT CONFIGURATION.**
+>
+> This v2.0 design document (2025-10-23) describes a *planned* architecture that
+> was never fully built. It is retained for reference only. The authoritative
+> source is the NixOS config itself (`configuration.nix` + `modules/`).
+>
+> Key divergences from what actually shipped:
+> - **Nextcloud** → replaced by **OpenCloud** (`cloud.somesh.dev`)
+> - **Jellyseerr** → replaced by **Seerr** (Docker, `ghcr.io/seerr-team/seerr`)
+> - **Navidrome, Keycloak, Microbin, Radicale** → never deployed
+> - **Docker Gluetun+Deluge for VPN** → Deluge runs natively in a systemd
+>   network namespace (`modules/wireguard-vpn.nix`); Gluetun is used only as an
+>   Iceland HTTP proxy (`modules/gluetun.nix`)
+> - Native PostgreSQL tuning → Immich/OpenCloud use their own Compose DBs
+> - LAN is `192.168.68.0/22` (server `192.168.68.59`), not `192.168.0.0/24`
+>
+> See `README.md` → "Current Status" and "Known Issues" for the real state.
+
 **Version:** 2.0  
 **Date:** 2025-10-23  
 **System:** Intel NUC N150 with 20TB ZFS Storage  
@@ -475,7 +493,7 @@ virtualisation.oci-containers = {
         WIREGUARD_ADDRESSES = "10.14.0.2/16";
         SERVER_COUNTRIES = "Netherlands";  # Fast server near India
         FIREWALL_VPN_INPUT_PORTS = "8112,58846";
-        FIREWALL_OUTBOUND_SUBNETS = "192.168.0.0/16"; # Allow local subnet
+        FIREWALL_OUTBOUND_SUBNETS = "192.168.68.0/24"; # Allow local subnet
         HEALTH_VPN_DURATION_INITIAL = "20s";
         DOT = "off";  # Disable DNS-over-TLS if causing issues
       };

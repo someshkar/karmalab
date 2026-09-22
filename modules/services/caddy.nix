@@ -10,8 +10,8 @@
 # - Automatic HTTPS with self-signed certs (if enabled later)
 #
 # Access:
-# - http://192.168.0.200 → Homepage dashboard
-# - http://192.168.0.200:8096 → Jellyfin (direct, not proxied)
+# - http://192.168.68.59 → Homepage dashboard
+# - http://192.168.68.59:8096 → Jellyfin (direct, not proxied)
 #
 # Note: External access is handled by Cloudflare Tunnel, not Caddy.
 # Caddy is for local network convenience only.

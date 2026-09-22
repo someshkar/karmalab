@@ -18,7 +18,7 @@
 # - SQLite database (simple, sufficient for personal use)
 #
 # Access:
-# - Local: http://192.168.0.200:8222
+# - Local: http://192.168.68.59:8222
 # - External: https://vault.somesh.dev (via Cloudflare Tunnel)
 #
 # Security Notes:

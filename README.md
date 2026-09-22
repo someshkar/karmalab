@@ -4,29 +4,36 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 
 ## Current Status
 
-| Service | Port | VPN | Status | Notes |
-|---------|------|-----|--------|-------|
-| **Jellyfin** | 8096 | - | Working | Media streaming, Intel Quick Sync HW transcoding |
-| **Prowlarr** | 9696 | Gluetun Proxy | Working | Indexer management, searches via Gluetun HTTP proxy |
-| **FlareSolverr** | 8191 | - | Working | Cloudflare bypass for Prowlarr |
-| **Radarr** | 7878 | - | Working | Movie automation |
-| **Sonarr** | 8989 | - | Working | TV show automation |
-| **Bazarr** | 6767 | Gluetun Proxy | Working | Subtitle automation via Gluetun HTTP proxy |
-| **Jellyseerr** | 5055 | - | Working | Media request interface |
-| **Deluge** | 8112 | Singapore | Working | Torrent client (Singapore VPN for speed) |
-| **aria2** | 6800/6880 | - | Working | HTTP/FTP download manager with AriaNg web UI |
-| **Calibre-Web** | 8083 | - | Working | Ebook library web interface (books.somesh.dev) |
-| **Shelfmark** | 8084 | - | Working | Ebook search & download UI (shelfmark.somesh.dev) ⚠️ Enable auth! |
-| **Audiobookshelf** | 13378 | - | Working | Audiobook server (abs.somesh.dev) |
-| **Immich** | 2283 | Working | Google Photos alternative (enable VAAPI in admin settings) |
-| **Uptime Kuma** | 3001 | Running | Needs monitors configured |
-| **Time Machine** | 445 | Running | macOS backup server (run `smbpasswd -a somesh` to set password) |
-| **Syncthing** | 8384 | Running | File sync (Obsidian + Calibre library) |
-| **Forgejo** | 3030 | Running | Self-hosted Git server (complete wizard at first access) |
-| **Vaultwarden** | 8222 | Working | Self-hosted password manager (Bitwarden-compatible) |
-| **Homepage** | 80 | Working | Service dashboard with system metrics (via Caddy) |
-| **Tailscale** | - | Working | VPN for remote access (exit node + subnet routing 192.168.0.0/24) |
-| **Cloudflare Tunnel** | - | Working | External access without port forwarding |
+| Service | Port | Network | Status | Notes |
+|---------|------|---------|--------|-------|
+| **Jellyfin** | 8096 | Host | Working | Media streaming, Intel Quick Sync HW transcoding |
+| **Prowlarr** | 9696 | Host + Gluetun proxy | Working | Indexer management, searches via Gluetun HTTP proxy |
+| **FlareSolverr** | 8191 | Host (Docker) | Working | Cloudflare bypass for Prowlarr |
+| **Radarr** | 7878 | Host | Working | Movie automation |
+| **Sonarr** | 8989 | Host | Working | TV show automation |
+| **Bazarr** | 6767 | Host + Gluetun proxy | Working | Subtitle automation via Gluetun HTTP proxy |
+| **Seerr** | 5055 | Host (Docker) | Working | Media request interface (Jellyseerr + Overseerr merged) |
+| **Deluge** | 8112 | VPN namespace | Working | Torrent client (Surfshark Singapore, namespace-isolated) |
+| **aria2 / AriaNg** | 6800 / 6880 | Host | Working | HTTP/FTP download manager with AriaNg web UI |
+| **FileBrowser** | 8085 | Host | Working | Web file manager (files.somesh.dev, local/Tailscale only) |
+| **Firefox (KasmVNC)** | 3010/3011 | Host (Docker) | Working | Web browser for authenticated downloads |
+| **Calibre-Web** | 8083 | Host | Working | Ebook library web interface (books.somesh.dev) |
+| **LazyLibrarian** | 5299 | Host + Gluetun proxy | Working | Ebook/audiobook automation (Docker) |
+| **Shelfmark** | 8084 | Host + Gluetun proxy | Working | Book search & download UI (shelfmark.somesh.dev) ⚠️ Enable auth! |
+| **Audiobookshelf** | 13378 | Host | Working | Audiobook server (abs.somesh.dev) |
+| **Immich** | 2283 | Host (Docker) | Working | Google Photos alternative (VAAPI transcoding) |
+| **OpenCloud** | 9200 | Host (Docker) | Working | File sync & share (cloud.somesh.dev) |
+| **Beszel** | 8090 | Host (Docker) | Working | System monitoring hub + agent (status.somesh.dev) |
+| **Homepage** | 8082 | Host (via Caddy :80) | Working | Service dashboard with Glances metrics |
+| **Glances** | 61208 | Host | Working | System metrics backend for Homepage |
+| **Caddy** | 80 | Host | Working | Reverse proxy → Homepage; serves AriaNg and `/updates.json` |
+| **Time Machine** | 445 | Host (Samba) | Working | macOS backup server (run `smbpasswd -a somesh` to set password) |
+| **Syncthing** | 8384 / 22000 | Host | Working | File sync (Obsidian + Calibre library) |
+| **Forgejo** | 3030 / 2222 | Host | Working | Self-hosted Git server + container registry + LFS |
+| **Vaultwarden** | 8222 | Host | Working | Self-hosted password manager (Bitwarden-compatible) |
+| **Karmes (Hermes)** | 18789 | Host | Configured | Native Hermes assistant + Camoufox browser (needs `/srv/karmes` secrets/config) |
+| **Tailscale** | - | Host | Working | Remote access (exit node + subnet route 192.168.68.0/22) |
+| **Cloudflare Tunnel** | - | Host | Working | External access without port forwarding |
 
 ## Hardware
 
@@ -37,7 +44,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **RAM** | 16GB DDR5 |
 | **Boot/OS** | 500GB NVMe SSD |
 | **Storage** | 20TB Seagate Expansion USB HDD (ZFS) |
-| **Network** | Ethernet (enp1s0) - Static IP 192.168.0.200 |
+| **Network** | Ethernet (enp1s0) - Static IP 192.168.68.59 |
 
 ## Architecture
 
@@ -53,7 +60,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
     │               │               │           │
     v               v               v           v
 ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────────────────────┐
-│Jellyfin │   │ Immich  │   │Jellyseerr│  │ Radarr, Sonarr, Prowlarr│
+│Jellyfin │   │ Immich  │   │  Seerr  │  │ Radarr, Sonarr, Prowlarr│
 │  :8096  │   │  :2283  │   │  :5055  │   │ Bazarr, Deluge, etc.    │
 └─────────┘   └─────────┘   └─────────┘   └─────────────────────────┘
                                 │
@@ -66,19 +73,24 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
                                            │
                               ┌────────────┴────────────┐
                               │    Local Network        │
-                              │   http://192.168.0.200  │
+                              │   http://192.168.68.59  │
                               └─────────────────────────┘
 
 External Access (Cloudflare Tunnel):
   - jellyfin.somesh.dev → Jellyfin
   - immich.somesh.dev   → Immich
-  - jellyseer.somesh.dev → Jellyseerr
+  - cloud.somesh.dev    → OpenCloud
+  - seer.somesh.dev     → Seerr
   - git.somesh.dev      → Forgejo
   - vault.somesh.dev    → Vaultwarden
   - abs.somesh.dev      → Audiobookshelf
   - books.somesh.dev    → Calibre-Web
+  - lib.somesh.dev      → LazyLibrarian
   - shelfmark.somesh.dev → Shelfmark (⚠️ enable auth!)
   - sync.somesh.dev     → Syncthing (TCP protocol)
+  - home.somesh.dev     → Homepage
+  - status.somesh.dev   → Beszel
+  - files.somesh.dev    → FileBrowser (local/Tailscale only)
 ```
 
 ### VPN Architecture (Hybrid VPN + HTTP Proxy)
@@ -88,7 +100,7 @@ External Access (Cloudflare Tunnel):
 │                           NETWORK ARCHITECTURE                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌────────────────────────────────────────────────────────────────────┐    │
-│  │ DEFAULT NAMESPACE (Host: 192.168.0.200)                            │    │
+│  │ DEFAULT NAMESPACE (Host: 192.168.68.59)                            │    │
 │  │                                                                    │    │
 │  │  Services: Jellyfin, Radarr, Sonarr, Prowlarr, Bazarr, Immich,    │    │
 │  │            Calibre-Web, Shelfmark, Audiobookshelf, etc.           │    │
@@ -102,9 +114,10 @@ External Access (Cloudflare Tunnel):
 │  │                                  │   │  HTTP Proxy: :8888            │   │
 │  │  Services:                       │   │                              │   │
 │  │  - Deluge (torrents)             │   │  Used by (via proxy config): │   │
-│  │                                  │   │  - Prowlarr (indexers)       │   │
-│  │  Kill Switch: Enabled            │   │  - Bazarr (subtitles)        │   │
-│  │                                  │   │  - Shelfmark (book sources)  │   │
+│  │  - mam-dynamic-seedbox           │   │  - Prowlarr (indexers)       │   │
+│  │                                  │   │  - Bazarr (subtitles)        │   │
+│  │  Kill Switch: Enabled            │   │  - Shelfmark (book sources)  │   │
+│  │                                  │   │  - LazyLibrarian             │   │
 │  └──────────────────────────────────┘   └──────────────────────────────┘   │
 │           │                                       │                         │
 │           ▼                                       ▼                         │
@@ -123,9 +136,10 @@ External Access (Cloudflare Tunnel):
 
 **Gluetun HTTP Proxy Setup:**
 Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
-- **Prowlarr:** Settings → General → Proxy → `http://192.168.0.200:8888`
-- **Bazarr:** Settings → General → Proxy URL → `http://192.168.0.200:8888`
-- **Shelfmark:** Settings → Proxy → `http://192.168.0.200:8888`
+- **Prowlarr:** Settings → General → Proxy → `http://192.168.68.59:8888`
+- **Bazarr:** Settings → General → Proxy URL → `http://192.168.68.59:8888`
+- **Shelfmark:** Settings → Proxy → `http://192.168.68.59:8888`
+- **LazyLibrarian:** `HTTP_PROXY`/`HTTPS_PROXY` env → `http://127.0.0.1:8888`
 
 **Why Iceland?**
 - 1337x, OpenSubtitles blocked in India/Singapore → Iceland unrestricted
@@ -145,19 +159,19 @@ Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
 │  /nix                        Nix store                                      │
 │  /var/lib/immich/postgres/   Immich database - UID 999:999                  │
 │  /var/lib/immich/model-cache/ML models - UID 999:999                        │
-│  /var/lib/nextcloud/         Nextcloud database/config (future)             │
+│  /var/lib/opencloud/         OpenCloud config/data (UID 1000)               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │              USB HDD ZFS Pool (20TB) - storagepool                          │
-│              Total Allocated: ~13.8TB | Unallocated: ~6.2TB                 │
+│              Total Allocated: ~19.5TB | Physical usable: ~18.2TB            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  MEDIA (7.1TB total):                                                       │
 │  ├── storagepool/media/movies       /data/media/movies (2TB quota)          │
 │  ├── storagepool/media/tv           /data/media/tv (2TB quota)              │
-│  ├── storagepool/media/downloads    /data/media/downloads (1TB)             │
+│  ├── storagepool/media/downloads    /data/media/downloads (2TB)             │
 │  │   ├── complete                   (800GB)                                 │
 │  │   └── incomplete                 (400GB, no snapshots)                   │
 │  ├── storagepool/media/ebooks       /data/media/ebooks (100GB)              │
@@ -168,17 +182,20 @@ Services that need to bypass geo-blocks configure Gluetun as their HTTP proxy:
 │  └── storagepool/immich/upload      /data/immich/upload (50GB)              │
 │                                                                             │
 │  CLOUD & BACKUP (2.5TB total):                                              │
-│  ├── storagepool/nextcloud          /data/nextcloud (1TB quota)             │
+│  ├── storagepool/opencloud          /data/opencloud (1TB quota)             │
 │  └── storagepool/timemachine        /data/timemachine (1.5TB quota)         │
 │                                                                             │
 │  SERVICES (~150GB):                                                         │
-│  └── storagepool/services           Service configurations                  │
+│  └── storagepool/services           Service configurations (mount: /var/lib/media-services)
 │      ├── jellyfin/config            /var/lib/jellyfin (10GB)                │
 │      ├── jellyfin/cache             /var/cache/jellyfin (100GB)             │
 │      ├── deluge/config              /var/lib/deluge (5GB)                   │
 │      ├── radarr                     /var/lib/radarr (5GB)                   │
 │      ├── sonarr                     /var/lib/sonarr (5GB)                   │
 │      └── bazarr                     /var/lib/bazarr (5GB)                   │
+│                                                                             │
+│  NOTE: storagepool/ai (6TB, /data/ai) is an unmanaged dataset created       │
+│  out-of-band and is NOT part of this NixOS config.                          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -193,18 +210,20 @@ git clone https://github.com/someshkar/karmalab ~/karmalab
 
 # 2. One-time setup (see SETUP.md for details):
 #    - Create ZFS pool on USB HDD
-#    - Configure Surfshark WireGuard VPN
-#    - Create Immich .env file
+#    - Configure Surfshark WireGuard VPN (Singapore + Iceland/Gluetun)
+#    - Create Immich and OpenCloud .env files
+#    - Add secrets under /etc/nixos/secrets/ and /etc/gluetun/
 
 # 3. Deploy
 sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 
 # 4. Manual service configuration (see SETUP.md):
 #    - Jellyfin: Add libraries, enable HW transcoding
-#    - Prowlarr: Add indexers, configure FlareSolverr proxy
+#    - Prowlarr: Add indexers, configure FlareSolverr proxy, set Gluetun proxy
 #    - Radarr/Sonarr: Connect to Prowlarr and Deluge
-#    - Jellyseerr: Connect to Jellyfin, Radarr, Sonarr
+#    - Seerr: Connect to Jellyfin, Radarr, Sonarr
 #    - Immich: Create admin account
+#    - Enable ZFS auto-snapshots (see "Known Issues / TODO" below)
 ```
 
 ## Ebook Management Workflow
@@ -214,7 +233,7 @@ sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 ### 📚 Step-by-Step Process
 
 #### 1. Search & Download (Shelfmark)
-- **Access:** http://192.168.0.200:8084 or https://shelfmark.somesh.dev
+- **Access:** http://192.168.68.59:8084 or https://shelfmark.somesh.dev
 - **Search** for ebooks from Anna's Archive, Libgen, Z-Library
 - **Download Options:**
   - **Option A (Recommended):** Download directly to your Mac browser via Shelfmark web UI
@@ -222,7 +241,7 @@ sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 
 ```bash
 # Option B: Transfer from NUC to Mac
-scp nixos@192.168.0.200:/tmp/shelfmark-downloads/*.epub ~/Downloads/
+scp somesh@192.168.68.59:/tmp/shelfmark-downloads/*.epub ~/Downloads/
 ```
 
 #### 2. Organize with Calibre Desktop (Mac)
@@ -254,7 +273,7 @@ scp nixos@192.168.0.200:/tmp/shelfmark-downloads/*.epub ~/Downloads/
 #### 4. Access via Calibre-Web (NUC)
 - **Calibre-Web** automatically detects updated `metadata.db`
 - **Books appear immediately** in web interface (no manual refresh needed)
-- **Access:** http://192.168.0.200:8083 or https://books.somesh.dev
+- **Access:** http://192.168.68.59:8083 or https://books.somesh.dev
 - **Features:** Read in browser, download formats, send to Kindle, OPDS feed
 
 ### 🔧 Syncthing Setup (Required for Sync)
@@ -285,7 +304,7 @@ brew services start syncthing
 #### On NUC:
 
 **1. Open Syncthing web UI:**
-- Local: http://192.168.0.200:8384
+- Local: http://192.168.68.59:8384
 - External: https://sync.somesh.dev
 
 **2. Add Mac as device:**
@@ -306,7 +325,7 @@ brew services start syncthing
 **4. Wait for initial sync:**
 ```bash
 # Monitor sync progress on NUC
-ssh nixos@192.168.0.200
+ssh somesh@192.168.68.59
 journalctl -u syncthing -f
 
 # Check folder size to verify sync
@@ -325,7 +344,7 @@ Since Shelfmark downloads to `/tmp/shelfmark-downloads/` on the NUC, periodicall
 
 ```bash
 # Manual cleanup (on NUC)
-ssh nixos@192.168.0.200 "sudo rm -rf /tmp/shelfmark-downloads/*"
+ssh somesh@192.168.68.59 "sudo rm -rf /tmp/shelfmark-downloads/*"
 
 # Or set up auto-cleanup (files older than 7 days deleted weekly)
 # Already configured in shelfmark.nix - no action needed
@@ -341,7 +360,7 @@ ssh nixos@192.168.0.200 "sudo rm -rf /tmp/shelfmark-downloads/*"
 │  1. SEARCH & DOWNLOAD (Shelfmark)                           │
 │     ┌──────────────────────────────────────┐                │
 │     │  🔍 Shelfmark Web UI                 │                │
-│     │  http://192.168.0.200:8084           │                │
+│     │  http://192.168.68.59:8084           │                │
 │     │                                       │                │
 │     │  Search: Anna's Archive, Libgen,     │                │
 │     │          Z-Library                   │                │
@@ -381,7 +400,7 @@ ssh nixos@192.168.0.200 "sudo rm -rf /tmp/shelfmark-downloads/*"
 │  4. DISPLAY (Calibre-Web on NUC)                            │
 │     ┌──────────────────────────────────────┐                │
 │     │  🌐 Calibre-Web                      │                │
-│     │  http://192.168.0.200:8083           │                │
+│     │  http://192.168.68.59:8083           │                │
 │     │  https://books.somesh.dev            │                │
 │     │                                       │                │
 │     │  • Browse/search library             │                │
@@ -403,7 +422,7 @@ brew services list | grep syncthing
 open http://localhost:8384
 
 # On NUC - check Syncthing logs
-ssh nixos@192.168.0.200
+ssh somesh@192.168.68.59
 systemctl status syncthing
 journalctl -u syncthing -f
 ```
@@ -411,13 +430,13 @@ journalctl -u syncthing -f
 **Book not appearing in Calibre-Web?**
 - Check Syncthing shows "Up to Date" on both devices
 - Verify file exists: `ls -la /data/media/ebooks/calibre-library/Author/Book*/`
-- Check Calibre-Web can read library: Visit http://192.168.0.200:8083
+- Check Calibre-Web can read library: Visit http://192.168.68.59:8083
 - Check file permissions: Should be readable by calibre-web user (group media)
 
 **Shelfmark downloads not working?**
-- Check `/tmp/shelfmark-downloads/` exists: `ssh nixos@192.168.0.200 'ls -la /tmp/shelfmark-downloads/'`
+- Check `/tmp/shelfmark-downloads/` exists: `ssh somesh@192.168.68.59 'ls -la /tmp/shelfmark-downloads/'`
 - Try downloading directly to Mac browser instead (Option A)
-- Check Shelfmark logs: `ssh nixos@192.168.0.200 'journalctl -u docker-shelfmark -f'`
+- Check Shelfmark logs: `ssh somesh@192.168.68.59 'journalctl -u docker-shelfmark -f'`
 
 **Metadata not syncing from Mac?**
 - Ensure you edited metadata in Calibre Desktop (not Calibre-Web)
@@ -428,36 +447,48 @@ journalctl -u syncthing -f
 
 ```
 karmalab/
-├── flake.nix                      # Nix flake entry point
+├── flake.nix                      # Nix flake entry point (nixos-25.11 + vaultwarden 26.05)
 ├── flake.lock                     # Pinned dependencies
-├── configuration.nix              # Main NixOS configuration
+├── configuration.nix              # Main NixOS configuration (imports all modules)
 ├── hardware-configuration.nix     # Hardware-specific config
-├── disko-config.nix              # NVMe disk partitioning
+├── disko-config.nix               # NVMe disk partitioning
 ├── modules/
-│   ├── storage.nix               # ZFS pool and dataset management
-│   ├── wireguard-vpn.nix         # VPN namespace for Deluge torrents
+│   ├── storage.nix               # ZFS pool/dataset management + graceful degradation
+│   ├── wireguard-vpn.nix         # "vpn" netns for Deluge torrents (Surfshark Singapore)
 │   ├── gluetun.nix               # Gluetun Docker container (Iceland VPN + HTTP proxy)
 │   ├── immich-go.nix             # immich-go tool for Google Photos Takeout migration
 │   └── services/
 │       ├── aria2.nix             # HTTP/FTP download manager
-│       ├── audiobookshelf.nix    # Audiobook & ebook server
-│       ├── caddy.nix             # Reverse proxy (port 80 → Homepage)
+│       ├── audiobookshelf.nix    # Audiobook server
+│       ├── beszel.nix            # Server monitoring hub + agent (Docker)
+│       ├── caddy.nix             # Reverse proxy (port 80 → Homepage, AriaNg, /updates.json)
+│       ├── calibre-web.nix       # Ebook library web interface
 │       ├── cloudflared.nix       # Cloudflare Tunnel for external access
+│       ├── container-updates.nix # Daily container version checker
 │       ├── deluge.nix            # Native Deluge in VPN namespace
+│       ├── filebrowser.nix       # Web file manager
+│       ├── firefox-browser.nix   # KasmVNC Firefox for authenticated downloads
 │       ├── flaresolverr.nix      # Cloudflare bypass (Docker)
-│       ├── forgejo.nix           # Self-hosted Git server
+│       ├── forgejo.nix           # Self-hosted Git server (+ registry, LFS)
 │       ├── homepage.nix          # Service dashboard with Glances
 │       ├── immich.nix            # Immich Docker Compose service
+│       ├── karmes.nix            # Hermes assistant + Camoufox browser (native)
+│       ├── lazylibrarian.nix     # Ebook/audiobook automation (Docker)
+│       ├── mam-dynamic-seedbox.nix # MAM seedbox IP updater (in VPN netns)
+│       ├── opencloud.nix         # OpenCloud file sync (Docker Compose)
+│       ├── shelfmark.nix         # Book & audiobook downloader (Docker)
 │       ├── syncthing.nix         # File synchronization
-│       ├── tailscale.nix         # Tailscale VPN (remote access)
-│       ├── timemachine.nix       # macOS Time Machine backup server
-│       ├── uptime-kuma.nix       # Service monitoring
+│       ├── tailscale.nix         # Tailscale VPN (remote access + exit node)
+│       ├── timemachine.nix       # macOS Time Machine backup server (Samba)
 │       └── vaultwarden.nix       # Password manager
 ├── docker/
-│   └── immich/
-│       ├── docker-compose.yml    # Immich container stack
-│       └── .env.example          # Environment template
+│   ├── immich/
+│   │   ├── docker-compose.yml    # Immich container stack
+│   │   └── .env.example          # Environment template
+│   └── opencloud/
+│       └── docker-compose.yml    # OpenCloud container stack
 ├── docs/                         # Additional documentation
+├── scripts/                      # Diagnostic scripts
 ├── SETUP.md                      # Complete setup guide
 └── README.md                     # This file
 ```
@@ -476,18 +507,18 @@ karmalab/
 - [x] **Radarr** - Movie automation
 - [x] **Sonarr** - TV show automation
 - [x] **Bazarr** - Subtitle automation
-- [x] **Jellyseerr** - Media request interface
+- [x] **Seerr** - Media request interface (replaced Jellyseerr)
 - [x] **Deluge** - Torrent client in VPN namespace
 - [x] **Immich** - Photo management (Docker)
-- [x] **Uptime Kuma** - Service monitoring
+- [x] **Beszel** - Service monitoring (replaced Uptime Kuma)
 
 ### Phase 2: Polish & Configuration - IN PROGRESS
 
 - [x] Quality profiles for Radarr/Sonarr (size-optimized)
 - [x] Minimum seeders configuration in Prowlarr
-- [ ] Uptime Kuma monitors for all services
-- [ ] Bazarr subtitle provider configuration
 - [x] Homepage dashboard (single pane of glass)
+- [ ] Bazarr subtitle provider configuration
+- [ ] Configure Beszel monitors/alerts for all services
 
 ### Phase 3: External Access - COMPLETE
 
@@ -499,23 +530,28 @@ karmalab/
 
 ### Phase 4: Book Stack - IN PROGRESS
 
-- [ ] Readarr (ebook/audiobook automation)
-- [x] **Audiobookshelf** (audiobook & ebook streaming) - New
-- [ ] Calibre-Web (ebook library - optional)
+- [x] **Audiobookshelf** (audiobook streaming)
+- [x] **Calibre-Web** (ebook library)
+- [x] **Shelfmark** (search & download)
+- [x] **LazyLibrarian** (ebook/audiobook automation, Docker)
+- [ ] Readarr (not used — replaced by LazyLibrarian)
 
 ### Phase 5: Productivity & Backup - IN PROGRESS
 
-- [x] **Vaultwarden** (password manager) - New
-- [ ] Nextcloud (file sync - 1TB allocated)
-- [x] **Time Machine** (macOS network backup - 1.5TB allocated) - Running
-- [x] **Syncthing** (file sync for Obsidian vault) - Running
-- [x] **Forgejo** (self-hosted Git server) - Running
+- [x] **Vaultwarden** (password manager)
+- [x] **OpenCloud** (file sync - 1TB allocated; replaced planned Nextcloud)
+- [x] **Time Machine** (macOS network backup - 1.5TB allocated)
+- [x] **Syncthing** (file sync for Obsidian vault + Calibre library)
+- [x] **Forgejo** (self-hosted Git server)
+- [x] **FileBrowser** (web file manager)
+- [x] **Firefox (KasmVNC)** (authenticated downloads)
+- [x] **Karmes / Hermes** (native AI assistant + Camoufox browser)
 
 ### Phase 6: Hardening & Backups - PLANNED
 
-- [ ] ZFS snapshot verification
-- [ ] Off-site backup (Backblaze B2)
-- [ ] Monitoring alerts (Telegram/Discord)
+- [ ] **ZFS auto-snapshots are currently NOT working** — `com.sun:auto-snapshot` is not set, so `zfs-auto-snapshot` skips every dataset (see Known Issues)
+- [ ] Off-site backup (Backblaze B2 / rclone)
+- [ ] Monitoring alerts (Telegram/Discord via Beszel)
 - [ ] Security hardening
 - [ ] Complete documentation
 
@@ -535,7 +571,7 @@ To verify torrent traffic is going through the VPN:
 
 ```bash
 # Check VPN namespace IP (should be Surfshark, not your ISP)
-sudo ip netns exec wg-vpn curl -s https://api.ipify.org
+sudo ip netns exec vpn curl -s https://api.ipify.org
 
 # Compare to real IP
 curl -s https://api.ipify.org
@@ -561,8 +597,13 @@ sudo zpool status storagepool
 # Manual ZFS scrub
 sudo zpool scrub storagepool
 
-# Check VPN connection
-sudo ip netns exec wg-vpn curl -s https://api.ipify.org
+# Check Deluge/Singapore VPN namespace (torrents)
+sudo ip netns exec vpn curl -s https://api.ipify.org
+sudo ip netns exec vpn wg show
+
+# Check Gluetun (Iceland) HTTP proxy egress
+curl -s --proxy http://127.0.0.1:8888 https://api.ipify.org
+docker logs gluetun --tail 50
 
 # Service logs
 journalctl -u jellyfin -f
@@ -570,10 +611,14 @@ journalctl -u radarr -f
 docker logs immich_server -f
 
 # Restart all *arr services
-sudo systemctl restart jellyfin radarr sonarr bazarr prowlarr jellyseerr
+sudo systemctl restart jellyfin radarr sonarr bazarr prowlarr
 
 # Restart Immich
 cd /var/lib/immich && docker compose restart
+
+# Verify the running system matches /etc/nixos (should print identical paths)
+readlink -f /run/current-system
+nix eval --raw /etc/nixos#nixosConfigurations.karmalab.config.system.build.toplevel.outPath
 ```
 
 ## Troubleshooting
@@ -586,31 +631,56 @@ See [SETUP.md](./SETUP.md) for detailed troubleshooting steps.
 |-------|----------|
 | Radarr/Sonarr can't write to /data/media | Run `sudo chown -R root:media /data/media && sudo chmod -R 775 /data/media` |
 | Immich 500 error | Fix permissions: `sudo chown -R 999:999 /var/lib/immich/postgres /data/immich` |
-| Jellyseerr "Failed to create tag" | Disable "Tag Requests" in Jellyseerr → Settings → Radarr |
-| Deluge not downloading | Check VPN: `sudo ip netns exec wg-vpn wg show` |
+| Deluge not downloading | Check VPN namespace: `sudo ip netns exec vpn wg show` |
+| Prowlarr/Bazarr searches blocked | Verify Gluetun proxy: `curl --proxy http://127.0.0.1:8888 https://api.ipify.org` should show Iceland |
 | FlareSolverr not working | Check container: `docker logs flaresolverr` |
 | Syncthing permission denied | Run `sudo chown -R somesh:users /var/lib/syncthing` |
 | Git pull permission error | Run `sudo chown -R somesh:users ~/karmalab` |
 | nixos-rebuild stuck/failed | Run `sudo systemctl stop nixos-rebuild-switch-to-configuration.service` then retry |
+| `vpn-health-check.service` fails | It curls `api.ipify.org` from the `vpn` netns; if the WireGuard tunnel is down (Surfshark rotating endpoints) the curl times out. Deluge stays up (already-established sessions), so this is cosmetic — see Known Issues |
+| No ZFS snapshots exist | Expected — `com.sun:auto-snapshot` is unset. See Known Issues |
+
+## Known Issues / TODO
+
+These are real, verified gaps between the declarative config and runtime state (as of commit `c368f16`):
+
+1. **ZFS auto-snapshots never run.** `services.zfs.autoSnapshot` enables `zfs-auto-snapshot-{frequent,hourly,daily,weekly,monthly}.timer`, but the `com.sun:auto-snapshot` ZFS property is never set on any dataset. `zfs-auto-snapshot` treats an unset (`-`) value as "not selected", so every run snapshots nothing. Fix: set `com.sun:auto-snapshot=true` on the datasets you want backed up (e.g. `services`, `immich/photos`, `media/ebooks`, `media/audiobooks`) and `false` on caches/downloads/incomplete. `storage.nix` already sets `false` on a few; add an explicit `true` set for the rest.
+2. **`vpn-health-check.service` fails every 5 minutes.** It curls `https://api.ipify.org` inside the `vpn` netns with a 10s timeout. When the Surfshark Singapore tunnel is not passing traffic, the probe times out (`status=28`) and the unit goes red. Consider probing the WireGuard handshake instead of an HTTP endpoint, or gating Deluge on it.
+3. **`storagepool/ai` (`/data/ai`, 6TB) is unmanaged.** It exists on the pool (models/runtimes, created out-of-band) but is not created or mounted by `modules/storage.nix`. It was not touched by this doc update.
+4. **Dead dataset definitions.** `storage.nix` creates `services/{prowlarr,jellyseerr,uptime-kuma}` datasets but no `fileSystems` entry mounts them, and Prowlarr/jellyseerr/Uptime-Kuma data actually lives on NVMe. These three datasets are empty (~96K each).
+5. **`scripts/diagnose-vpn-prowlarr.sh` is obsolete.** It targets `vpn-iceland`/`wg-iceland`, which were removed when Prowlarr moved to the Gluetun HTTP proxy. It's not referenced anywhere.
+6. **`docs/media-server-architecture.md` is aspirational** (v2.0 dream doc: Nextcloud, Navidrome, Keycloak, Microbin, Radicale, native PostgreSQL tuning). None of it is implemented; OpenCloud replaced Nextcloud, Beszel replaced Uptime Kuma. Kept for history but not authoritative.
 
 ## Access URLs (Local Network)
 
 | Service | URL |
 |---------|-----|
-| Jellyfin | http://192.168.0.200:8096 |
-| Jellyseerr | http://192.168.0.200:5055 |
-| Radarr | http://192.168.0.200:7878 |
-| Sonarr | http://192.168.0.200:8989 |
-| Bazarr | http://192.168.0.200:6767 |
-| Prowlarr | http://192.168.0.200:9696 |
-| Deluge | http://192.168.0.200:8112 |
-| Immich | http://192.168.0.200:2283 |
-| Uptime Kuma | http://192.168.0.200:3001 |
-| Syncthing | http://192.168.0.200:8384 |
-| Forgejo | http://192.168.0.200:3030 |
-| Forgejo SSH | ssh://git@192.168.0.200:2222 |
-| Vaultwarden | http://192.168.0.200:8222 |
-| Audiobookshelf | http://192.168.0.200:13378 |
+| Homepage | http://192.168.68.59 |
+| Jellyfin | http://192.168.68.59:8096 |
+| Seerr | http://192.168.68.59:5055 |
+| Radarr | http://192.168.68.59:7878 |
+| Sonarr | http://192.168.68.59:8989 |
+| Bazarr | http://192.168.68.59:6767 |
+| Prowlarr | http://192.168.68.59:9696 |
+| FlareSolverr | http://192.168.68.59:8191 |
+| Deluge | http://192.168.68.59:8112 |
+| aria2 RPC | http://192.168.68.59:6800/jsonrpc |
+| AriaNg | http://192.168.68.59:6880 |
+| FileBrowser | http://192.168.68.59:8085 |
+| Firefox (KasmVNC) | https://192.168.68.59:3011 |
+| Immich | http://192.168.68.59:2283 |
+| OpenCloud | http://192.168.68.59:9200 |
+| Calibre-Web | http://192.168.68.59:8083 |
+| LazyLibrarian | http://192.168.68.59:5299 |
+| Shelfmark | http://192.168.68.59:8084 |
+| Audiobookshelf | http://192.168.68.59:13378 |
+| Beszel | http://192.168.68.59:8090 |
+| Glances | http://192.168.68.59:61208 |
+| Syncthing | http://192.168.68.59:8384 |
+| Forgejo | http://192.168.68.59:3030 |
+| Forgejo SSH | ssh://git@192.168.68.59:2222 |
+| Vaultwarden | http://192.168.68.59:8222 |
+| Time Machine | smb://192.168.68.59/timemachine |
 
 ## License
 

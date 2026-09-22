@@ -131,7 +131,7 @@
     # Disable WiFi completely - server uses Ethernet only
     wireless.enable = false;
     
-    # Ethernet gets DHCP (router assigns static IP 192.168.0.200 via reservation)
+    # Ethernet gets DHCP (router assigns static IP 192.168.68.59 via reservation)
     useDHCP = lib.mkDefault false;
     interfaces = {
       enp1s0.useDHCP = lib.mkDefault true;  # Ethernet only
@@ -330,7 +330,7 @@
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
     # VPN handled by Gluetun HTTP proxy - configure in Prowlarr web UI:
-    # Settings -> General -> Proxy -> HTTP(S) -> 192.168.0.200:8888
+    # Settings -> General -> Proxy -> HTTP(S) -> 192.168.68.59:8888
   };
 
   # ============================================================================
@@ -388,7 +388,7 @@
     after = [ "network-online.target" "storage-online.target" ];
     wants = [ "network-online.target" "storage-online.target" ];
     # VPN handled by Gluetun HTTP proxy - configure in Bazarr web UI:
-    # Settings -> General -> Proxy -> http://192.168.0.200:8888
+    # Settings -> General -> Proxy -> http://192.168.68.59:8888
   };
 
   # ============================================================================

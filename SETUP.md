@@ -211,22 +211,26 @@ mount | grep storagepool
 ```bash
 # List namespaces
 ip netns list
-# Should show: wg-vpn
+# Should show: vpn
 
-# Check VPN IP (should be Surfshark, not your ISP)
-sudo ip netns exec wg-vpn curl -s https://api.ipify.org
+# Check VPN IP (should be Surfshark Singapore, not your ISP)
+sudo ip netns exec vpn curl -s https://api.ipify.org
 echo ""
 curl -s https://api.ipify.org
 # These should be DIFFERENT IPs
+
+# Check Gluetun (Iceland) HTTP proxy egress
+curl -s --proxy http://127.0.0.1:8888 https://api.ipify.org
+# Should be an Iceland IP
 ```
 
 ### 6.3 Check Services
 
 ```bash
-sudo systemctl status jellyfin radarr sonarr bazarr prowlarr jellyseerr
+sudo systemctl status jellyfin radarr sonarr bazarr prowlarr
 sudo systemctl status deluged deluge-web
-sudo systemctl status immich uptime-kuma
-docker ps  # Should show immich containers
+sudo systemctl status immich opencloud
+docker ps  # Should show immich, opencloud, gluetun, seerr, etc.
 ```
 
 ## Part 7: Service Configuration (Web UI)
@@ -332,7 +336,9 @@ Same as Radarr:
 4. **Configure Languages:**
    - Settings → Languages → Add preferred languages
 
-### 7.7 Jellyseerr (http://IP:5055)
+### 7.7 Seerr (http://IP:5055)
+
+Seerr is the merged Jellyseerr + Overseerr project (Docker container `seerr`, data in `/var/lib/jellyseerr`).
 
 1. Select **Jellyfin** as media server
 2. Sign in with Jellyfin admin credentials
@@ -366,29 +372,24 @@ Same as Radarr:
    - Login with admin credentials
    - Enable Background Backup
 
-### 7.9 Uptime Kuma (http://IP:3001)
+### 7.9 Beszel (http://IP:8090)
 
-1. Create admin account
-2. Add monitors for each service:
+Monitoring is provided by **Beszel** (hub + agent), not Uptime Kuma. The hub and agent run as Docker containers (`beszel-hub`, `beszel-agent`).
 
-| Monitor | Type | URL/Host | Interval |
-|---------|------|----------|----------|
-| Jellyfin | HTTP(s) | `http://localhost:8096` | 60s |
-| Radarr | HTTP(s) | `http://localhost:7878` | 60s |
-| Sonarr | HTTP(s) | `http://localhost:8989` | 60s |
-| Prowlarr | HTTP(s) | `http://localhost:9696` | 60s |
-| Bazarr | HTTP(s) | `http://localhost:6767` | 60s |
-| Jellyseerr | HTTP(s) | `http://localhost:5055` | 60s |
-| Immich | HTTP(s) | `http://localhost:2283/api/server/ping` | 60s |
-| Deluge | TCP Port | `localhost:58846` | 60s |
-| FlareSolverr | HTTP(s) | `http://localhost:8191/health` | 60s |
+1. Access http://IP:8090 and create the admin account
+2. Add a system:
+   - Host/IP: `localhost`
+   - Port: `45876`
+   - Key/Token: from `/etc/nixos/secrets/beszel-key` and `/etc/nixos/secrets/beszel-token`
+3. Configure alerts (CPU, memory, disk, bandwidth, temperature) per system
+4. Systemd service monitoring and Docker container stats are collected automatically
 
 ## Part 8: Test the Full Flow
 
-1. **Request a movie in Jellyseerr**
+1. **Request a movie in Seerr**
 2. **Check Radarr** → Movies → Should show the movie searching
 3. **Check Deluge** → Should see download starting
-4. **Verify VPN:** `sudo ip netns exec wg-vpn curl -s https://api.ipify.org`
+4. **Verify VPN:** `sudo ip netns exec vpn curl -s https://api.ipify.org`
 5. **After download:** Radarr imports to `/data/media/movies`
 6. **Check Jellyfin** → Movie appears in library
 7. **Bazarr** → Should fetch subtitles automatically
@@ -424,9 +425,9 @@ docker compose up -d
 # Re-create admin account
 ```
 
-### Jellyseerr: "Failed to create tag" Error
+### Seerr: "Failed to create tag" Error
 
-Disable "Tag Requests" in Jellyseerr → Settings → Radarr/Sonarr.
+Disable "Tag Requests" in Seerr → Settings → Radarr/Sonarr.
 
 ### VPN Not Working
 
@@ -435,16 +436,16 @@ Disable "Tag Requests" in Jellyseerr → Settings → Radarr/Sonarr.
 ip netns list
 
 # Check WireGuard status
-sudo ip netns exec wg-vpn wg show
+sudo ip netns exec vpn wg show
 
 # Check logs
-journalctl -u wireguard-vpn-namespace.service
-journalctl -u wireguard-vpn.service
+journalctl -u netns-vpn.service
+journalctl -u wireguard-vpn.service  # Surfshark Singapore tunnel
 ```
 
 ### Deluge Not Downloading
 
-1. Check VPN is connected: `sudo ip netns exec wg-vpn curl -s https://api.ipify.org`
+1. Check VPN is connected: `sudo ip netns exec vpn curl -s https://api.ipify.org`
 2. Check port forwarding: `sudo systemctl status deluge-port-forward`
 3. Check Deluge daemon: `sudo systemctl status deluged`
 
@@ -539,7 +540,7 @@ sudo systemctl status jellyfin radarr sonarr
 docker ps
 
 # VPN status
-sudo ip netns exec wg-vpn wg show
+sudo ip netns exec vpn wg show
 ```
 
 ### Backup Service Configs
@@ -556,7 +557,7 @@ sudo zfs list -t snapshot
 
 ```bash
 # From your Mac (after adding SSH key)
-ssh somesh@192.168.0.200
+ssh somesh@192.168.68.59
 # Or if configured in ~/.ssh/config:
 ssh karmalab
 ```
@@ -564,7 +565,7 @@ ssh karmalab
 SSH config (`~/.ssh/config`):
 ```
 Host karmalab
-    HostName 192.168.0.200
+    HostName 192.168.68.59
     User somesh
     IdentityFile ~/.ssh/id_ed25519
 ```
@@ -590,7 +591,7 @@ sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 | `/data/media/` | Media files | root:media 775 |
 | `/data/immich/` | Photos | 999:999 755 |
 | `/data/timemachine/` | Time Machine backups | root:root 770 |
-| `/data/nextcloud/` | Nextcloud files (future) | root:root 750 |
+| `/data/opencloud/` | OpenCloud files | 1000:1000 750 |
 
 ## Part 9: Time Machine Backup Server Setup
 
@@ -709,7 +710,7 @@ Syncthing provides decentralized file synchronization, perfect for syncing your 
 
 After deploying the NixOS configuration:
 
-1. Open **http://192.168.0.200:8384** in your browser
+1. Open **http://192.168.68.59:8384** in your browser
 2. You'll see a warning about no GUI authentication - we'll fix that next
 
 ### 10.2 Set Up GUI Authentication (Important!)
@@ -806,7 +807,7 @@ Forgejo is a lightweight, self-hosted Git forge for hosting your personal reposi
 
 After deploying the NixOS configuration:
 
-1. Open **http://192.168.0.200:3030** in your browser
+1. Open **http://192.168.68.59:3030** in your browser
 2. You'll see the initial setup wizard
 
 ### 11.2 Complete Initial Setup
@@ -855,17 +856,17 @@ After deploying the NixOS configuration:
 **SSH (recommended):**
 ```bash
 # Clone
-git clone ssh://git@192.168.0.200:2222/somesh/my-project.git
+git clone ssh://git@192.168.68.59:2222/somesh/my-project.git
 
 # Or add remote to existing repo
-git remote add karmalab ssh://git@192.168.0.200:2222/somesh/my-project.git
+git remote add karmalab ssh://git@192.168.68.59:2222/somesh/my-project.git
 git push karmalab main
 ```
 
 **HTTPS:**
 ```bash
 # Clone
-git clone http://192.168.0.200:3030/somesh/my-project.git
+git clone http://192.168.68.59:3030/somesh/my-project.git
 ```
 
 ### 11.6 SSH Config for Easier Access
@@ -874,7 +875,7 @@ Add to your `~/.ssh/config`:
 
 ```
 Host karmalab-git
-    HostName 192.168.0.200
+    HostName 192.168.68.59
     Port 2222
     User git
     IdentityFile ~/.ssh/id_ed25519
@@ -909,7 +910,7 @@ Then rebuild: `sudo nixos-rebuild switch --flake /etc/nixos#karmalab`
 systemctl status forgejo
 
 # Check SSH access
-ssh -p 2222 git@192.168.0.200
+ssh -p 2222 git@192.168.68.59
 # Should show: "Hi somesh! You've successfully authenticated..."
 
 # View logs
@@ -935,7 +936,7 @@ When you set up Cloudflare Tunnel (Phase 3), you can expose Forgejo at `https://
 | `/data/media/` | Media files | root:media 775 |
 | `/data/immich/` | Photos | 999:999 755 |
 | `/data/timemachine/` | Time Machine backups | somesh:users 770 |
-| `/data/nextcloud/` | Nextcloud files (future) | root:root 750 |
+| `/data/opencloud/` | OpenCloud files | 1000:1000 750 |
 | `/var/lib/syncthing/` | Syncthing data & config | somesh:users 750 |
 | `/var/lib/syncthing/sync/` | Synced folders (Obsidian, etc.) | somesh:users 750 |
 | `/var/lib/forgejo/` | Forgejo data & repositories | forgejo:forgejo |

@@ -37,7 +37,7 @@
 # - Root directory: /data/media (access to all media subdirectories)
 #
 # Access:
-# - Local: http://192.168.0.200:8085
+# - Local: http://192.168.68.59:8085
 # - Tailscale: http://karmalab:8085
 # - External: https://files.somesh.dev (local/Tailscale only - no public access)
 #
@@ -48,7 +48,7 @@
 # - Respects Linux file permissions (media group)
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:8085
+# 1. Access http://192.168.68.59:8085
 # 2. Login with default credentials: admin/admin
 # 3. IMMEDIATELY change password:
 #    - Settings → User Management → Edit admin user → Change password
@@ -66,7 +66,7 @@
 # 8. Add custom command "Refresh Jellyfin":
 #    - Settings → Commands → Add Command
 #    - Name: Refresh Jellyfin Library
-#    - Command: curl -X POST "http://192.168.0.200:8096/Library/Refresh" -H "X-MediaBrowser-Token: YOUR_API_KEY"
+#    - Command: curl -X POST "http://192.168.68.59:8096/Library/Refresh" -H "X-MediaBrowser-Token: YOUR_API_KEY"
 #    - Get API key from Jellyfin: Dashboard → API Keys → Add API Key
 #
 # ============================================================================

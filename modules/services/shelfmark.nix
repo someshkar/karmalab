@@ -36,7 +36,7 @@
 # - WebUI directly accessible on local network
 #
 # Access:
-# - Local: http://192.168.0.200:8084
+# - Local: http://192.168.68.59:8084
 # - External: https://shelfmark.somesh.dev (via Cloudflare Tunnel)
 #
 # Security:
@@ -46,7 +46,7 @@
 # - Until auth is enabled, anyone with the URL can access Shelfmark
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:8084 or https://shelfmark.somesh.dev
+# 1. Access http://192.168.68.59:8084 or https://shelfmark.somesh.dev
 # 2. **PRIORITY: Enable Authentication (Settings → Authentication)**
 #    - Enable "Require Authentication"
 #    - Create admin account: username "somesh", STRONG password

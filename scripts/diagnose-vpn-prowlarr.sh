@@ -1,7 +1,28 @@
 #!/usr/bin/env bash
 # scripts/diagnose-vpn-prowlarr.sh
 # ============================================================================
-# COMPREHENSIVE VPN + PROWLARR DIAGNOSTIC SCRIPT
+# ⚠️  OBSOLETE — DO NOT USE  ⚠️
+# ============================================================================
+#
+# This script targets the old `vpn-iceland` network namespace / `wg-iceland`
+# WireGuard interface that no longer exist. Prowlarr/Bazarr/Shelfmark now use
+# the Gluetun HTTP proxy instead (see modules/gluetun.nix).
+#
+# The current diagnostic for Prowlarr search routing is:
+#
+#   # Confirm the Gluetun proxy egresses from Iceland
+#   curl -s --proxy http://127.0.0.1:8888 https://api.ipify.org
+#   curl -s "https://ipapi.co/$(curl -s --proxy http://127.0.0.1:8888 https://api.ipify.org)/country_name/"
+#
+#   # Confirm the Deluge/Singapore namespace (torrents) is healthy
+#   sudo ip netns exec vpn wg show
+#   sudo ip netns exec vpn curl -s https://api.ipify.org
+#
+# This file is retained for historical reference only and is not referenced by
+# any NixOS module.
+# ============================================================================
+#
+# ORIGINAL (historical) DESCRIPTION
 # ============================================================================
 #
 # This script diagnoses why 1337x indexer is failing in Prowlarr despite

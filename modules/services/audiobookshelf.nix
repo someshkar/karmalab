@@ -23,7 +23,7 @@
 # Note: Ebooks are now managed by Calibre-Web, not Audiobookshelf
 #
 # Access:
-# - Local: http://192.168.0.200:13378
+# - Local: http://192.168.68.59:13378
 # - External: https://audiobooks.somesh.dev (via Cloudflare Tunnel)
 #
 # Mobile Apps:
@@ -31,7 +31,7 @@
 # - Android: https://play.google.com/store/apps/details?id=com.audiobookshelf.app
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:13378
+# 1. Access http://192.168.68.59:13378
 # 2. Create admin account
 # 3. Add libraries:
 #    - Audiobooks: /audiobooks (type: Audiobook)

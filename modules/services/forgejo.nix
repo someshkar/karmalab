@@ -23,9 +23,9 @@
 # - LFS objects stored in /var/lib/forgejo/data/lfs/
 #
 # Access:
-# - Web UI: http://192.168.0.200:3030
-# - SSH: ssh://git@192.168.0.200:2222/user/repo.git
-# - HTTPS clone: http://192.168.0.200:3030/user/repo.git
+# - Web UI: http://192.168.68.59:3030
+# - SSH: ssh://git@192.168.68.59:2222/user/repo.git
+# - HTTPS clone: http://192.168.68.59:3030/user/repo.git
 # - Container Registry: https://git.somesh.dev/<owner>/<image>:<tag>
 #
 # Container Registry Usage:
@@ -36,7 +36,7 @@
 # 5. Browse: git.somesh.dev/<user>/-/packages
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:3030
+# 1. Access http://192.168.68.59:3030
 # 2. Complete initial setup wizard
 # 3. Create admin account (recommend: somesh)
 # 4. Add SSH key in Settings -> SSH/GPG Keys

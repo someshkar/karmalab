@@ -208,7 +208,7 @@ Prowlarr uses Gluetun's HTTP proxy to route indexer searches through Iceland VPN
 3. Configure:
    - **Use Proxy**: ✅ (enabled)
    - **Proxy Type**: `HTTP(S)`
-   - **Hostname**: `192.168.0.200`
+   - **Hostname**: `192.168.68.59`
    - **Port**: `8888`
    - **Bypass Proxy for Local Addresses**: ✅ (recommended)
 4. Click **Save Changes**
@@ -544,7 +544,7 @@ Bazarr uses Gluetun's HTTP proxy to route subtitle searches through Iceland VPN,
 2. Scroll to **Proxy** section
 3. Configure:
    - **Use Proxy**: ✅ (enabled)
-   - **Proxy URL**: `http://192.168.0.200:8888`
+   - **Proxy URL**: `http://192.168.68.59:8888`
 4. Click **Save**
 
 **Note:** This ensures subtitle searches bypass any regional blocks that might affect providers like OpenSubtitles.

@@ -26,7 +26,7 @@
 #
 # Usage:
 # - Access karmalab services via Tailscale IP or MagicDNS name
-# - Access ANY home network device via 192.168.0.x (printer, router, etc.)
+# - Access ANY home network device via 192.168.68.x (printer, router, etc.)
 # - Enable exit node on client devices to route all internet traffic through home
 #
 # ============================================================================

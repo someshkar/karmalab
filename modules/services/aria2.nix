@@ -13,8 +13,8 @@
 # - AriaNg web UI for easy management
 #
 # Access:
-# - AriaNg Web UI: http://192.168.0.200:6880
-# - RPC Endpoint: http://192.168.0.200:6800/jsonrpc
+# - AriaNg Web UI: http://192.168.68.59:6880
+# - RPC Endpoint: http://192.168.68.59:6800/jsonrpc
 #
 # Setup:
 # 1. Create RPC secret in /etc/nixos/secrets/aria2-rpc-secret

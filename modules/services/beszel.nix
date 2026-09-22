@@ -23,7 +23,7 @@
 # - Docker containers: lazylibrarian, immich, gluetun, etc.
 #
 # Access:
-# - Local: http://192.168.0.200:8090
+# - Local: http://192.168.68.59:8090
 # - Tailscale: http://karmalab:8090
 # - External: https://status.somesh.dev (via Cloudflare Tunnel)
 #

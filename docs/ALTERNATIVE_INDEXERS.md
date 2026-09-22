@@ -112,7 +112,7 @@ These mirrors may not be blocked in your region even if the main site is.
 
 ### Adding a New Indexer
 
-1. Open Prowlarr web UI: http://192.168.0.200:9696
+1. Open Prowlarr web UI: http://192.168.68.59:9696
 2. Go to **Settings** → **Indexers**
 3. Click **Add Indexer** (big + button)
 4. Search for the indexer name (e.g., "YTS", "EZTV", "TorrentGalaxy")
@@ -195,7 +195,7 @@ Currently configured VPN/proxy routing:
 1. Go to **Settings** → **General** → **Proxy**
 2. Enable proxy and configure:
    - **Proxy Type:** HTTP(S)
-   - **Hostname:** `192.168.0.200`
+   - **Hostname:** `192.168.68.59`
    - **Port:** `8888`
    - **Bypass for local addresses:** ✓
 

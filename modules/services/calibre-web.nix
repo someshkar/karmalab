@@ -37,11 +37,11 @@
 #     │       └── book.epub
 #
 # Access:
-# - Local: http://192.168.0.200:8083
+# - Local: http://192.168.68.59:8083
 # - External: https://books.somesh.dev (via Cloudflare Tunnel)
 #
 # Post-deployment setup:
-# 1. Access http://192.168.0.200:8083
+# 1. Access http://192.168.68.59:8083
 # 2. Login with default admin credentials:
 #    - Username: admin
 #    - Password: admin123
@@ -52,7 +52,7 @@
 # 7. Optional: Configure Kindle email for send-to-kindle
 #
 # OPDS Feed Access:
-# - OPDS URL: http://192.168.0.200:8083/opds
+# - OPDS URL: http://192.168.68.59:8083/opds
 # - Use with mobile reading apps (KyBook, FBReader, etc.)
 #
 # Security:
