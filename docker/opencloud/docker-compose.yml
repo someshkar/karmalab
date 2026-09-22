@@ -3,6 +3,13 @@
 # OpenCloud is a modern file sync & share platform (ownCloud Infinite Scale fork)
 # 
 # This file is copied to /var/lib/opencloud/docker-compose.yml on deployment
+#
+# Channel: opencloud-rolling (set OC_VERSION in /var/lib/opencloud/.env)
+# Upgrades are stepwise major versions and may require a config migration:
+#   opencloud init --diff    (inside a temp container, then `patch`)
+# 8.x additionally requires a search index rebuild:
+#   opencloud search index --all-spaces --force-rescan --insecure
+# See docs.opencloud.eu/admin/maintenance/upgrade
 # ============================================================================
 
 name: opencloud
