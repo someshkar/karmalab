@@ -330,6 +330,20 @@ in
         ];
       }
 
+      # Smart Home
+      {
+        "Smart Home" = [
+          {
+            "Home Assistant" = {
+              icon = "home-assistant.svg";
+              description = "Smart home hub";
+              href = "http://${serverIP}:8123";
+              siteMonitor = "http://${serverIP}:8123";
+            };
+          }
+        ];
+      }
+
       # System metrics via Glances + Update Checker
       {
         "System" = [

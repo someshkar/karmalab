@@ -23,6 +23,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Audiobookshelf** | 13378 | Host | Working | Audiobook server (abs.somesh.dev) |
 | **Immich** | 2283 | Host (Docker) | Working | Google Photos alternative (VAAPI transcoding) |
 | **OpenCloud** | 9200 | Host (Docker) | Working | File sync & share (cloud.somesh.dev) |
+| **Home Assistant** | 8123 | Host (native) | Working | Smart home hub (Tuya Local for ZEB-SP110 plug) |
 | **Beszel** | 8090 | Host (Docker) | Working | System monitoring hub + agent (status.somesh.dev) |
 | **Homepage** | 8082 | Host (via Caddy :80) | Working | Service dashboard with Glances metrics |
 | **Glances** | 61208 | Host | Working | System metrics backend for Homepage |
@@ -472,6 +473,7 @@ karmalab/
 │       ├── forgejo.nix           # Self-hosted Git server (+ registry, LFS)
 │       ├── homepage.nix          # Service dashboard with Glances
 │       ├── immich.nix            # Immich Docker Compose service
+│       ├── home-assistant.nix    # Home Assistant smart home hub (native)
 │       ├── karmes.nix            # Hermes assistant + Camoufox browser (native)
 │       ├── lazylibrarian.nix     # Ebook/audiobook automation (Docker)
 │       ├── mam-dynamic-seedbox.nix # MAM seedbox IP updater (in VPN netns)
