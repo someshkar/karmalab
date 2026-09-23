@@ -80,6 +80,7 @@
     ./modules/services/firefox-browser.nix  # Web browser for authenticated downloads (Google Takeout)
     ./modules/services/karmes.nix  # Karmes/Hermes personal assistant (native)
     ./modules/services/opencloud.nix  # OpenCloud file sync & share (cloud.somesh.dev)
+    ./modules/services/home-assistant.nix  # Home Assistant smart home hub (smart home)
     ./modules/services/mam-dynamic-seedbox.nix  # MAM dynamic seedbox IP updater
     ./modules/services/container-updates.nix  # Automated container update checking
   ];
