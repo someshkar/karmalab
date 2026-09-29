@@ -24,13 +24,15 @@
 #
 # Architecture:
 #
-#   Kobo (KOReader) ─┐
-#   XTEINK (CrossPoint) ─┤      ┌────────────────────────────┐
-#   iPad/MacBook (Readest) ─┼──▶│ Caddy :7200  (LAN URL)      │
-#   Omarchy/desktop (KOReader/Readest) ─┘  └──▶ 127.0.0.1:17200 │
-#                                          │  kosync-dotnet container │
-#                                          │  /var/lib/kosync (LiteDB)│
-#                                          └────────────────────────────┘
+#   Kobo Libra Colour   (KOReader)    ─┐
+#   XTEINK X4 Pro       (CrossPoint)  ─┤     ┌─────────────────────────────┐
+#   iPad / MacBook      (Readest)     ─┼───▶ │ Caddy :7200 (LAN + Tailnet) │
+#   Omarchy desktop (KOReader/Readest) ┘     └──────────────┬──────────────┘
+#                                           127.0.0.1:17200 │
+#                                           ┌───────────────▼──────────────┐
+#                                           │ kosync-dotnet (Docker)       │
+#                                           │ /var/lib/kosync (LiteDB)     │
+#                                           └──────────────────────────────┘
 #
 # Networking:
 #   - LAN:        http://192.168.68.59:7200          (Caddy -> container)
