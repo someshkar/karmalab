@@ -157,6 +157,14 @@ in
             };
           }
           {
+            "KOSync" = {
+              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png";
+              description = "Reading progress sync";
+              href = "http://${serverIP}:7200";
+              siteMonitor = "http://${serverIP}:7200/healthcheck";
+            };
+          }
+          {
             "Audiobookshelf" = {
               icon = "audiobookshelf.svg";
               description = "Audiobook server";

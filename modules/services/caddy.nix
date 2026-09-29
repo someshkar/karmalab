@@ -26,6 +26,10 @@ let
   
   # AriaNg port
   ariangPort = 6880;
+
+  # KOSync (reading progress sync) — public port and container loopback port
+  kosyncPort = config.services.kosync.port;
+  kosyncInternalPort = config.services.kosync.internalPort;
 in
 {
   # ============================================================================
@@ -63,6 +67,14 @@ in
         extraConfig = ''
           root * ${pkgs.ariang}/share/ariang
           file_server
+        '';
+      };
+
+      # KOSync reading-progress sync on port 7200 (all interfaces, incl. LAN).
+      # Proxies to the container on loopback so devices only ever need this URL.
+      "http://:${toString kosyncPort}" = lib.mkIf config.services.kosync.enable {
+        extraConfig = ''
+          reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
         '';
       };
     };

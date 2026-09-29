@@ -14,6 +14,8 @@
 # - Calibre-Web: Ebook library web interface
 # - Shelfmark: Unified book & audiobook downloader
 # - Audiobookshelf: Audiobook streaming server
+# - KOSync: Cross-device reading-progress sync (KOReader, XTEINK/CrossPoint,
+#           Readest) — private replacement for sync.koreader.rocks
 #
 # PHOTOS:
 # - Immich: Self-hosted Google Photos alternative (Docker)
@@ -74,6 +76,7 @@
     ./modules/services/vaultwarden.nix  # Password manager
     ./modules/services/audiobookshelf.nix  # Audiobook server
     ./modules/services/calibre-web.nix  # Ebook library web interface
+    ./modules/services/kosync.nix      # Reading progress sync (KOReader/Readest/XTEINK)
     ./modules/services/shelfmark.nix    # Book & audiobook downloader
     ./modules/services/lazylibrarian.nix  # Ebook & audiobook automation
     ./modules/services/filebrowser.nix  # Web-based file manager
@@ -459,6 +462,24 @@
     # secretsFile defaults to /etc/nixos/secrets/mam-id
     # interval defaults to "1h"
   };
+
+  # ============================================================================
+  # KOSYNC - CROSS-DEVICE READING PROGRESS SYNC
+  # ============================================================================
+  #
+  # Private replacement for sync.koreader.rocks. One account syncs reading
+  # position across KOReader (Kobo Libra Colour), CrossPoint (XTEINK X4 Pro),
+  # and Readest (iPad, MacBook, desktop/web).
+  #
+  # Setup:
+  #   1. printf 'ADMIN_PASSWORD=%s\n' "$(openssl rand -base64 24)" \
+  #        | sudo tee /etc/nixos/secrets/kosync.env
+  #   2. sudo chmod 600 /etc/nixos/secrets/kosync.env
+  #   3. rebuild, then: sudo kosync-user add somesh '<reading-password>'
+  #   4. On each device point KOReader/Readest/CrossPoint at
+  #      http://192.168.68.59:7200 with that username/password.
+
+  services.kosync.enable = true;
 
   # ============================================================================
   # SYSTEM PACKAGES
