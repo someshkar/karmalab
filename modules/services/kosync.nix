@@ -35,7 +35,7 @@
 # Networking:
 #   - LAN:        http://192.168.68.59:7200          (Caddy -> container)
 #   - Tailscale:  http://karmalab:7200 or http://<tailnet-ip>:7200
-#   - Internet:   point any Cloudflare Tunnel hostname (e.g. sync.somesh.dev)
+#   - Internet:   point any Cloudflare Tunnel hostname (e.g. kosync.somesh.dev)
 #                 at http://localhost:7200. No public port forwarding needed.
 #
 # Storage:

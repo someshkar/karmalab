@@ -18,6 +18,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **FileBrowser** | 8085 | Host | Working | Web file manager (files.somesh.dev, local/Tailscale only) |
 | **Firefox (KasmVNC)** | 3010/3011 | Host (Docker) | Working | Web browser for authenticated downloads |
 | **Calibre-Web** | 8083 | Host | Working | Ebook library web interface (books.somesh.dev) |
+| **KOSync** | 7200 | Host (via Caddy) | Working | Cross-device reading progress sync (KOReader/Readest/XTEINK) |
 | **LazyLibrarian** | 5299 | Host + Gluetun proxy | Working | Ebook/audiobook automation (Docker) |
 | **Shelfmark** | 8084 | Host + Gluetun proxy | Working | Book search & download UI (shelfmark.somesh.dev) ⚠️ Enable auth! |
 | **Audiobookshelf** | 13378 | Host | Working | Audiobook server (abs.somesh.dev) |
@@ -536,6 +537,7 @@ karmalab/
 - [x] **Calibre-Web** (ebook library)
 - [x] **Shelfmark** (search & download)
 - [x] **LazyLibrarian** (ebook/audiobook automation, Docker)
+- [x] **KOSync** (cross-device reading progress sync — KOReader, XTEINK/CrossPoint, Readest)
 - [ ] Readarr (not used — replaced by LazyLibrarian)
 
 ### Phase 5: Productivity & Backup - IN PROGRESS
@@ -673,6 +675,7 @@ These are real, verified gaps between the declarative config and runtime state (
 | Immich | http://192.168.68.59:2283 |
 | OpenCloud | http://192.168.68.59:9200 |
 | Calibre-Web | http://192.168.68.59:8083 |
+| KOSync (reading sync) | http://192.168.68.59:7200 |
 | LazyLibrarian | http://192.168.68.59:5299 |
 | Shelfmark | http://192.168.68.59:8084 |
 | Audiobookshelf | http://192.168.68.59:13378 |

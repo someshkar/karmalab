@@ -924,11 +924,57 @@ When you set up Cloudflare Tunnel (Phase 3), you can expose Forgejo at `https://
 - Web UI works seamlessly over HTTPS
 - For SSH over Cloudflare, you'll need `cloudflared access` tunnel or use HTTPS cloning
 
+## Part 12: Reading Progress Sync (KOSync) Setup
+
+KOSync keeps your reading position in sync across KOReader (Kobo Libra
+Colour), CrossPoint firmware (XTEINK X4 Pro), and Readest (iPad, MacBook,
+desktop/web) — a private replacement for `sync.koreader.rocks`.
+
+See **[docs/reading-sync-setup.md](./docs/reading-sync-setup.md)** for the full
+guide. Short version:
+
+### 12.1 Create the admin secret (before or right after the rebuild)
+
+```bash
+printf 'ADMIN_PASSWORD=%s\n' "$(openssl rand -base64 24)" \
+  | sudo tee /etc/nixos/secrets/kosync.env
+sudo chmod 600 /etc/nixos/secrets/kosync.env
+```
+
+### 12.2 Verify the service
+
+```bash
+systemctl status docker-kosync
+curl -s http://127.0.0.1:7200/healthcheck   # {"state":"OK"}
+```
+
+### 12.3 Create your reading account
+
+The protocol sends `md5(password)`, so accounts must be created with the hash.
+The helper handles this:
+
+```bash
+sudo kosync-user add somesh 'your-reading-password'
+sudo kosync-user list
+```
+
+### 12.4 Point your devices at it
+
+Server URL: `http://192.168.68.59:7200` (LAN) or `http://karmalab:7200`
+(Tailscale). On **every** device set document matching to the binary/file-
+content option:
+
+- KOReader (Kobo): Plugins → Progress sync → Custom sync server
+- CrossPoint (XTEINK): Settings → System → KOReader Sync
+- Readest (iPad/Mac): Settings → Integrations → KOSync, checksum "File Content"
+
 ## File Locations Summary (Updated)
 
 | Path | Purpose | Permissions |
 |------|---------|-------------|
 | `/etc/wireguard/surfshark.conf` | VPN config | root:root 600 |
+| `/etc/nixos/secrets/kosync.env` | KOSync admin password | root:root 600 |
+| `/var/lib/kosync/` | KOSync database (LiteDB) | somesh:users 750 |
 | `/var/lib/immich/.env` | Immich secrets | root:root 600 |
 | `/var/lib/immich/docker-compose.yml` | Immich compose | root:root 644 |
 | `/var/lib/immich/postgres/` | Immich DB | 999:999 |
