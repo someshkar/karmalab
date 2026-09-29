@@ -53,12 +53,10 @@
 #   4. Enter the server URL + those credentials on every device.
 #
 # IMPORTANT (KOSync password quirk):
-#   The KOSync protocol transmits md5(password) as the x-auth-key header, and
-#   the server stores md5(of whatever you send). To make a KOReader/Readest
-#   login work, the account must therefore be created with md5(password) as
-#   the stored value. The `kosync-user add` helper does this for you; if you
-#   create users by hand, hash first:
-#     echo -n 'password' | md5sum
+#   The KOSync protocol transmits md5(password) as the x-auth-key header. The
+#   management API used by `kosync-user add` hashes the plaintext it is given,
+#   so the stored value is md5(password) — exactly what devices send. Just pass
+#   your normal password on the command line; do not pre-hash it.
 #
 # ============================================================================
 
@@ -207,49 +205,60 @@ in
           Commands:
             list                       List registered users
             add <username> <password>  Create a user that KOReader/Readest can log into
+            passwd <username> <password>  Change a user's reading password
             delete <username>          Delete a user and their reading progress
+            documents <username>       List a user's synced documents
             raw <METHOD> <path> [json] Send a raw request to the management API
 
           Server: $SERVER   (override with KOSYNC_URL)
           USAGE
           }
 
+          admin_curl() {
+            curl -fsS -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" "$@"
+          }
+
           cmd="''${1:-}"
           case "$cmd" in
             list)
-              curl -fsS -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" \
-                "$SERVER/manage/users"
+              admin_curl "$SERVER/manage/users"
               echo
               ;;
             add)
               if [ "$#" -ne 3 ]; then usage; exit 2; fi
-              # Store md5(password) so the protocol's md5 x-auth-key matches.
-              PW_MD5="$(printf %s "$3" | md5sum | cut -d' ' -f1)"
-              curl -fsS -X POST \
-                -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" \
-                -H 'Content-Type: application/json' \
-                -d "{\"username\":\"$2\",\"password\":\"$PW_MD5\"}" \
+              # The management API hashes the password it is given, so pass the
+              # plaintext here. The stored value then matches the md5 x-auth-key
+              # that KOReader/Readest send at login.
+              admin_curl -X POST -H 'Content-Type: application/json' \
+                -d "{\"username\":\"$2\",\"password\":\"$3\"}" \
                 "$SERVER/manage/users"
+              echo
+              ;;
+            passwd)
+              if [ "$#" -ne 3 ]; then usage; exit 2; fi
+              admin_curl -X PUT -H 'Content-Type: application/json' \
+                -d "{\"password\":\"$3\"}" \
+                "$SERVER/manage/users/password?username=$2"
               echo
               ;;
             delete)
               if [ "$#" -ne 2 ]; then usage; exit 2; fi
-              curl -fsS -X DELETE \
-                -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" \
-                "$SERVER/manage/users/$2"
+              admin_curl -X DELETE "$SERVER/manage/users?username=$2"
+              echo
+              ;;
+            documents)
+              if [ "$#" -ne 2 ]; then usage; exit 2; fi
+              admin_curl "$SERVER/manage/users/documents?username=$2"
               echo
               ;;
             raw)
               shift
               METHOD="''${1:-GET}"; PATH_="''${2:-/manage/users}"; shift || true
               if [ "$#" -gt 0 ]; then
-                curl -fsS -X "$METHOD" \
-                  -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" \
-                  -H 'Content-Type: application/json' -d "$1" "$SERVER$PATH_"
+                admin_curl -X "$METHOD" -H 'Content-Type: application/json' \
+                  -d "$1" "$SERVER$PATH_"
               else
-                curl -fsS -X "$METHOD" \
-                  -H "x-auth-user: $ADMIN_USER" -H "x-auth-key: $ADMIN_KEY" \
-                  "$SERVER$PATH_"
+                admin_curl -X "$METHOD" "$SERVER$PATH_"
               fi
               echo
               ;;

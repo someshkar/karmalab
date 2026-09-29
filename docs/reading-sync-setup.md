@@ -19,7 +19,7 @@ for cross-vendor reading sync, and everything you own can speak it:
 | XTEINK X4 Pro | CrossPoint (or Crossing) firmware | Built-in "KOReader Sync" |
 | iPad Pro | Readest | Built-in KOReader integration |
 | MacBook | Readest, or KOReader desktop | Same account |
-| Omarchy (Arch) | KOReader desktop, Readest AppImage, or any device's browser | Same account |
+| Omarchy (Arch) | KOReader desktop, Readest AppImage, or a browser | Same account |
 
 Instead of trusting the public `sync.koreader.rocks` server, karmalab runs your
 own. Your reading history stays on your hardware and is included in ZFS
@@ -64,7 +64,7 @@ On karmalab:
 
 ```bash
 cd ~/karmalab
-git pull                 # or: git checkout main && git pull   (after merge)
+git pull
 sudo nixos-rebuild switch --flake /etc/nixos#karmalab
 
 # Create the admin password file (once, outside git):
@@ -87,9 +87,8 @@ curl -s http://127.0.0.1:7200/healthcheck       # through Caddy
 
 ## 2. Create your reading account
 
-The KOSync protocol sends `md5(password)` as the auth key, and the server
-stores `md5(what you send)`. So the account must be created with
-`md5(password)` as its value. The helper does this for you:
+Use the helper — it does the md5 juggling the protocol needs (see the note
+below):
 
 ```bash
 sudo kosync-user add somesh 'your-reading-password'
@@ -98,6 +97,12 @@ sudo kosync-user list
 
 Use the **same username + password** on every device. (Optional: add a second
 account for a family member.)
+
+> **Why the helper?** KOSync devices authenticate by sending
+> `md5(password)` in an `x-auth-key` header. The management API hashes the
+> plaintext you give it, so `kosync-user add` with your normal password produces
+> exactly the value devices expect. Always pass the **plain text** password to
+> the helper — never a pre-computed hash.
 
 ## 3. Set up each device
 
@@ -148,7 +153,7 @@ Any of these work, all using the same account:
   Custom sync server. Set Document matching to **Binary**.
 - **Readest** — AppImage from the Readest releases; set it up as in 3.3.
 - **Browser** — open Calibre-Web (`http://192.168.68.59:8083`) to read and see
-  current position, or the Readest web app.
+  the current position, or the Readest web app.
 
 ## 4. Optional: reach it from anywhere
 
@@ -167,21 +172,22 @@ Pick one book that exists on two devices:
 3. Confirm the server saw it:
 
 ```bash
-sudo docker exec kosync sh -c 'ls -la /app/data'   # Kosync.db is growing
-# or watch live:
-sudo journalctl -u docker-kosync -f
+sudo docker exec kosync ls -la /app/data            # Kosync.db is present
+sudo journalctl -u docker-kosync -f                 # watch live
+sudo kosync-user documents somesh                   # per-user synced docs
 ```
 
 ## 6. Troubleshooting
 
 | Symptom | Cause / fix |
 |---------|-------------|
-| `User could not be found` right after creating a user | The account was created with the plain password instead of `md5(password)`. Delete and re-add with `sudo kosync-user add`. |
+| `User could not be found` after creating a user | The user was created with a pre-hashed value. Re-add with `sudo kosync-user add <name> <plain-password>` (the helper hashes it for you). |
 | Books never line up between two apps | **Document matching disagrees.** Set KOReader/CrossPoint to *Binary* and Readest to *File Content* on every device. |
-| `Document hash [...] not found for user [...]` on first sync | The server has no record yet. Push progress from one device first (or `PUT /syncs/progress` once); afterwards it works normally. |
+| `Document hash [...] not found for user [...]` on first sync | The server has no record yet. Push progress from one device first (the plugin does this when you tap Sync); afterwards it works normally. |
 | Container restarts every 10s | Missing `/etc/nixos/secrets/kosync.env`. Create it (see step 1). |
-| Port 7200 unreachable from the LAN | Check `systemctl status caddy docker-kosync` and that `networking.firewall` includes 7200 (it does via the module). |
-| `curl /healthcheck` returns OK but the device can't log in | Verify the URL has no trailing path and starts with `http://` (LAN) or `https://` (tunnel). |
+| Port 7200 unreachable from the LAN | Check `systemctl status caddy docker-kosync`; the module opens 7200 in the firewall. |
+| `/healthcheck` returns OK but the device can't log in | Verify the URL has no trailing path and starts with `http://` (LAN) or `https://` (tunnel), and that the username/password match exactly. |
+| Changed the password on one device only | Run `sudo kosync-user passwd <name> <new-password>`, then update every device. |
 
 ## 7. Maintenance
 
@@ -193,5 +199,5 @@ sudo journalctl -u docker-kosync -f
   pulls the new image on start.
 - **Add/remove users:** `sudo kosync-user add <name> <password>` /
   `sudo kosync-user delete <name>`.
-- **Raw API:** `sudo kosync-user raw GET /manage/users` (see
-  `kosync-user` help for the full set).
+- **Raw API:** `sudo kosync-user raw GET /manage/users` (run `kosync-user` with
+  no arguments for the full command list).
