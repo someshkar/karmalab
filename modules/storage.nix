@@ -339,13 +339,27 @@ in
       echo "--- Creating Media datasets ---"
       create_dataset "$POOL/media" -o mountpoint=/data/media -o compression=lz4 -o atime=off
       
+      # The four library datasets must use mountpoint=legacy so the declarative
+      # fileSystems entries (mount -t zfs) work. If an older dataset exists with
+      # a ZFS-native mountpoint, switch it to legacy; `zfs mount -a` is run by
+      # zfs-mount.service before this unit, so the data stays mounted meanwhile.
+      for ds in movies tv ebooks audiobooks; do
+        if ${pkgs.zfs}/bin/zfs list "$POOL/media/$ds" &>/dev/null; then
+          cur=$(${pkgs.zfs}/bin/zfs get -H -o value mountpoint "$POOL/media/$ds")
+          if [ "$cur" != "legacy" ]; then
+            echo "Converting $POOL/media/$ds mountpoint $cur -> legacy"
+            ${pkgs.zfs}/bin/zfs set mountpoint=legacy "$POOL/media/$ds"
+          fi
+        fi
+      done
+      
       # Movies (2TB quota, 1M recordsize for large files)
-      create_dataset "$POOL/media/movies"
+      create_dataset "$POOL/media/movies" -o mountpoint=legacy
       set_property "$POOL/media/movies" "quota" "2T"
       set_property "$POOL/media/movies" "recordsize" "1M"
       
       # TV Shows (2TB quota, 1M recordsize for large files)
-      create_dataset "$POOL/media/tv"
+      create_dataset "$POOL/media/tv" -o mountpoint=legacy
       set_property "$POOL/media/tv" "quota" "2T"
       set_property "$POOL/media/tv" "recordsize" "1M"
       
@@ -361,12 +375,14 @@ in
       set_property "$POOL/media/downloads/incomplete" "com.sun:auto-snapshot" "false"
       
       # Ebooks (100GB quota - text files are tiny)
-      create_dataset "$POOL/media/ebooks"
+      # mountpoint=legacy so the fileSystems entry below can mount it via
+      # `mount -t zfs` (ZFS-native mountpoints only work with `zfs mount`).
+      create_dataset "$POOL/media/ebooks" -o mountpoint=legacy
       set_property "$POOL/media/ebooks" "quota" "100G"
       set_property "$POOL/media/ebooks" "recordsize" "128K"
       
       # Audiobooks (1TB quota - ~1000-2000 audiobooks)
-      create_dataset "$POOL/media/audiobooks"
+      create_dataset "$POOL/media/audiobooks" -o mountpoint=legacy
       set_property "$POOL/media/audiobooks" "quota" "1T"
       set_property "$POOL/media/audiobooks" "recordsize" "1M"
       
