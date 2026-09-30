@@ -34,6 +34,16 @@ let
   # KoInsight reading-stats dashboard port
   statsPort = config.services.koinsight.port;
   statsInternalPort = config.services.koinsight.internalPort;
+
+  # Browser-based readers (e.g. Readest web at web.readest.com) fetch KOSync
+  # cross-origin, which needs CORS. Neither the official nor self-hosted KOSync
+  # servers send CORS headers, so we add them at the proxy for the browser
+  # reader origins only. Native apps (KOReader, Readest desktop/iOS) are
+  # unaffected — CORS is a browser concept.
+  kosyncCorsOrigins = [
+    "https://web.readest.com"
+    "https://readest.com"
+  ];
 in
 {
   # ============================================================================
@@ -79,6 +89,36 @@ in
       "http://:${toString kosyncPort}" = lib.mkIf config.services.kosync.enable {
         extraConfig = ''
           reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
+        '';
+      };
+
+      # Public HTTPS entrypoint for KOSync, reached via the Cloudflare Tunnel
+      # (kosync.somesh.dev -> localhost:7200; see modules/services/cloudflared.nix).
+      # Caddy's auto_https is off because Cloudflare terminates TLS. This block
+      # exists to add CORS headers for browser-based readers.
+      "http://kosync.somesh.dev" = lib.mkIf config.services.kosync.enable {
+        extraConfig = ''
+          @browserOrigin {
+            header Origin ${lib.concatStringsSep " " kosyncCorsOrigins}
+          }
+
+          handle @browserOrigin {
+            header {
+              Access-Control-Allow-Origin "{http.request.header.Origin}"
+              Access-Control-Allow-Methods "GET, PUT, POST, OPTIONS"
+              Access-Control-Allow-Headers "x-auth-user, x-auth-key, content-type, accept"
+              Access-Control-Max-Age "86400"
+              Vary "Origin"
+            }
+            # Answer CORS preflight here; the app does not handle OPTIONS.
+            @preflight method OPTIONS
+            respond @preflight 204
+            reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
+          }
+
+          handle {
+            reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
+          }
         '';
       };
 
