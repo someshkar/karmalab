@@ -106,11 +106,19 @@ account for a family member.)
 
 ## 3. Set up each device
 
-Use the **same server URL** everywhere:
+Use the **same account** everywhere. Pick the URL that matches each device:
 
 - **At home (LAN):** `http://192.168.68.59:7200`
-- **Anywhere (Tailscale):** `http://karmalab:7200` or `http://<tailnet-ip>:7200`
-- **Public (if you add a tunnel hostname):** `https://kosync.somesh.dev`
+- **Anywhere (Tailscale):** `http://karmalab:7200` or `http://100.80.102.100:7200`
+- **Public HTTPS (works for every reader):** `https://kosync.somesh.dev`
+
+> **Which URL should I use?** The e-ink readers can't join Tailscale, so:
+> - On home Wi-Fi → the **LAN** URL (fastest, no internet dependency).
+> - Away from home → **`https://kosync.somesh.dev`**.
+> - iPad/MacBook/Omarchy with Tailscale → `http://karmalab:7200` anywhere.
+>
+> All three URLs share one account and database, so mixing them is fine — two
+> devices only need the *same username/password*, not the same URL.
 
 ### 3.1 Kobo Libra Colour (KOReader)
 
@@ -155,12 +163,44 @@ Any of these work, all using the same account:
 - **Browser** — open Calibre-Web (`http://192.168.68.59:8083`) to read and see
   the current position, or the Readest web app.
 
-## 4. Optional: reach it from anywhere
+## 4. Remote access (already configured)
 
-The server is already reachable on the LAN and over Tailscale. For browser-only
-or non-Tailscale devices, add a Cloudflare Tunnel hostname in the Zero Trust
-dashboard (e.g. `kosync.somesh.dev` → `http://localhost:7200`) — the same pattern
-used for `books.somesh.dev`. No firewall changes are required.
+`kosync.somesh.dev` is live and reachable from anywhere:
+
+- **Cloudflare Tunnel** — the existing `karmalab` tunnel (id
+  `838930b7-5642-453e-9ac8-dbb4e1ff41e4`) has an ingress rule
+  `kosync.somesh.dev → http://localhost:7200`, plus a proxied CNAME
+  `kosync.somesh.dev → 838930b7-….cfargotunnel.com`. Managed via the `cf` CLI
+  or the Zero Trust dashboard.
+- **Tailscale** — `http://karmalab:7200` works from any tailnet device.
+- No port forwarding; `cloudflared` connects outbound from karmalab.
+
+To change or remove the public hostname later (using the `cf` CLI, signed in as
+`somesh.kar@gmail.com`):
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID=ac6767857b4428415d882181a3310a1c
+TUN=838930b7-5642-453e-9ac8-dbb4e1ff41e4
+
+# inspect / edit ingress (note: `update` REPLACES the whole list)
+cf tunnels config get "$TUN"
+cf tunnels config update "$TUN" --body @new-config.json --dry-run
+
+# remove just the DNS record
+cf dns records list --zone somesh.dev
+cf dns records delete <record-id> --zone somesh.dev
+```
+
+> **Caution:** `cf tunnels config update` replaces the *entire* ingress list.
+> Always `get` the current config, edit it, and `--dry-run` before applying —
+> otherwise you can knock out the other 12 hostnames on that tunnel.
+
+**Security note:** `kosync.somesh.dev` is publicly reachable, and
+`REGISTRATION_DISABLED=true` prevents strangers creating accounts. Consider also
+putting it behind a **Cloudflare Access** policy (email OTP) if you want to
+require auth at the edge in addition to the KOSync credentials. If you do, note
+that the e-ink readers can't complete a browser login — so an Access policy
+would break them and you should use the LAN/Tailscale URL on those instead.
 
 ## 5. Verify sync
 

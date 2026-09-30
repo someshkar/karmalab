@@ -20,6 +20,7 @@
 # - shelfmark.somesh.dev → Shelfmark (port 8084)
 # - home.somesh.dev     → Homepage Dashboard (port 8082)
 # - files.somesh.dev    → FileBrowser (port 8085) [local/Tailscale only - no public DNS]
+# - kosync.somesh.dev   → KOSync reading progress sync (port 7200)
 # - status.somesh.dev   → Uptime Kuma (port 3001) [optional]
 #
 # Note: files.somesh.dev has tunnel config but NO public DNS record.
