@@ -178,6 +178,15 @@ in
       options = zfsMountOpts;
     };
     
+    # --- KOSync reading-progress database ---
+    # Small LiteDB file, but it holds irreplaceable reading state, so it lives
+    # on ZFS and is covered by auto-snapshots (see com.sun:auto-snapshot below).
+    "/var/lib/kosync" = {
+      device = "${poolName}/services/kosync";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
     # Note: jellyseerr, prowlarr, and lazylibrarian use NixOS defaults on NVMe SSD
     # They use DynamicUser=true which conflicts with ZFS mounts (or small databases)
     # Their data is small (config + SQLite) so NVMe is fine
@@ -411,6 +420,45 @@ in
       create_dataset "$POOL/services/uptime-kuma" -o mountpoint=legacy
       set_property "$POOL/services/uptime-kuma" "quota" "1G"
       set_property "$POOL/services/uptime-kuma" "recordsize" "8K"
+      
+      # KOSync reading-progress database (LiteDB). Tiny, but it is the only
+      # copy of reading state that KOReader/Readest/CrossPoint devices sync to,
+      # so it must be snapshotted.
+      create_dataset "$POOL/services/kosync" -o mountpoint=legacy
+      set_property "$POOL/services/kosync" "quota" "1G"
+      set_property "$POOL/services/kosync" "recordsize" "8K"
+      set_property "$POOL/services/kosync" "com.sun:auto-snapshot" "true"
+      
+      # ===== AUTO-SNAPSHOT SELECTION =====
+      # services.zfs.autoSnapshot enables the timers, but zfs-auto-snapshot only
+      # acts on datasets where com.sun:auto-snapshot=true. An unset value means
+      # "not selected", which is why no snapshots were being taken. Be explicit:
+      echo "--- Configuring auto-snapshot selection ---"
+      for ds in \
+        "$POOL/immich/photos" \
+        "$POOL/media/ebooks" \
+        "$POOL/media/audiobooks" \
+        "$POOL/services" \
+        "$POOL/services/jellyfin/config" \
+        "$POOL/services/deluge/config" \
+        "$POOL/services/radarr" \
+        "$POOL/services/sonarr" \
+        "$POOL/services/bazarr" \
+        "$POOL/services/prowlarr" \
+        "$POOL/services/jellyseerr" \
+        "$POOL/services/kosync"
+      do
+        set_property "$ds" "com.sun:auto-snapshot" "true"
+      done
+      
+      # Media libraries (movies/tv) and bulk downloads are large and re-obtainable;
+      # keep snapshot churn off them to avoid burning pool space.
+      for ds in "$POOL/media" "$POOL/media/movies" "$POOL/media/tv" \
+                "$POOL/media/downloads" "$POOL/media/downloads/complete" \
+                "$POOL/ai" "$POOL/opencloud"
+      do
+        set_property "$ds" "com.sun:auto-snapshot" "false"
+      done
       
       # Note: LazyLibrarian, Jellyseerr, Prowlarr, and FileBrowser use NVMe defaults
       # Their data is small (config + SQLite databases) so no ZFS datasets needed

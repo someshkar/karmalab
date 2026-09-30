@@ -165,6 +165,14 @@ in
             };
           }
           {
+            "Reading Stats" = {
+              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/koreader.png";
+              description = "Reading statistics dashboard";
+              href = "http://${serverIP}:3005";
+              siteMonitor = "http://${serverIP}:3005";
+            };
+          }
+          {
             "Audiobookshelf" = {
               icon = "audiobookshelf.svg";
               description = "Audiobook server";

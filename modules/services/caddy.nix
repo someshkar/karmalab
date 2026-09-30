@@ -30,6 +30,9 @@ let
   # KOSync (reading progress sync) — public port and container loopback port
   kosyncPort = config.services.kosync.port;
   kosyncInternalPort = config.services.kosync.internalPort;
+
+  # KoInsight reading-stats dashboard port
+  statsPort = config.services.koinsight.port;
 in
 {
   # ============================================================================
@@ -75,6 +78,13 @@ in
       "http://:${toString kosyncPort}" = lib.mkIf config.services.kosync.enable {
         extraConfig = ''
           reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
+        '';
+      };
+
+      # KoInsight reading-stats dashboard (LAN + Tailscale).
+      "http://:${toString statsPort}" = lib.mkIf config.services.koinsight.enable {
+        extraConfig = ''
+          reverse_proxy 127.0.0.1:${toString statsPort}
         '';
       };
     };

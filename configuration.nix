@@ -77,6 +77,8 @@
     ./modules/services/audiobookshelf.nix  # Audiobook server
     ./modules/services/calibre-web.nix  # Ebook library web interface
     ./modules/services/kosync.nix      # Reading progress sync (KOReader/Readest/XTEINK)
+    ./modules/services/koinsight.nix   # Reading statistics dashboard
+    ./modules/services/kosync-backup.nix  # Daily backup of reading state
     ./modules/services/shelfmark.nix    # Book & audiobook downloader
     ./modules/services/lazylibrarian.nix  # Ebook & audiobook automation
     ./modules/services/filebrowser.nix  # Web-based file manager
@@ -480,6 +482,15 @@
   #      http://192.168.68.59:7200 with that username/password.
 
   services.kosync.enable = true;
+
+  # Reading statistics dashboard (KOReader reading time, heatmaps, per-book
+  # progress). Reads stats only — KOSync above remains the single source of
+  # truth for reading position.
+  services.koinsight.enable = true;
+
+  # Daily backup of KOSync + KoInsight state onto the ZFS pool. These live
+  # under /var/lib on the ext4 root, which ZFS auto-snapshots do not cover.
+  services.kosync-backup.enable = true;
 
   # ============================================================================
   # SYSTEM PACKAGES

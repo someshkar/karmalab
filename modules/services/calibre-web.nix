@@ -103,6 +103,11 @@ in
       # Enable ebook conversion (requires calibre package)
       # This allows format conversion (e.g., EPUB to MOBI for Kindle)
       enableBookConversion = true;
+
+      # Generate KEPUB variants on download. Kobo devices read KEPUB natively
+      # (real page numbers, faster page turns) and Calibre-Web's Kobo sync
+      # serves KEPUB to the device.
+      enableKepubify = true;
     };
   };
   
