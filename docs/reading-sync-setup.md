@@ -26,6 +26,10 @@ Instead of trusting the public `sync.koreader.rocks` server, karmalab runs your
 own. Your reading history stays on your hardware and is included in ZFS
 snapshots.
 
+**New here?** `docs/reading-devices-quickstart.md` has the exact
+device-by-device click-path (which app, which URL, which setting). This document
+is the reference/why.
+
 ## Architecture
 
 ```
