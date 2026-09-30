@@ -178,6 +178,37 @@ in
       options = zfsMountOpts;
     };
     
+    # --- Media library datasets ---
+    # storage.nix creates movies/tv/ebooks/audiobooks as child datasets, but
+    # without explicit fileSystems entries they are only mounted by
+    # zfs-mount.service when canmount=on. In practice that has silently failed,
+    # leaving /data/media/movies etc. as empty dirs on the parent dataset while
+    # the real data sat unmounted (Jellyfin/Calibre/Audiobookshelf saw nothing).
+    # Declaring them here makes the mount declarative and reliable.
+    "/data/media/movies" = {
+      device = "${poolName}/media/movies";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
+    "/data/media/tv" = {
+      device = "${poolName}/media/tv";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
+    "/data/media/ebooks" = {
+      device = "${poolName}/media/ebooks";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
+    "/data/media/audiobooks" = {
+      device = "${poolName}/media/audiobooks";
+      fsType = "zfs";
+      options = zfsMountOpts;
+    };
+    
     # --- KOSync reading-progress database ---
     # Small LiteDB file, but it holds irreplaceable reading state, so it lives
     # on ZFS and is covered by auto-snapshots (see com.sun:auto-snapshot below).
