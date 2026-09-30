@@ -296,6 +296,38 @@ Calibre-Web's own reader does **not** talk to KOSync, so its position is
 separate — treat Readest-web as the true "read anywhere, resume anywhere"
 surface, and Calibre-Web as the library/browse/download surface.
 
+## 4d. Getting books onto each device (library delivery)
+
+The library is **159 books / 128 authors** in
+`/data/media/ebooks/calibre-library`, served by Calibre-Web. Calibre-Web's OPDS
+feed is verified working at `https://books.somesh.dev/opds` (login required).
+
+**Every device should pull from this same source** — that is what makes the
+KOSync document hashes line up.
+
+| Device | Method | URL / steps |
+|--------|--------|-------------|
+| Phone (Readest) | OPDS | Import Books → Online Library → `https://books.somesh.dev/opds` + Calibre-Web login |
+| iPad / MacBook (Readest, KOReader) | OPDS | same catalog URL |
+| Omarchy (KOReader/Readest) | OPDS | same catalog URL |
+| XTEINK (CrossPoint) | OPDS | saved server (up to 8) in the OPDS browser |
+| Kobo (KOReader) | OPDS | file browser → OPDS catalog → add `https://books.somesh.dev/opds` |
+| Kobo (native) | Kobo sync | `https://books.somesh.dev/<auth_token>` — token from *your* Kobo-sync settings page |
+
+Credentials for OPDS are your **Calibre-Web** login (`somesh` + the password you
+set in Calibre-Web, which is separate from the KOSync reading password and the
+sudo password). If you don't know it, reset it in Calibre-Web →
+*Admin → Users → somesh*, or via a one-off shell.
+
+> **Kobo native sync caveat:** Kobo's built-in sync carries **library contents**
+> (so books appear on the device automatically) but **not reading position**.
+> Position comes from KOReader + KOSync. So on the Kobo you get: books delivered
+> by Calibre-Web, position synced by KOSync. Best of both.
+>
+> Also note Calibre-Web's OPDS serves *EPUB*; Kobo's native reader prefers KEPUB,
+> which is why `enableKepubify = true` is set — Calibre-Web will serve the KEPUB
+> variant to the device.
+
 ## 4c. Which device does what (and where books come from)
 
 | Surface | Read here? | Syncs position? | Gets books from |
@@ -342,7 +374,7 @@ sudo kosync-user documents somesh                   # per-user synced docs
 | Changed the password on one device only | Run `sudo kosync-user passwd <name> <new-password>`, then update every device. |
 | Phone/app can't reach an OPDS URL with a `192.168.x.x` address | iOS blocks LAN addresses without the Local Network permission. Use `https://books.somesh.dev/opds` instead, or grant Settings → Privacy & Security → Local Network → Readest. |
 | Readest web shows a CORS error | Only allow-listed origins send CORS headers. Add the origin to the `@corsOrigin` regexp in `modules/services/caddy.nix`. |
-| Phone syncs position but the book won't download | OPDS needs a Calibre-Web login (`somesh` + your Calibre-Web password). If it fails, reset it from the Calibre-Web UI. |
+| Phone syncs position but the book won't download | OPDS needs a Calibre-Web login (`somesh` + your Calibre-Web password, *not* the KOSync one). Reset it from Calibre-Web → Admin → Users. |
 | Two devices never line up on the same book | They hold *differently-modified* copies, so the file hashes differ. Re-download both from the same OPDS/library source. |
 | KoInsight shows no data | It reads KOReader's `statistics.sqlite`, which nothing uploads automatically — use Tools → KoInsight → Sync, or Upload Statistics DB. |
 
