@@ -530,6 +530,14 @@ in
     "d /var/lib/immich/postgres 0700 999 999 -"
     "d /var/lib/immich/model-cache 0755 999 999 -"
     
+    # Media library mount points. These MUST exist before the fileSystems
+    # entries can mount; with mountpoint=legacy ZFS cannot create the directory
+    # ("canonicalization error: No such file or directory").
+    "d /data/media/movies 2775 root media -"
+    "d /data/media/tv 2775 root media -"
+    "d /data/media/ebooks 2775 root media -"
+    "d /data/media/audiobooks 2775 root media -"
+    
     # LazyLibrarian download subdirectory
     "d /data/media/downloads/complete/lazylibrarian 0775 root media - -"
   ];
