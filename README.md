@@ -541,6 +541,8 @@ karmalab/
 - [x] **KOSync** (cross-device reading progress sync — KOReader, XTEINK/CrossPoint, Readest)
 - [x] **KoInsight** (reading statistics dashboard)
 - [x] Reading-state backups + ZFS auto-snapshots for reading data
+- [x] Phone reading (Readest iOS/Android) with KOSync progress sync
+- [x] OPDS book delivery (Calibre-Web catalog to readers + phone)
 - [ ] Readarr (not used — replaced by LazyLibrarian)
 
 ### Phase 5: Productivity & Backup - IN PROGRESS

@@ -17,6 +17,7 @@ for cross-vendor reading sync, and everything you own can speak it:
 |--------|-------------------|----------------|
 | Kobo Libra Colour | KOReader | Built-in "Progress sync" plugin |
 | XTEINK X4 Pro | CrossPoint (or Crossing) firmware | Built-in "KOReader Sync" |
+| Phone (iOS/Android) | Readest (or KOReader on Android) | Built-in KOReader integration |
 | iPad Pro | Readest | Built-in KOReader integration |
 | MacBook | Readest, or KOReader desktop | Same account |
 | Omarchy (Arch) | KOReader desktop, Readest AppImage, or a browser | Same account |
@@ -115,10 +116,12 @@ Use the **same account** everywhere. Pick the URL that matches each device:
 > **Which URL should I use?** The e-ink readers can't join Tailscale, so:
 > - On home Wi-Fi → the **LAN** URL (fastest, no internet dependency).
 > - Away from home → **`https://kosync.somesh.dev`**.
-> - iPad/MacBook/Omarchy with Tailscale → `http://karmalab:7200` anywhere.
+> - Phone / iPad / MacBook / Omarchy with Tailscale → `http://karmalab:7200`.
 >
 > All three URLs share one account and database, so mixing them is fine — two
-> devices only need the *same username/password*, not the same URL.
+> devices only need the *same username/password*, not the same URL. For phones
+> the public URL is the simplest choice since it works on mobile data and any
+> Wi-Fi.
 
 ### 3.1 Kobo Libra Colour (KOReader)
 
@@ -162,6 +165,43 @@ Any of these work, all using the same account:
 - **Readest** — AppImage from the Readest releases; set it up as in 3.3.
 - **Browser** — open Calibre-Web (`http://192.168.68.59:8083`) to read and see
   the current position, or the Readest web app.
+
+### 3.5 Phone (iOS *and* Android)
+
+The phone is the easiest device to add, and it can do **both** halves — browse
+your library *and* resume at the right page.
+
+**Readest (recommended, iOS + Android):**
+
+1. Install **Readest** from the App Store / Play Store.
+2. **Settings → Integrations → KOSync** → server
+   `https://kosync.somesh.dev`, username `somesh`, your reading password,
+   checksum **File Content**.
+3. Get books onto the phone — either:
+   - **OPDS:** library → **Import Books → Online Library**, add catalog
+     `https://books.somesh.dev/opds` with your Calibre-Web username/password
+     (`somesh` + *your Calibre-Web password*, which is the one login I don't
+     have). Browse and download straight into Readest.
+   - **Web Browser import:** **Import Books → From Web Browser**, save
+     `https://books.somesh.dev` and browse it in-app.
+   - **WebDAV** (OpenCloud) or manual file import.
+4. Add the Readest **widget** to your home screen — it shows recent books with
+   progress, so resuming is one tap.
+
+> On iOS, reaching a *LAN* OPDS URL triggers a Local Network permission prompt.
+> Using the public `https://books.somesh.dev` avoids that entirely.
+
+**KOReader on Android** — also works, same account: install KOReader, open a
+book → **Plugins → Progress sync → Custom sync server** →
+`https://kosync.somesh.dev`, then set **Document matching = Binary**.
+
+**Audiobooks on the phone:** install the **Audiobookshelf** app and point it at
+`https://abs.somesh.dev`. Audiobook position syncs across your phone and other
+devices through Audiobookshelf (separate from KOSync, which is ebook-only).
+
+**Why the phone is worth setting up first:** it shares the *exact same account*
+as the Kobo and XTEINK, so one book read on the phone resumes on the e-reader —
+and it needs no flashing, rooting, or USB sideloading.
 
 ## 4. Remote access (already configured)
 
@@ -250,6 +290,24 @@ Two independent paths, both worth having:
 Calibre-Web's own reader does **not** talk to KOSync, so its position is
 separate — treat Readest-web as the true "read anywhere, resume anywhere"
 surface, and Calibre-Web as the library/browse/download surface.
+
+## 4c. Which device does what (and where books come from)
+
+| Surface | Read here? | Syncs position? | Gets books from |
+|---------|-----------|-----------------|-----------------|
+| Kobo Libra Colour (KOReader) | ✅ e-ink | ✅ KOSync | OPDS from Calibre-Web |
+| XTEINK X4 Pro (CrossPoint) | ✅ e-ink | ✅ KOSync | OPDS from Calibre-Web |
+| Phone (Readest) | ✅ | ✅ KOSync | OPDS + WebDAV |
+| iPad Pro (Readest) | ✅ | ✅ KOSync | OPDS + WebDAV |
+| Readest web / MacBook | ✅ | ✅ KOSync | OPDS + WebDAV |
+| Calibre-Web browser | ✅ | ❌ own reader only | library itself |
+| KoInsight | ❌ stats only | n/a | uploads stats |
+| Audiobookshelf app | ✅ audio | ✅ ABS (audio only) | audiobooks library |
+
+**The one rule that makes it all work:** every book should come from the *same*
+source (`/data/media/ebooks/calibre-library`) so the file bytes — and therefore
+the KOSync document hash — match on every device. If two devices hold
+differently-modified copies of the same EPUB, KOSync sees two different books.
 
 ## 5. Verify sync
 
