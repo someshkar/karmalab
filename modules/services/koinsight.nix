@@ -50,7 +50,17 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 3005;
-      description = "Host port for the dashboard.";
+      description = "Public port for the dashboard, served by Caddy.";
+    };
+
+    internalPort = lib.mkOption {
+      type = lib.types.port;
+      default = 13005;
+      description = ''
+        Loopback port the container listens on. Must differ from `port`,
+        because Caddy (which serves `port`) binds all interfaces including
+        loopback.
+      '';
     };
 
     dataDir = lib.mkOption {
@@ -86,7 +96,7 @@ in
         ${pkgs.docker_29}/bin/docker run \
           --name=koinsight \
           --rm \
-          -p 127.0.0.1:${toString cfg.port}:3000 \
+          -p 127.0.0.1:${toString cfg.internalPort}:3000 \
           -v ${cfg.dataDir}:/app/data \
           -e HOSTNAME=0.0.0.0 \
           -e PORT=3000 \
@@ -110,9 +120,8 @@ in
     # ------------------------------------------------------------------------
     # FIREWALL
     # ------------------------------------------------------------------------
-    # The dashboard is served via Caddy on the LAN (see caddy.nix). Port 3005
-    # is opened here so Caddy (which proxies from all interfaces) can reach it,
-    # and on Tailscale for direct access.
+    # Caddy serves the dashboard on cfg.port across all interfaces; the
+    # container only listens on loopback (cfg.internalPort).
     networking.firewall = {
       allowedTCPPorts = [ cfg.port ];
       interfaces."tailscale0".allowedTCPPorts = [ cfg.port ];

@@ -33,6 +33,7 @@ let
 
   # KoInsight reading-stats dashboard port
   statsPort = config.services.koinsight.port;
+  statsInternalPort = config.services.koinsight.internalPort;
 in
 {
   # ============================================================================
@@ -84,7 +85,7 @@ in
       # KoInsight reading-stats dashboard (LAN + Tailscale).
       "http://:${toString statsPort}" = lib.mkIf config.services.koinsight.enable {
         extraConfig = ''
-          reverse_proxy 127.0.0.1:${toString statsPort}
+          reverse_proxy 127.0.0.1:${toString statsInternalPort}
         '';
       };
     };
