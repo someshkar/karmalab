@@ -41,6 +41,16 @@ in
       '';
     };
 
+    requiredMountPoint = lib.mkOption {
+      type = lib.types.path;
+      default = "/data/media/ebooks";
+      description = ''
+        Mount point that must be active for the backup to run. /data/media/ebooks
+        is a ZFS dataset; if the pool failed to import (nofail mounts), writing
+        to destDir would silently land on the root filesystem instead.
+      '';
+    };
+
     retain = lib.mkOption {
       type = lib.types.int;
       default = 14;
@@ -70,7 +80,7 @@ in
       wants = [ "storage-online.target" ];
       # Only run when the pool is actually mounted; otherwise we would write
       # into the root filesystem and silently produce no backup.
-      unitConfig.ConditionPathIsMountPoint = cfg.destDir;
+      unitConfig.ConditionPathIsMountPoint = cfg.requiredMountPoint;
 
       serviceConfig = {
         Type = "oneshot";
