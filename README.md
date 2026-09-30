@@ -19,6 +19,7 @@ A fully declarative NixOS configuration for an ASUS NUC (Intel N150) homelab ser
 | **Firefox (KasmVNC)** | 3010/3011 | Host (Docker) | Working | Web browser for authenticated downloads |
 | **Calibre-Web** | 8083 | Host | Working | Ebook library web interface (books.somesh.dev) |
 | **KOSync** | 7200 | Host (via Caddy) | Working | Cross-device reading progress sync (KOReader/Readest/XTEINK) — kosync.somesh.dev |
+| **KoInsight** | 3005 | Host (via Caddy) | Working | Reading statistics dashboard (KOReader time/heatmap/progress) |
 | **LazyLibrarian** | 5299 | Host + Gluetun proxy | Working | Ebook/audiobook automation (Docker) |
 | **Shelfmark** | 8084 | Host + Gluetun proxy | Working | Book search & download UI (shelfmark.somesh.dev) ⚠️ Enable auth! |
 | **Audiobookshelf** | 13378 | Host | Working | Audiobook server (abs.somesh.dev) |
@@ -538,6 +539,8 @@ karmalab/
 - [x] **Shelfmark** (search & download)
 - [x] **LazyLibrarian** (ebook/audiobook automation, Docker)
 - [x] **KOSync** (cross-device reading progress sync — KOReader, XTEINK/CrossPoint, Readest)
+- [x] **KoInsight** (reading statistics dashboard)
+- [x] Reading-state backups + ZFS auto-snapshots for reading data
 - [ ] Readarr (not used — replaced by LazyLibrarian)
 
 ### Phase 5: Productivity & Backup - IN PROGRESS
@@ -676,6 +679,7 @@ These are real, verified gaps between the declarative config and runtime state (
 | OpenCloud | http://192.168.68.59:9200 |
 | Calibre-Web | http://192.168.68.59:8083 |
 | KOSync (reading sync) | http://192.168.68.59:7200 • https://kosync.somesh.dev |
+| Reading Stats (KoInsight) | http://192.168.68.59:3005 |
 | LazyLibrarian | http://192.168.68.59:5299 |
 | Shelfmark | http://192.168.68.59:8084 |
 | Audiobookshelf | http://192.168.68.59:13378 |

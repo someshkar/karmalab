@@ -202,6 +202,55 @@ require auth at the edge in addition to the KOSync credentials. If you do, note
 that the e-ink readers can't complete a browser login — so an Access policy
 would break them and you should use the LAN/Tailscale URL on those instead.
 
+**Browser CORS:** Readest's *web* app (`web.readest.com`) talks to KOSync from
+the browser, which requires CORS headers. Neither the official nor the
+self-hosted KOSync server sends them, so Caddy adds them on `:7200` for an
+allow-list of reader origins, and answers the `OPTIONS` preflight that the app
+rejects with 405. Native apps (KOReader, Readest iOS/macOS/desktop) are
+unaffected — CORS is a browser-only concept. To permit another browser reader,
+add its origin to the `@corsOrigin` regexp in `modules/services/caddy.nix`.
+
+## 4a. Reading statistics dashboard (KoInsight)
+
+KoInsight charts your KOReader reading time, a calendar heatmap, per-book
+progress and streaks:
+
+```
+LAN:       http://192.168.68.59:3005
+Tailscale: http://karmalab:3005
+```
+
+Feed it data one of two ways:
+
+- **Plugin (recommended):** in KOReader open **Tools → KoInsight**, configure
+  the server URL, then **Sync**.
+- **Manual:** copy `statistics.sqlite` from the device's `koreader/settings/`
+  folder and use **Upload Statistics DB**.
+
+Covers are not extracted automatically; add them once per book via the
+**Cover Selector** tab.
+
+> KoInsight *can* also act as a KOSync server, but this setup deliberately does
+> not use that. `kosync-dotnet` (step 3) stays the single source of truth for
+> reading *position*; two servers writing the same document hashes would fight
+> over which is furthest.
+
+## 4b. Reading on the web (MacBook, Omarchy, anywhere)
+
+Two independent paths, both worth having:
+
+1. **Readest web** — `https://web.readest.com`. Add KOSync under
+   *Settings → Integrations → KOSync* with server `https://kosync.somesh.dev`,
+   your username/password, and checksum **File Content**. Progress syncs with
+   your Kobo/XTEINK. (This is what the CORS config above enables.)
+2. **Calibre-Web in-browser reader** — `http://192.168.68.59:8083` (or
+   `https://books.somesh.dev`) has a built-in EPUB reader and a **Kobo sync**
+   feature. Log in as `somesh`.
+
+Calibre-Web's own reader does **not** talk to KOSync, so its position is
+separate — treat Readest-web as the true "read anywhere, resume anywhere"
+surface, and Calibre-Web as the library/browse/download surface.
+
 ## 5. Verify sync
 
 Pick one book that exists on two devices:
@@ -229,11 +278,40 @@ sudo kosync-user documents somesh                   # per-user synced docs
 | `/healthcheck` returns OK but the device can't log in | Verify the URL has no trailing path and starts with `http://` (LAN) or `https://` (tunnel), and that the username/password match exactly. |
 | Changed the password on one device only | Run `sudo kosync-user passwd <name> <new-password>`, then update every device. |
 
-## 7. Maintenance
+## 7. Backup & maintenance
 
-- **Database:** `/var/lib/kosync/Kosync.db` (a few KB–MB). Included in ZFS
-  snapshots if you snapshot the NVMe root, or copy the file for a manual backup:
-  `sudo cp /var/lib/kosync/Kosync.db /somewhere/backup/`.
+Reading state is protected three ways:
+
+1. **KOSync DB on ZFS.** `/var/lib/kosync` is the `storagepool/services/kosync`
+   dataset and carries `com.sun:auto-snapshot=true`, so it is captured by the
+   ZFS auto-snapshot timers (15-min/hourly/daily/weekly/monthly).
+2. **Nightly copy on the pool.** `kosync-backup.timer` copies
+   `/var/lib/kosync` and `/var/lib/koinsight` to
+   `/data/media/ebooks/.backups/<utc-timestamp>/` — also on ZFS, so those copies
+   are themselves snapshotted. Keeps the newest 14.
+3. **Manual (optional):** `sudo cp /var/lib/kosync/Kosync.db /somewhere/backup/`.
+
+Verify / run on demand:
+
+```bash
+sudo systemctl start kosync-backup.service    # run now
+sudo systemctl list-timers kosync-backup.timer
+sudo ls /data/media/ebooks/.backups/
+
+sudo zfs list -t snapshot | grep services/kosync
+```
+
+Restore:
+
+```bash
+sudo systemctl stop docker-kosync
+sudo cp /data/media/ebooks/.backups/<stamp>/kosync/Kosync.db /var/lib/kosync/Kosync.db
+sudo chown 1000:100 /var/lib/kosync/Kosync.db
+sudo systemctl start docker-kosync
+```
+
+Other maintenance:
+
 - **Update the server:** change `services.kosync.image` in
   `modules/services/kosync.nix`, then `sudo nixos-rebuild switch`. The unit
   pulls the new image on start.
@@ -241,3 +319,8 @@ sudo kosync-user documents somesh                   # per-user synced docs
   `sudo kosync-user delete <name>`.
 - **Raw API:** `sudo kosync-user raw GET /manage/users` (run `kosync-user` with
   no arguments for the full command list).
+
+> **Caution:** never run `caddy validate` as root. Caddy's config creates log
+> files under `/var/log/caddy` owned by its own user; a root-owned log file
+> makes Caddy fail to start with `permission denied`. Validate via
+> `nixos-rebuild build` instead, or delete the stray log file afterwards.
