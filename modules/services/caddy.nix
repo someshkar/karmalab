@@ -98,27 +98,22 @@ in
       # exists to add CORS headers for browser-based readers.
       "http://kosync.somesh.dev" = lib.mkIf config.services.kosync.enable {
         extraConfig = ''
-          @browserOrigin {
-            header Origin ${lib.concatStringsSep " " kosyncCorsOrigins}
+          # Only reflect an allow-listed browser origin.
+          @corsOrigin header_regexp Origin ^https://(web\.readest\.com|readest\.com)$
+
+          header @corsOrigin {
+            Access-Control-Allow-Origin "{http.request.header.Origin}"
+            Access-Control-Allow-Methods "GET, PUT, POST, OPTIONS"
+            Access-Control-Allow-Headers "x-auth-user, x-auth-key, content-type, accept"
+            Access-Control-Max-Age "86400"
+            Vary "Origin"
           }
 
-          handle @browserOrigin {
-            header {
-              Access-Control-Allow-Origin "{http.request.header.Origin}"
-              Access-Control-Allow-Methods "GET, PUT, POST, OPTIONS"
-              Access-Control-Allow-Headers "x-auth-user, x-auth-key, content-type, accept"
-              Access-Control-Max-Age "86400"
-              Vary "Origin"
-            }
-            # Answer CORS preflight here; the app does not handle OPTIONS.
-            @preflight method OPTIONS
-            respond @preflight 204
-            reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
-          }
+          # The app does not implement OPTIONS, so answer preflight here.
+          @preflight method OPTIONS
+          respond @preflight 204
 
-          handle {
-            reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
-          }
+          reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
         '';
       };
 
