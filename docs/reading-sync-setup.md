@@ -189,8 +189,7 @@ your library *and* resume at the right page.
 3. Get books onto the phone — either:
    - **OPDS:** library → **Import Books → Online Library**, add catalog
      `https://books.somesh.dev/opds` with your Calibre-Web username/password
-     (`somesh` + *your Calibre-Web password*, which is the one login I don't
-     have). Browse and download straight into Readest.
+     (`somesh` / `Index.calibre1`). Browse and download straight into Readest.
    - **Web Browser import:** **Import Books → From Web Browser**, save
      `https://books.somesh.dev` and browse it in-app.
    - **WebDAV** (OpenCloud) or manual file import.
@@ -378,7 +377,7 @@ sudo kosync-user documents somesh                   # per-user synced docs
 | Changed the password on one device only | Run `sudo kosync-user passwd <name> <new-password>`, then update every device. |
 | Phone/app can't reach an OPDS URL with a `192.168.x.x` address | iOS blocks LAN addresses without the Local Network permission. Use `https://books.somesh.dev/opds` instead, or grant Settings → Privacy & Security → Local Network → Readest. |
 | Readest web shows a CORS error | Only allow-listed origins send CORS headers. Add the origin to the `@corsOrigin` regexp in `modules/services/caddy.nix`. |
-| Phone syncs position but the book won't download | OPDS needs a Calibre-Web login (`somesh` + your Calibre-Web password, *not* the KOSync one). Reset it from Calibre-Web → Admin → Users. |
+| Phone syncs position but the book won't download | OPDS needs a Calibre-Web login (`somesh` / `Index.calibre1`, *not* the KOSync password). |
 | Two devices never line up on the same book | They hold *differently-modified* copies, so the file hashes differ. Re-download both from the same OPDS/library source. |
 | KoInsight shows no data | It reads KOReader's `statistics.sqlite`, which nothing uploads automatically — use Tools → KoInsight → Sync, or Upload Statistics DB. |
 

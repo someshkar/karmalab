@@ -14,7 +14,7 @@ prove the sync works before touching the Kobo or XTEINK.
 | **KOSync password** | `Index.kosync1` |
 | **Document matching** | **Binary** (KOReader/CrossPoint) = **File Content** (Readest) |
 | OPDS catalog (books) | `https://books.somesh.dev/opds` |
-| OPDS login | Calibre-Web user `somesh` + *your Calibre-Web password* |
+| OPDS login | Calibre-Web user `somesh` / **`Index.calibre1`** |
 | Reading stats dashboard | `http://192.168.68.59:3005` |
 
 > **The one setting that breaks everything:** document matching. If KOReader says
@@ -37,7 +37,7 @@ so it's the perfect single book to test with.
 3. Get the book onto the iPad:
    - **Library → + (Import Books) → Online Library**
    - Add catalog: `https://books.somesh.dev/opds`
-   - Username `somesh`, password = **your Calibre-Web password**
+   - Username `somesh`, password = **`Index.calibre1`**
    - Browse → download *The Selfish Gene*
 4. Open the book, read a few pages.
 5. **Test:** open the same book, sync (`Sync now`). Repeat on the phone later —
@@ -89,8 +89,7 @@ This one needs KOReader installed (there's no other way to run KOSync on a Kobo)
 5. Tap **Register / Login** → `somesh` / `Index.kosync1`.
 6. Set **Document matching = Binary**.
 7. Get the book: KOReader's file browser → menu → **OPDS catalog** → add
-   `https://books.somesh.dev/opds` (username `somesh`, password = Calibre-Web
-   password) → download *The Selfish Gene*.
+   `https://books.somesh.dev/opds` (username `somesh`, password `Index.calibre1`) → download *The Selfish Gene*.
 8. Open it, read, then **Sync progress**.
 
 > **Note:** Kobo's *native* sync (Niagara) can deliver books automatically but
@@ -124,6 +123,19 @@ This one needs KOReader installed (there's no other way to run KOSync on a Kobo)
 
 ---
 
+## Why you must download the book from OPDS (not copy it around)
+
+Verified on this server: Calibre-Web rewrites the EPUB on the way out when
+`config_embed_metadata` is on (the file it serves differs from the one on disk),
+but the rewrite is **deterministic** — two downloads of the same book are
+byte-identical. That is exactly what KOSync needs: devices agree on the hash.
+
+The corollary is that a *locally re-exported* copy (e.g. AirDropped from Apple
+Books, or the original file on your Mac) will have a **different** hash and will
+not line up. So on every device, get the book via the OPDS catalog
+`https://books.somesh.dev/opds` — that guarantees identical bytes and therefore
+working sync.
+
 ## Reading statistics (after any device has read something)
 
 KOReader keeps local reading time; KoInsight charts it:
@@ -154,6 +166,6 @@ bytes are identical.
 |---------|-----|
 | "User could not be found" on device | Password is `Index.kosync1`. If you changed it, update every device. |
 | Syncs but position never matches | Document matching differs between devices → set Binary / File Content everywhere. |
-| OPDS download fails / 401 | Use your **Calibre-Web** password (not the KOSync one). Reset it in Calibre-Web → Admin → Users → somesh. |
+| OPDS download fails / 401 | Calibre-Web password is **`Index.calibre1`** (separate from the KOSync password). |
 | iOS can't reach a `192.168.x.x` OPDS URL | iOS Local Network permission. Use `https://books.somesh.dev/opds` instead. |
 | CrossPoint can't authenticate | Set matching to **binary** and re-check the URL has no trailing slash. |
