@@ -52,12 +52,17 @@ snapshots.
 
 | File | Purpose |
 |------|---------|
-| `modules/services/kosync.nix` | Container, data dir, firewall, `kosync-user` helper |
-| `modules/services/caddy.nix` | `http://:7200` → container loopback |
-| `modules/services/homepage.nix` | "KOSync" entry in the Books group |
-| `configuration.nix` | Imports the module and enables `services.kosync` |
+| `modules/services/kosync.nix` | KOSync server: container, data dir, firewall, `kosync-user` helper |
+| `modules/services/koinsight.nix` | Reading-statistics dashboard container |
+| `modules/services/kosync-backup.nix` | Daily copy of reading state onto the ZFS pool |
+| `modules/services/caddy.nix` | Serves `:7200` (KOSync + CORS) and `:3005` (stats) |
+| `modules/services/homepage.nix` | "KOSync" and "Reading Stats" entries in the Books group |
+| `modules/storage.nix` | `services/kosync` dataset; media-library mounts; auto-snapshot selection |
+| `modules/services/calibre-web.nix` | `enableKepubify` for Kobo-native downloads |
+| `configuration.nix` | Imports the modules and enables the services |
 
-Default port: **7200**. Data: **`/var/lib/kosync`** (LiteDB).
+Default ports: **7200** (sync), **3005** (stats). Data: **`/var/lib/kosync`**
+(LiteDB, on ZFS), **`/var/lib/koinsight`** (SQLite, backed up daily).
 
 ## 1. Deploy
 
@@ -335,6 +340,11 @@ sudo kosync-user documents somesh                   # per-user synced docs
 | Port 7200 unreachable from the LAN | Check `systemctl status caddy docker-kosync`; the module opens 7200 in the firewall. |
 | `/healthcheck` returns OK but the device can't log in | Verify the URL has no trailing path and starts with `http://` (LAN) or `https://` (tunnel), and that the username/password match exactly. |
 | Changed the password on one device only | Run `sudo kosync-user passwd <name> <new-password>`, then update every device. |
+| Phone/app can't reach an OPDS URL with a `192.168.x.x` address | iOS blocks LAN addresses without the Local Network permission. Use `https://books.somesh.dev/opds` instead, or grant Settings → Privacy & Security → Local Network → Readest. |
+| Readest web shows a CORS error | Only allow-listed origins send CORS headers. Add the origin to the `@corsOrigin` regexp in `modules/services/caddy.nix`. |
+| Phone syncs position but the book won't download | OPDS needs a Calibre-Web login (`somesh` + your Calibre-Web password). If it fails, reset it from the Calibre-Web UI. |
+| Two devices never line up on the same book | They hold *differently-modified* copies, so the file hashes differ. Re-download both from the same OPDS/library source. |
+| KoInsight shows no data | It reads KOReader's `statistics.sqlite`, which nothing uploads automatically — use Tools → KoInsight → Sync, or Upload Statistics DB. |
 
 ## 7. Backup & maintenance
 
