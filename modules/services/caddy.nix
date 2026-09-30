@@ -34,16 +34,6 @@ let
   # KoInsight reading-stats dashboard port
   statsPort = config.services.koinsight.port;
   statsInternalPort = config.services.koinsight.internalPort;
-
-  # Browser-based readers (e.g. Readest web at web.readest.com) fetch KOSync
-  # cross-origin, which needs CORS. Neither the official nor self-hosted KOSync
-  # servers send CORS headers, so we add them at the proxy for the browser
-  # reader origins only. Native apps (KOReader, Readest desktop/iOS) are
-  # unaffected — CORS is a browser concept.
-  kosyncCorsOrigins = [
-    "https://web.readest.com"
-    "https://readest.com"
-  ];
 in
 {
   # ============================================================================
@@ -84,21 +74,15 @@ in
         '';
       };
 
-      # KOSync reading-progress sync on port 7200 (all interfaces, incl. LAN).
-      # Proxies to the container on loopback so devices only ever need this URL.
+      # KOSync reading-progress sync on port 7200. Serves both the LAN
+      # (devices use http://<lan-ip>:7200) and the Cloudflare Tunnel
+      # (kosync.somesh.dev -> http://localhost:7200). Because the tunnel
+      # forwards to this port, CORS must be configured here rather than on a
+      # separate hostname block.
       "http://:${toString kosyncPort}" = lib.mkIf config.services.kosync.enable {
         extraConfig = ''
-          reverse_proxy 127.0.0.1:${toString kosyncInternalPort}
-        '';
-      };
-
-      # Public HTTPS entrypoint for KOSync, reached via the Cloudflare Tunnel
-      # (kosync.somesh.dev -> localhost:7200; see modules/services/cloudflared.nix).
-      # Caddy's auto_https is off because Cloudflare terminates TLS. This block
-      # exists to add CORS headers for browser-based readers.
-      "http://kosync.somesh.dev" = lib.mkIf config.services.kosync.enable {
-        extraConfig = ''
-          # Only reflect an allow-listed browser origin.
+          # Browser-based readers (Readest web) need CORS; native apps don't.
+          # Reflect only allow-listed origins.
           @corsOrigin header_regexp Origin ^https://(web\.readest\.com|readest\.com)$
 
           header @corsOrigin {
@@ -109,7 +93,7 @@ in
             Vary "Origin"
           }
 
-          # The app does not implement OPTIONS, so answer preflight here.
+          # The app answers OPTIONS with 405, which fails CORS preflight.
           @preflight method OPTIONS
           respond @preflight 204
 
